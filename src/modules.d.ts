@@ -21,7 +21,6 @@ declare module "~plugins" {
     export default plugins;
     export const PluginMeta: Record<string, {
         folderName: string;
-        userPlugin: boolean;
     }>;
     export const ExcludedPlugins: Record<string, "web" | "discordDesktop" | "vesktop" | "equibop" | "desktop" | "dev">;
 }

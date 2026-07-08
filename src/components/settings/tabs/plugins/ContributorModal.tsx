@@ -17,7 +17,7 @@ import { pluralise } from "@utils/misc";
 import { RenderModalProps, User } from "@vencord/discord-types";
 import { Modal, openModal, showToast, useEffect, useMemo, UserProfileStore, useStateFromStores } from "@webpack/common";
 
-import Plugins, { PluginMeta } from "~plugins";
+import Plugins from "~plugins";
 
 import { GithubButton, WebsiteButton } from "./LinkIconButton";
 import { PluginCard } from "./PluginCard";
@@ -46,7 +46,7 @@ function ContributorModal({ user, modalProps }: { user: User; modalProps: Render
         const pluginsByAuthor = (VencordDevsById[user.id] || EquicordDevsById[user.id])
             ? allPlugins.filter(p => p.authors.includes(VencordDevsById[user.id] || EquicordDevsById[user.id]))
             : allPlugins.filter(p =>
-                PluginMeta[p.name]?.userPlugin && p.authors.some(a => a.id.toString() === user.id)
+                p.authors.some(a => a.id.toString() === user.id)
                 || p.authors.some(a => a.name === user.username)
             );
 

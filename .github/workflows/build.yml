@@ -7,7 +7,7 @@ on:
 env:
     FORCE_COLOR: true
     GITHUB_TOKEN: ${{ secrets.ETOKEN }}
-    REPO: Equicord/Equibored
+    REPO: Code-Flocord/Flocordplugins
     USERNAME: GitHub-Actions
 
 permissions:

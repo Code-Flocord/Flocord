@@ -217,7 +217,7 @@ export default function PluginModal({ plugin, onRestartNeeded, onClose, transiti
                                 renderUser={(user: User) => (
                                     <Clickable
                                         className={AvatarStyles.clickableAvatar}
-                                        onClick={() => isEquicordPlugin ? openContributorModal(user) : openContributorModal(user)}
+                                        onClick={() => openContributorModal(user)}
                                     >
                                         <img
                                             className={AvatarStyles.avatar}
@@ -256,7 +256,6 @@ export default function PluginModal({ plugin, onRestartNeeded, onClose, transiti
                                 )}
                             </Tooltip>
                         ) : <div />}
-                        {!pluginMeta.userPlugin && (
                             <div className={cl("links")}>
                                 <WebsiteButton
                                     text="Website"
@@ -267,7 +266,6 @@ export default function PluginModal({ plugin, onRestartNeeded, onClose, transiti
                                     href={`https://github.com/${gitRemote}/tree/main/${pluginMeta.folderName}`}
                                 />
                             </div>
-                        )}
                     </Flex>
                 </Flex>
             </div>

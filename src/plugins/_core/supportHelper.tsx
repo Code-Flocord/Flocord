@@ -45,7 +45,7 @@ import { CloudUploadPlatform } from "@vencord/discord-types/enums";
 import { Alerts, ChannelStore, CloudUploader, ConfirmModal, Constants, GuildMemberStore, openModal, Parser, PermissionsBits, PermissionStore, RelationshipStore, RestAPI, SelectedChannelStore, showToast, SnowflakeUtils, Text, Toasts, UserStore } from "@webpack/common";
 import { JSX } from "react";
 
-import plugins, { PluginMeta } from "~plugins";
+import plugins from "~plugins";
 
 import SettingsPlugin from "./settings";
 
@@ -174,7 +174,6 @@ async function generateDebugInfoMessage() {
         "Equicord DevBuild": !IS_STANDALONE,
         "Equibop DevBuild": IS_EQUIBOP && tryOrElse(() => VesktopNative.app.isDevBuild?.(), false),
         "Platform Spoofed": spoofInfo?.spoofed ?? false,
-        "Has UserPlugins": Object.values(PluginMeta).some(m => m.userPlugin),
         ">2 Weeks Outdated": BUILD_TIMESTAMP < Date.now() - 12096e5,
         [`Potentially Problematic Plugins: ${potentiallyProblematicPlugins.join(", ")}\n${potentiallyProblematicPluginsNote}`]: potentiallyProblematicPlugins.length
     };
@@ -223,8 +222,7 @@ function generatePluginList() {
     const enabledPlugins = Object.keys(plugins)
         .filter(p => isPluginEnabled(p) && !isApiPlugin(p));
 
-    const enabledStockPlugins = enabledPlugins.filter(p => !PluginMeta[p].userPlugin).sort();
-    const enabledUserPlugins = enabledPlugins.filter(p => PluginMeta[p].userPlugin).sort();
+    const enabledStockPlugins = enabledPlugins.sort();
 
     const user = UserStore.getCurrentUser();
 
@@ -249,14 +247,6 @@ function generatePluginList() {
             "",
         ];
 
-        if (enabledUserPlugins.length) {
-            fileContent.push(
-                `Enabled User Plugins (${enabledUserPlugins.length}):`,
-                ...enabledUserPlugins.map(p => `  - ${p}`),
-                ""
-            );
-        }
-
         fileContent.push(
             "---",
             `Total Enabled Plugins: ${enabledPlugins.length}`,
@@ -270,11 +260,7 @@ function generatePluginList() {
         };
     }
 
-    let content = `**Enabled Plugins (${enabledStockPlugins.length}):**\n${makeCodeblock(enabledStockPlugins.join(", "))}`;
-
-    if (enabledUserPlugins.length) {
-        content += `**Enabled UserPlugins (${enabledUserPlugins.length}):**\n${makeCodeblock(enabledUserPlugins.join(", "))}`;
-    }
+    const content = `**Enabled Plugins (${enabledStockPlugins.length}):**\n${makeCodeblock(enabledStockPlugins.join(", "))}`;
 
     return content;
 }

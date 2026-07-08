@@ -70,7 +70,7 @@ const UserPluginContributorBadge: ProfileBadge = {
         const allPlugins = Object.values(Plugins);
         return allPlugins.some(p => {
             const pluginMeta = PluginMeta[p.name];
-            return pluginMeta?.userPlugin && p.authors.some(a => a.id.toString() === userId);
+            return p.authors.some(a => a.id.toString() === userId);
         });
     },
     onClick: (_, { userId }) => openContributorModal(UserStore.getUser(userId)),
