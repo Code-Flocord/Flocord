@@ -19,7 +19,7 @@ on:
 env:
     FORCE_COLOR: true
     GITHUB_TOKEN: ${{ secrets.ETOKEN }}
-    REPO: Equicord/Equibuilds
+    REPO: Flocord/Flocordbuilds
     USERNAME: GitHub-Actions
 
 permissions:
@@ -27,9 +27,9 @@ permissions:
 
 jobs:
     Build:
-        name: Build Equicord
+        name: Build Flocord
         runs-on: ubuntu-latest
-        if: github.repository == 'Equicord/Equicord'
+        if: github.repository == 'Flocord/Flocord'
 
         steps:
             - uses: actions/checkout@v6
