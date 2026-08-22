@@ -1,11 +1,10 @@
-import { definePlugin, OptionType } from "@utils/types";
-import { FluxDispatcher } from "@webpack/common";
+import definePlugin, { OptionType } from "@utils/types";
+import { definePluginSettings } from "@api/Settings";
+import { FluxDispatcher, UserStore, VoiceStateStore, ChannelStore, PermissionStore, PermissionsBits, Menu } from "@webpack/common";
 import { addContextMenuPatch, removeContextMenuPatch, NavContextMenuPatchCallback } from "@api/ContextMenu";
-import { getCurrentUser } from "@utils/discord";
-import { PermissionsBits } from "@utils/discord";
-import { VoiceStateStore, ChannelStore, PermissionStore } from "@webpack/common";
-import { Menu } from "@webpack/common";
-import { selectVoiceChannel } from "@utils/discord";
+import { findByPropsLazy } from "@webpack";
+
+const ChannelActions = findByPropsLazy("selectVoiceChannel");
 
 interface VoiceStateUpdate {
     userId: string;
@@ -37,7 +36,7 @@ function handleVoiceStateUpdates({ voiceStates }: VoiceStateUpdateEvent) {
 
         if (!state.channelId) continue;
 
-        const me = getCurrentUser();
+        const me = UserStore.getCurrentUser();
         const myState = VoiceStateStore.getVoiceStateForUser(me.id);
 
         if (myState?.channelId === state.channelId) continue;
@@ -47,12 +46,12 @@ function handleVoiceStateUpdates({ voiceStates }: VoiceStateUpdateEvent) {
         // Vérification des permissions uniquement pour les salons de serveur
         if (channel?.guild_id && !canJoinChannel(state.channelId)) {
             if (settings.store.disconnectOnInaccessible && myState?.channelId) {
-                selectVoiceChannel(null);
+                ChannelActions.selectVoiceChannel(null);
             }
             continue;
         }
 
-        selectVoiceChannel(state.channelId);
+        ChannelActions.selectVoiceChannel(state.channelId);
         break;
     }
 }
