@@ -7,7 +7,7 @@
 import { findGroupChildrenByChildId, NavContextMenuPatchCallback } from "@api/ContextMenu";
 import definePlugin from "@utils/types";
 import { findStoreLazy } from "@webpack";
-import { Menu, React, showToast, Slider, Toasts } from "@webpack/common";
+import { Menu, React, Slider, showToast, Toasts } from "@webpack/common";
 
 const VoiceStateStore = findStoreLazy("VoiceStateStore");
 const MediaEngineStore = findStoreLazy("MediaEngineStore");
@@ -134,6 +134,7 @@ function clearChannelVolume(channelId: string) {
 	channelVolumes.delete(channelId);
 }
 
+
 const ChannelContextMenuPatch: NavContextMenuPatchCallback = (children, ctx: { channel?: any } = {}) => {
 	const { channel } = ctx;
 	if (!channel || !isVoiceChannel(channel)) return;
@@ -141,7 +142,7 @@ const ChannelContextMenuPatch: NavContextMenuPatchCallback = (children, ctx: { c
 	const group = findGroupChildrenByChildId("mark-channel-read", children) ?? children;
 	const channelName = channel.name ?? "Canal vocal";
 	const current = channelVolumes.get(channel.id) ?? 100;
-	const { MenuControlItem } = (Menu as any);
+	const MenuControlItem = (Menu as any).MenuControlItem;
 
 	const applyVolume = (value: number) => {
 		const rounded = Math.max(0, Math.min(200, Math.round(value)));

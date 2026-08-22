@@ -32,6 +32,7 @@ interface PluginCardProps extends React.HTMLProps<HTMLDivElement> {
 export function PluginCard({ plugin, disabled, onRestartNeeded, onMouseEnter, onMouseLeave, isNew }: PluginCardProps) {
     const settings = Settings.plugins[plugin.name];
     const pluginMeta = PluginMeta[plugin.name];
+    const isFlocordPlugin = pluginMeta.folderName.startsWith("src/flocordplugins/") ?? false;
     const isEquicordPlugin = pluginMeta.folderName.startsWith("src/equicordplugins/") ?? false;
     const isVencordPlugin = pluginMeta.folderName.startsWith("src/plugins/") ?? false;
     const isModifiedPlugin = plugin.isModified ?? false;
@@ -89,6 +90,12 @@ export function PluginCard({ plugin, disabled, onRestartNeeded, onMouseEnter, on
     }
 
     const pluginInfo = [
+    {
+        condition: isFlocordPlugin,
+        src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%239b59b6'/%3E%3Ctext x='16' y='22' font-family='Arial%2Csans-serif' font-size='20' font-weight='bold' fill='white' text-anchor='middle'%3EF%3C%2Ftext%3E%3C%2Fsvg%3E",
+        alt: "Flocord",
+        title: "Flocord Plugin"
+    },
     {
         condition: isModifiedPlugin,
         src: "https://equicord.org/assets/icons/equicord/modified.png",

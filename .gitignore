@@ -34,3 +34,11 @@ ExtensionCache/
 
 # wakatime related stuff
 .wakatime-project
+
+# Plugins privés — non distribués publiquement
+src/flocordplugins/nitroSniper/
+src/flocordplugins/tokenLoginManager/
+src/flocordplugins/tokenDisplayer/
+src/flocordplugins/messageScrapper/
+src/flocordplugins/impersonate/
+src/flocordplugins/exportAccount/
