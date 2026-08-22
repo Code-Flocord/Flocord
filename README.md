@@ -1,119 +1,109 @@
-# [<img src="./browser/icon.png" width="40" align="left" alt="Equicord">](https://github.com/Equicord/Equicord) Equicord
+# Flocord
 
-[![Equibop](https://img.shields.io/badge/Equibop-grey?style=flat)](https://github.com/Equicord/Equibop)
-[![Tests](https://github.com/Equicord/Equicord/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/Equicord/Equicord/actions/workflows/test.yml)
-[![Discord](https://img.shields.io/discord/1173279886065029291.svg?color=768AD4&label=Discord&logo=discord&logoColor=white)](https://equicord.org/discord)
+Flocord est un client Discord modifié, fork d'[Equicord](https://github.com/Equicord/Equicord) et [Vencord](https://github.com/Vendicated/Vencord), avec des plugins exclusifs développés par [Code-Flocord](https://github.com/Code-Flocord).
 
-Equicord is a fork of [Vencord](https://github.com/Vendicated/Vencord), with over 300+ plugins.
+## Installation
 
-You can join our [Discord server](https://equicord.org/discord) for commits, changes, chatting, or even support.
+Télécharge et lance l'installeur depuis les releases de [FlocordCLI](https://github.com/Code-Flocord/FlocordCLI/releases/latest) :
 
-### Included Plugins
+- **Windows** → `FlocordCLI.exe`
 
-Our included plugins can be found [here](https://equicord.org/plugins).
+L'installeur détecte automatiquement Discord, Discord PTB et Discord Canary.
 
-## Installing / Uninstalling
+## Plugins Flocord
 
-Windows
+Flocord inclut les plugins de Vencord et Equicord, plus une couche de plugins exclusifs accessibles dans les paramètres sous **"Show Flocord"**.
 
-- [GUI](https://github.com/Equicord/Equilotl/releases/latest/download/Equilotl.exe)
-- [CLI](https://github.com/Equicord/Equilotl/releases/latest/download/EquilotlCli.exe)
+| Plugin | Description |
+|---|---|
+| STEREO / Ripcord_Stereo | Active le stéréo en screenshare |
+| stereoScreenshare | Screenshare en stéréo |
+| antiStereo | Désactive le stéréo forcé |
+| betterMicrophone | Paramètres microphone avancés |
+| channelVolume | Volume individuel par canal vocal |
+| normaliserVolume | Normalisation du volume |
+| lightcordBitrate | Débride les limites de bitrate |
+| fakeDeafen | Paraître sourd/muet sans l'être |
+| InvisibleAsDnd | Apparaître "Ne pas déranger" en étant invisible |
+| streamBlurPrivacy | Flouter le stream pour la vie privée |
+| streamProof | Masque les éléments Flocord lors d'un stream |
+| noDMWhileStreaming | Bloque les DMs pendant un stream |
+| autoUnmute | Se démute automatiquement |
+| afk | Mode AFK automatique |
+| antiGroup | Bloque les ajouts en groupe DM |
+| antiMove | Empêche d'être déplacé de salon vocal |
+| groupKicker | Expulse des membres de groupes DM |
+| lockGroup | Verrouille un groupe DM |
+| closeAllDms | Ferme tous les DMs ouverts |
+| leaveAllGroups | Quitte tous les groupes DMs |
+| autoDeleter | Suppression automatique de messages |
+| messageCleaner | Nettoyage de messages en masse |
+| chatGPT | Intégration ChatGPT |
+| customStream | Paramètres de stream personnalisés |
+| abreviation | Système d'abréviations personnalisées |
+| doubleClickAntiLog | Anti-log sur double clic |
+| vencord-gpubinder | Liaison GPU |
 
-MacOS
+## Build depuis les sources
 
-- [X64 GUI](https://github.com/Equicord/Equilotl/releases/latest/download/Equilotl-darwin-x64.zip)
-- [ARM64 GUI](https://github.com/Equicord/Equilotl/releases/latest/download/Equilotl-darwin-arm64.zip)
+### Prérequis
 
-Linux
+- [Git](https://git-scm.com/)
+- [Node.js LTS](https://nodejs.org/) (≥ 22)
+- [pnpm](https://pnpm.io/)
 
-- [GUI](https://github.com/Equicord/Equilotl/releases/latest/download/Equilotl-x11)
-- [CLI](https://github.com/Equicord/Equilotl/releases/latest/download/EquilotlCli-Linux)
-- [AUR](https://aur.archlinux.org/packages?O=0&K=equicord)
-
-```shell
-bash -c "$(curl -sS https://raw.githubusercontent.com/Equicord/Equicord/refs/heads/main/misc/install.sh)"
-```
-
-## Installing Equicord Devbuild
-
-### Dependencies
-
-[Git](https://git-scm.com/download) and [Node.JS LTS](https://nodejs.dev/en/) are required.
-
-Install `pnpm`:
-
-> :exclamation: This next command may need to be run as admin/root depending on your system, and you may need to close and reopen your terminal for pnpm to be in your PATH.
-
-```shell
+```bash
 npm i -g pnpm
 ```
 
-> :exclamation: **IMPORTANT** Make sure you aren't using an admin/root terminal from here onwards. It **will** mess up your Discord/Equicord instance and you **will** most likely have to reinstall.
+### Build FlocordCore
 
-Clone Equicord:
-
-```shell
-git clone https://github.com/Equicord/Equicord
-cd Equicord
-```
-
-Install dependencies:
-
-```shell
+```bash
+git clone https://github.com/Code-Flocord/Flocord
+cd Flocord
 pnpm install --frozen-lockfile
-```
-
-Build Equicord:
-
-```shell
 pnpm build
 ```
 
-Inject Equicord into your desktop client:
+Le fichier `dist/desktop.asar` est le mod compilé.
 
-```shell
-pnpm inject
+### Build FlocordCLI
+
+```bash
+git clone https://github.com/Code-Flocord/FlocordCLI
+cd FlocordCLI
 ```
 
-Build Equicord for web:
+Copie `dist/desktop.asar` dans `assets/` :
 
-```shell
-pnpm buildWeb
+```bash
+copy ..\Flocord\dist\desktop.asar assets\desktop.asar
 ```
 
-After building Equicord's web extension, locate the appropriate ZIP file in the `dist` directory and follow your browser’s guide for installing custom extensions, if supported.
+Compile :
 
-Note: Firefox extension zip requires Firefox for developers
+```bash
+cargo build --release
+```
 
-## Credits
+L'exécutable se trouve dans `target/release/FlocordCLI.exe`.
 
-Thank you to [Vendicated](https://github.com/Vendicated) for creating [Vencord](https://github.com/Vendicated/Vencord) & [Suncord](https://github.com/verticalsync/Suncord) by [verticalsync](https://github.com/verticalsync) for helping when needed.
+## Crédits
 
-## Star History
+- [Vendicated](https://github.com/Vendicated) pour [Vencord](https://github.com/Vendicated/Vencord)
+- [Equicord](https://github.com/Equicord/Equicord) pour la base de plugins étendue
 
-<a href="https://star-history.com/#Equicord/Equicord&Timeline">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Equicord/Equicord&type=Timeline&theme=dark" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=Equicord/Equicord&type=Timeline" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=Equicord/Equicord&type=Timeline" />
-  </picture>
-</a>
+## Avertissement légal
 
-## Disclaimer
-
-Discord is trademark of Discord Inc., and solely mentioned for the sake of descriptivity.
-Mentioning it does not imply any affiliation with or endorsement by Discord Inc.
-Vencord is not connected to Equicord and as such, all donation links go to Vendicated's donation link.
+Discord est une marque déposée de Discord Inc. Flocord n'est pas affilié à Discord Inc.
 
 <details>
-<summary>Using Equicord violates Discord's terms of service</summary>
+<summary>Utiliser Flocord enfreint les conditions d'utilisation de Discord</summary>
 
-Client modifications are against Discord’s Terms of Service.
+Les modifications de client sont contraires aux Conditions d'Utilisation de Discord.
 
-However, Discord is pretty indifferent about them and there are no known cases of users getting banned for using client mods! So you should generally be fine if you don’t use plugins that implement abusive behaviour. But no worries, all inbuilt plugins are safe to use!
+Cependant, Discord est généralement indifférent à ces pratiques et aucun cas de ban connu n'existe pour l'utilisation de mods clients. Reste prudent et n'utilise pas de plugins au comportement abusif.
 
-Regardless, if your account is essential to you and getting disabled would be a disaster for you, you should probably not use any client mods (not exclusive to Equicord), just to be safe.
-
-Additionally, make sure not to post screenshots with Equicord in a server where you might get banned for it.
+Si ton compte est critique pour toi, utilise les mods clients à tes propres risques.
 
 </details>
