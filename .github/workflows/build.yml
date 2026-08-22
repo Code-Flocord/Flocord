@@ -68,7 +68,7 @@ jobs:
                   rm release/*.map
 
             - name: Upload Flocord Stable
-              if: ${{ vars.ACT == 'false' }}
+              if: ${{ vars.ACT != 'true' }}
               run: |
                   gh release upload latest --clobber dist/release/*
 
