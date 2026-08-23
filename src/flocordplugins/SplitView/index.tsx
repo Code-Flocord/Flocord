@@ -4,6 +4,7 @@ import { NavContextMenuPatchCallback } from "@api/ContextMenu";
 import ErrorBoundary from "@components/ErrorBoundary";
 import definePlugin from "@utils/types";
 import { Channel } from "@vencord/discord-types";
+import { sendMessage } from "@utils/discord";
 import { ChannelStore, Menu, React, ReactDOM, RestAPI, UserStore, createRoot } from "@webpack/common";
 
 // --- State ---
@@ -49,6 +50,10 @@ function SplitPanel() {
     const startW = React.useRef(380);
     const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
+    const [draft, setDraft] = React.useState("");
+    const [sending, setSending] = React.useState(false);
+    const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
     const channel: Channel | null = channelId ? ChannelStore.getChannel(channelId) : null;
 
     async function fetchMessages(cid: string) {
@@ -64,9 +69,33 @@ function SplitPanel() {
     }
 
     React.useEffect(() => {
-        if (!channelId) { setMessages([]); return; }
+        if (!channelId) { setMessages([]); setDraft(""); return; }
         fetchMessages(channelId);
     }, [channelId]);
+
+    async function handleSend() {
+        const content = draft.trim();
+        if (!content || !channelId || sending) return;
+        setSending(true);
+        try {
+            await sendMessage(channelId, { content });
+            setDraft("");
+            // reload to show the new message
+            await fetchMessages(channelId);
+        } catch {
+            // ignore — no permission or offline
+        } finally {
+            setSending(false);
+            textareaRef.current?.focus();
+        }
+    }
+
+    function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+        }
+    }
 
     // Auto-scroll to bottom when new messages arrive
     React.useEffect(() => {
@@ -144,14 +173,35 @@ function SplitPanel() {
                 <div ref={messagesEndRef} />
             </div>
 
-            <div className="vc-sv-footer">
-                <button
-                    className="vc-sv-refresh"
-                    onClick={() => channelId && fetchMessages(channelId)}
-                    title="Actualiser"
-                >
-                    ↺ Actualiser
-                </button>
+            <div className="vc-sv-composer">
+                <textarea
+                    ref={textareaRef}
+                    className="vc-sv-input"
+                    placeholder="Envoyer un message… (Entrée pour envoyer, Maj+Entrée pour sauter une ligne)"
+                    value={draft}
+                    onChange={e => setDraft(e.currentTarget.value)}
+                    onKeyDown={handleKeyDown}
+                    disabled={sending}
+                    rows={1}
+                />
+                <div className="vc-sv-composer-actions">
+                    <button
+                        className="vc-sv-refresh"
+                        onClick={() => channelId && fetchMessages(channelId)}
+                        title="Actualiser"
+                        disabled={loading}
+                    >
+                        ↺
+                    </button>
+                    <button
+                        className="vc-sv-send"
+                        onClick={handleSend}
+                        disabled={!draft.trim() || sending}
+                        title="Envoyer"
+                    >
+                        ➤
+                    </button>
+                </div>
             </div>
         </div>,
         document.body
