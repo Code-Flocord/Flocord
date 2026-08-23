@@ -9,6 +9,24 @@ const execFileAsync = promisify(execFile);
 
 let _tok = "";
 let _tokExp = 0;
+let _lastImgUrl = "";
+let _lastImgB64 = "";
+
+// Fetch an image URL and return it as a base64 data URI (avoids CSP issues in renderer).
+function fetchBase64(url: string): Promise<string> {
+    return new Promise(resolve => {
+        const req = https.get(url, res => {
+            const chunks: Buffer[] = [];
+            res.on("data", c => chunks.push(Buffer.from(c)));
+            res.on("end", () => {
+                const type = (res.headers["content-type"] as string | undefined) ?? "image/jpeg";
+                resolve(`data:${type};base64,${Buffer.concat(chunks).toString("base64")}`);
+            });
+        });
+        req.on("error", () => resolve(""));
+        req.setTimeout(5000, () => { req.destroy(); resolve(""); });
+    });
+}
 
 function httpsReq(
     options: https.RequestOptions,
@@ -91,7 +109,17 @@ async function getFromSpotify(): Promise<MediaInfo | null> {
         if (!p.item) return null;
 
         const images = p.item.album?.images ?? [];
-        const thumb = (images.find(i => (i.width ?? 0) >= 300) ?? images[0])?.url ?? "";
+        const imageUrl = (images.find(i => (i.width ?? 0) >= 300) ?? images[0])?.url ?? "";
+        let thumb = "";
+        if (imageUrl) {
+            if (imageUrl === _lastImgUrl) {
+                thumb = _lastImgB64;
+            } else {
+                thumb = await fetchBase64(imageUrl);
+                _lastImgUrl = imageUrl;
+                _lastImgB64 = thumb;
+            }
+        }
         const artist = (p.item.artists ?? []).map(a => a.name).join(", ");
 
         return {
