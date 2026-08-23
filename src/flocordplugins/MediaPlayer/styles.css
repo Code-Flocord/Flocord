@@ -1,27 +1,6 @@
-/* =============================================
-   MediaPlayer — portal container (fixed bottom-left)
-   ============================================= */
-
-#vc-mp-root {
-    position: fixed;
-    bottom: 56px;      /* just above the Discord account panel (~52px) */
-    left: 8px;
-    width: 232px;
-    z-index: 100;
-    pointer-events: none; /* let clicks through when panel is hidden */
-}
-
-#vc-mp-root > * {
-    pointer-events: auto;
-}
-
-/* =============================================
-   MediaPlayer panel
-   ============================================= */
-
 .vc-mp-panel {
     padding: 8px 8px 6px;
-    margin: 0 0 4px;
+    margin: 4px 8px;
     background: var(--background-secondary, #2f3136);
     border-radius: 8px;
     display: flex;
@@ -29,14 +8,6 @@
     gap: 6px;
     user-select: none;
 }
-
-.vc-mp-error {
-    font-size: 11px;
-    color: var(--text-danger, #f04747);
-    padding: 6px 8px;
-}
-
-/* --- Track info --- */
 
 .vc-mp-track {
     display: flex;
@@ -96,8 +67,6 @@
     text-transform: uppercase;
 }
 
-/* --- Controls --- */
-
 .vc-mp-controls {
     display: flex;
     align-items: center;
@@ -137,8 +106,6 @@
     color: #ffffff;
 }
 
-/* --- Progress bar --- */
-
 .vc-mp-progress-area {
     display: flex;
     align-items: center;
@@ -163,7 +130,6 @@
     background: var(--background-modifier-accent, rgba(255,255,255,0.08));
     border-radius: 2px;
     overflow: hidden;
-    position: relative;
 }
 
 .vc-mp-bar-fill {

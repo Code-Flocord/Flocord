@@ -2,13 +2,11 @@ import "./styles.css";
 
 import ErrorBoundary from "@components/ErrorBoundary";
 import definePlugin, { type PluginNative } from "@utils/types";
-import { React, createRoot } from "@webpack/common";
+import { React } from "@webpack/common";
 
 import type { MediaInfo } from "./native";
 
 const Native = VencordNative.pluginHelpers.MediaPlayer as PluginNative<typeof import("./native")>;
-
-// --- App name helpers ---
 
 const APP_NAMES: Record<string, string> = {
     "Spotify.exe": "Spotify",
@@ -70,7 +68,6 @@ function IconPause() {
 function MediaPlayerPanel() {
     const [info, setInfo] = React.useState<MediaInfo | null>(null);
     const [thumbSrc, setThumbSrc] = React.useState<string | null>(null);
-    const [nativeError, setNativeError] = React.useState(false);
     const lastTrackRef = React.useRef<string>("");
 
     React.useEffect(() => {
@@ -79,22 +76,15 @@ function MediaPlayerPanel() {
         async function poll() {
             while (alive) {
                 try {
-                    // This will throw if VencordNative.pluginHelpers.MediaPlayer is undefined
                     const result = await Native.getMediaInfo();
                     if (!alive) break;
-
-                    setNativeError(false);
                     setInfo(result);
-
                     const trackKey = `${result?.title}|${result?.artist}`;
                     if (result && trackKey !== lastTrackRef.current) {
                         lastTrackRef.current = trackKey;
                         setThumbSrc(result.thumb ? `data:image/jpeg;base64,${result.thumb}` : null);
                     }
-                } catch {
-                    setNativeError(true);
-                }
-
+                } catch { /* ignore */ }
                 await new Promise(r => setTimeout(r, 2000));
             }
         }
@@ -102,14 +92,6 @@ function MediaPlayerPanel() {
         poll();
         return () => { alive = false; };
     }, []);
-
-    if (nativeError) {
-        return (
-            <div className="vc-mp-panel vc-mp-error">
-                <span>MediaPlayer: native non disponible</span>
-            </div>
-        );
-    }
 
     if (!info || info.status === "Closed" || info.status === "Stopped") return null;
 
@@ -160,34 +142,30 @@ function MediaPlayerPanel() {
     );
 }
 
-let _root: ReturnType<typeof createRoot> | null = null;
-let _container: HTMLDivElement | null = null;
-
 export default definePlugin({
     name: "MediaPlayer",
     description: "Contrôle musical dans le panneau bas-gauche. Compatible Spotify, YouTube Music, VLC, et tout lecteur Windows sans connexion requise.",
     authors: [{ name: "Flocord", id: 0n }],
     tags: ["Media", "Utility"],
 
-    start() {
-        if (!IS_DISCORD_DESKTOP) return;
+    patches: [
+        {
+            find: "#{intl::USER_PROFILE_ACCOUNT_POPOUT_BUTTON_A11Y_LABEL}",
+            replacement: {
+                match: /(?<=\i\.jsxs?\)\()(\i),{(?=[^}]*?userTag:\i,occluded:)/,
+                replace: "$self.PanelWrapper,{VencordOriginal:$1,",
+            },
+        },
+    ],
 
-        _container = document.createElement("div");
-        _container.id = "vc-mp-root";
-        document.body.appendChild(_container);
-
-        _root = createRoot(_container);
-        _root.render(
-            <ErrorBoundary>
-                <MediaPlayerPanel />
-            </ErrorBoundary>
+    PanelWrapper({ VencordOriginal, ...props }: { VencordOriginal: React.ComponentType<any>; [k: string]: any; }) {
+        return (
+            <>
+                <ErrorBoundary noop>
+                    <MediaPlayerPanel />
+                </ErrorBoundary>
+                <VencordOriginal {...props} />
+            </>
         );
-    },
-
-    stop() {
-        _root?.unmount();
-        _root = null;
-        _container?.remove();
-        _container = null;
     },
 });
