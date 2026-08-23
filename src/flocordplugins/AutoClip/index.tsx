@@ -9,6 +9,7 @@ interface Recording {
     streams: MediaStream[];
     startTime: number;
     channelName: string;
+    hasVideo: boolean;
 }
 
 let recording: Recording | null = null;
@@ -29,44 +30,65 @@ async function startRecording(channelId: string): Promise<void> {
     const channel = ChannelStore.getChannel(channelId);
     const channelName = channel?.name ?? `vocal-${channelId.slice(0, 6)}`;
 
-    const audioTracks: MediaStreamTrack[] = [];
-    const streams: MediaStream[] = [];
-
-    // Microphone
-    try {
-        const mic = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-        streams.push(mic);
-        audioTracks.push(...mic.getAudioTracks());
-    } catch { /* mic unavailable or denied */ }
-
-    // System audio via loopback (intercepted by our main-process handler)
+    // ── Screen + system audio via loopback handler ────────────
     const captureOk = await Native.setupCapture().catch(() => false);
+    let displayStream: MediaStream | null = null;
     if (captureOk) {
         try {
-            const display = await navigator.mediaDevices.getDisplayMedia({
+            displayStream = await navigator.mediaDevices.getDisplayMedia({
+                video: { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } },
                 audio: true,
-                video: { width: 1, height: 1 } as any,
             });
-            display.getVideoTracks().forEach(t => t.stop());
-            streams.push(display);
-            audioTracks.push(...display.getAudioTracks());
-        } catch { /* loopback unavailable */ }
+        } catch { /* handler may have been overridden or loopback unavailable */ }
     }
 
-    if (audioTracks.length === 0) return;
+    // ── Microphone ─────────────────────────────────────────────
+    let micStream: MediaStream | null = null;
+    try {
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    } catch { /* mic denied or unavailable */ }
 
-    // Mix all tracks into one stream via WebAudio
+    if (!displayStream && !micStream) {
+        await Native.teardownCapture().catch(() => {});
+        return;
+    }
+
+    // ── Mix all audio through WebAudio ─────────────────────────
+    // We route both mic and loopback into a single mixed track so MediaRecorder
+    // gets one clean audio stream instead of two competing tracks.
     const ctx = new AudioContext();
-    const dest = ctx.createMediaStreamDestination();
-    for (const track of audioTracks) {
-        ctx.createMediaStreamSource(new MediaStream([track])).connect(dest);
+    const audioDest = ctx.createMediaStreamDestination();
+
+    if (micStream) {
+        ctx.createMediaStreamSource(micStream).connect(audioDest);
+    }
+    if (displayStream?.getAudioTracks().length) {
+        // Route loopback audio through WebAudio for mixing (do NOT add raw tracks to finalStream)
+        ctx.createMediaStreamSource(new MediaStream(displayStream.getAudioTracks())).connect(audioDest);
     }
 
-    const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-        ? "audio/webm;codecs=opus"
-        : "audio/webm";
+    // ── Build final stream: screen video + mixed audio ─────────
+    const videoTracks = displayStream?.getVideoTracks() ?? [];
+    const hasVideo = videoTracks.length > 0;
+    const finalStream = new MediaStream([
+        ...videoTracks,
+        ...audioDest.stream.getAudioTracks(),
+    ]);
 
-    const recorder = new MediaRecorder(dest.stream, { mimeType });
+    // Pick best supported mime type
+    const mimeType = (() => {
+        if (hasVideo) {
+            for (const m of ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"]) {
+                if (MediaRecorder.isTypeSupported(m)) return m;
+            }
+        }
+        for (const m of ["audio/webm;codecs=opus", "audio/webm"]) {
+            if (MediaRecorder.isTypeSupported(m)) return m;
+        }
+        return "video/webm";
+    })();
+
+    const recorder = new MediaRecorder(finalStream, { mimeType });
     await Native.openTempFile();
 
     recorder.ondataavailable = async e => {
@@ -77,12 +99,14 @@ async function startRecording(channelId: string): Promise<void> {
     };
 
     recorder.start(1000);
-    recording = { recorder, ctx, streams, startTime: Date.now(), channelName };
+
+    const streams = [displayStream, micStream].filter(Boolean) as MediaStream[];
+    recording = { recorder, ctx, streams, startTime: Date.now(), channelName, hasVideo };
 }
 
 async function stopRecording(): Promise<void> {
     if (!recording) return;
-    const { recorder, ctx, streams, startTime, channelName } = recording;
+    const { recorder, ctx, streams, startTime, channelName, hasVideo } = recording;
     recording = null;
 
     await new Promise<void>(resolve => {
@@ -94,14 +118,21 @@ async function stopRecording(): Promise<void> {
     ctx.close();
     await Native.teardownCapture().catch(() => {});
 
-    const duration = Date.now() - startTime;
-    openModal(props => <ClipModal modalProps={props} duration={duration} channelName={channelName} />);
+    openModal(props => (
+        <ClipModal
+            modalProps={props}
+            duration={Date.now() - startTime}
+            channelName={channelName}
+            hasVideo={hasVideo}
+        />
+    ));
 }
 
-function ClipModal({ modalProps, duration, channelName }: {
+function ClipModal({ modalProps, duration, channelName, hasVideo }: {
     modalProps: { transitionState: number; onClose(): void };
     duration: number;
     channelName: string;
+    hasVideo: boolean;
 }) {
     const [phase, setPhase] = React.useState<"confirm" | "saving" | "saved">("confirm");
     const [savedPath, setSavedPath] = React.useState("");
@@ -153,6 +184,10 @@ function ClipModal({ modalProps, duration, channelName }: {
         );
     }
 
+    const sourceLabel = hasVideo
+        ? "écran + micro + sortie système"
+        : "micro uniquement";
+
     return (
         <Modal
             {...modalProps}
@@ -180,7 +215,7 @@ function ClipModal({ modalProps, duration, channelName }: {
                 {fmtDuration(duration)}
             </p>
             <p style={{ margin: "4px 0 8px", color: "var(--text-muted)", fontSize: 13 }}>
-                enregistré — micro + sortie système
+                enregistré — {sourceLabel}
             </p>
         </Modal>
     );
@@ -189,7 +224,6 @@ function ClipModal({ modalProps, duration, channelName }: {
 const onVoiceChannelSelect = ({ channelId }: { channelId: string | null }) => {
     if (channelId) {
         if (recording) {
-            // Switched channels: stop current, start new
             stopRecording().then(() => startRecording(channelId)).catch(() => {});
         } else {
             startRecording(channelId).catch(() => {});
@@ -201,7 +235,7 @@ const onVoiceChannelSelect = ({ channelId }: { channelId: string | null }) => {
 
 export default definePlugin({
     name: "AutoClip",
-    description: "Enregistre automatiquement le call vocal (micro + sortie système). À la fin du call, choisis de garder ou supprimer le clip.",
+    description: "Enregistre automatiquement le call vocal (écran + micro + sortie système). À la fin du call, choisis de garder ou supprimer le clip (.webm).",
     authors: [{ name: "Flocord", id: 0n }],
     tags: ["Voice", "Utility"],
 
