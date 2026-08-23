@@ -13,14 +13,19 @@ function runPS(script: string): Promise<string> {
         .catch(() => "{}");
 }
 
-// WinRT SMTC — reads title, artist, status, position, duration, thumbnail and source app
+// WinRT SMTC — picks the actively Playing session across ALL registered sessions,
+// falls back to the current session if none is explicitly playing.
 const INFO_SCRIPT = String.raw`
 [Console]::OutputEncoding=[System.Text.Encoding]::UTF8
 $ErrorActionPreference='Stop'
 try {
     [void][Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager,Windows.Media.Control,ContentType=WindowsRuntime]
     $sm=[Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync().GetAwaiter().GetResult()
-    $s=$sm.GetCurrentSession()
+    # Prefer any session with status Playing; fall back to current session
+    $s = $sm.GetSessions() | Where-Object {
+        $_.GetPlaybackInfo().PlaybackStatus.ToString() -eq 'Playing'
+    } | Select-Object -First 1
+    if (-not $s) { $s = $sm.GetCurrentSession() }
     if (-not $s) { '{}'; exit }
     $p=$s.TryGetMediaPropertiesAsync().GetAwaiter().GetResult()
     $pb=$s.GetPlaybackInfo()
@@ -51,7 +56,11 @@ function controlScript(method: string): string {
     return String.raw`
 try {
     [void][Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager,Windows.Media.Control,ContentType=WindowsRuntime]
-    $s=[Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync().GetAwaiter().GetResult().GetCurrentSession()
+    $sm=[Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync().GetAwaiter().GetResult()
+    $s = $sm.GetSessions() | Where-Object {
+        $_.GetPlaybackInfo().PlaybackStatus.ToString() -eq 'Playing'
+    } | Select-Object -First 1
+    if (-not $s) { $s = $sm.GetCurrentSession() }
     if ($s) { $s.${method}().GetAwaiter().GetResult() | Out-Null }
 } catch {}
 `.trim();
