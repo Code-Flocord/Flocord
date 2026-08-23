@@ -1,4 +1,4 @@
-import definePlugin from "@utils/types";
+import definePlugin, { type PluginNative } from "@utils/types";
 import { showNotification } from "@api/Notifications";
 import { relaunch } from "@utils/native";
 
