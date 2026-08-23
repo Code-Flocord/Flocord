@@ -2,9 +2,9 @@ import "./styles.css";
 
 import { NavContextMenuPatchCallback } from "@api/ContextMenu";
 import ErrorBoundary from "@components/ErrorBoundary";
+import { sendMessage } from "@utils/discord";
 import definePlugin from "@utils/types";
 import { Channel } from "@vencord/discord-types";
-import { sendMessage } from "@utils/discord";
 import { ChannelStore, Menu, React, ReactDOM, RestAPI, UserStore, createRoot } from "@webpack/common";
 
 // --- State ---
@@ -27,7 +27,7 @@ function useSplitChannelId() {
     return id;
 }
 
-// --- Message types (minimal) ---
+// --- Types ---
 
 interface RawMessage {
     id: string;
@@ -35,37 +35,46 @@ interface RawMessage {
     author: { id: string; username: string; global_name?: string; };
     timestamp: string;
     attachments: { url: string; filename: string; }[];
-    referenced_message?: RawMessage | null;
 }
 
-// --- Panel component ---
+// --- Popup window ---
 
-function SplitPanel() {
+function SplitPopup() {
     const channelId = useSplitChannelId();
+
     const [messages, setMessages] = React.useState<RawMessage[]>([]);
     const [loading, setLoading] = React.useState(false);
-    const [width, setWidth] = React.useState(380);
-    const dragging = React.useRef(false);
-    const startX = React.useRef(0);
-    const startW = React.useRef(380);
-    const messagesEndRef = React.useRef<HTMLDivElement>(null);
-
     const [draft, setDraft] = React.useState("");
     const [sending, setSending] = React.useState(false);
+
+    // Window position — starts bottom-right
+    const [pos, setPos] = React.useState({ x: window.innerWidth - 440, y: window.innerHeight - 560 });
+    const [size, setSize] = React.useState({ w: 400, h: 500 });
+
+    const dragRef = React.useRef<{ active: boolean; startMouseX: number; startMouseY: number; startPosX: number; startPosY: number; }>({
+        active: false, startMouseX: 0, startMouseY: 0, startPosX: 0, startPosY: 0
+    });
+    const resizeRef = React.useRef<{ active: boolean; startMouseX: number; startMouseY: number; startW: number; startH: number; }>({
+        active: false, startMouseX: 0, startMouseY: 0, startW: 400, startH: 500
+    });
+
+    const messagesEndRef = React.useRef<HTMLDivElement>(null);
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
     const channel: Channel | null = channelId ? ChannelStore.getChannel(channelId) : null;
+    const channelLabel = channel
+        ? (channel.name
+            ? `# ${channel.name}`
+            : `@ ${channel.recipients?.map(id => UserStore.getUser(id)?.globalName ?? "...").join(", ") ?? "Conversation"}`)
+        : (channelId ?? "");
 
     async function fetchMessages(cid: string) {
         setLoading(true);
         try {
             const res = await RestAPI.get({ url: `/channels/${cid}/messages?limit=50` });
             if (res.ok) setMessages((res.body as RawMessage[]).reverse());
-        } catch {
-            // ignore — no permission or offline
-        } finally {
-            setLoading(false);
-        }
+        } catch { /* no permission / offline */ }
+        finally { setLoading(false); }
     }
 
     React.useEffect(() => {
@@ -73,43 +82,30 @@ function SplitPanel() {
         fetchMessages(channelId);
     }, [channelId]);
 
-    async function handleSend() {
-        const content = draft.trim();
-        if (!content || !channelId || sending) return;
-        setSending(true);
-        try {
-            await sendMessage(channelId, { content });
-            setDraft("");
-            // reload to show the new message
-            await fetchMessages(channelId);
-        } catch {
-            // ignore — no permission or offline
-        } finally {
-            setSending(false);
-            textareaRef.current?.focus();
-        }
-    }
-
-    function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            handleSend();
-        }
-    }
-
-    // Auto-scroll to bottom when new messages arrive
     React.useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
-    // Resize handle drag
+    // Global drag / resize listeners
     React.useEffect(() => {
         const onMove = (e: MouseEvent) => {
-            if (!dragging.current) return;
-            const delta = startX.current - e.clientX;
-            setWidth(Math.max(260, Math.min(900, startW.current + delta)));
+            if (dragRef.current.active) {
+                setPos({
+                    x: Math.max(0, dragRef.current.startPosX + e.clientX - dragRef.current.startMouseX),
+                    y: Math.max(0, dragRef.current.startPosY + e.clientY - dragRef.current.startMouseY),
+                });
+            }
+            if (resizeRef.current.active) {
+                setSize({
+                    w: Math.max(320, resizeRef.current.startW + e.clientX - resizeRef.current.startMouseX),
+                    h: Math.max(300, resizeRef.current.startH + e.clientY - resizeRef.current.startMouseY),
+                });
+            }
         };
-        const onUp = () => { dragging.current = false; };
+        const onUp = () => {
+            dragRef.current.active = false;
+            resizeRef.current.active = false;
+        };
         window.addEventListener("mousemove", onMove);
         window.addEventListener("mouseup", onUp);
         return () => {
@@ -118,91 +114,117 @@ function SplitPanel() {
         };
     }, []);
 
+    async function handleSend() {
+        const content = draft.trim();
+        if (!content || !channelId || sending) return;
+        setSending(true);
+        try {
+            await sendMessage(channelId, { content });
+            setDraft("");
+            await fetchMessages(channelId);
+        } catch { /* no permission */ }
+        finally { setSending(false); textareaRef.current?.focus(); }
+    }
+
+    function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+    }
+
     if (!channelId) return null;
 
-    const channelLabel = channel
-        ? (channel.name ? `# ${channel.name}` : `@ ${channel.recipients?.map(id => UserStore.getUser(id)?.globalName ?? "...").join(", ") ?? "Conversation"}`)
-        : channelId;
+    // Copy Discord's theme class so CSS variables resolve correctly
+    const themeClass = document.documentElement.classList.contains("theme-light") ? "theme-light" : "theme-dark";
 
     return ReactDOM.createPortal(
-        <div className="vc-sv-panel" style={{ width }}>
+        <div
+            className={`vc-sv-popup ${themeClass}`}
+            style={{ left: pos.x, top: pos.y, width: size.w, height: size.h }}
+        >
+            {/* Title bar — drag handle */}
             <div
-                className="vc-sv-handle"
+                className="vc-sv-titlebar"
                 onMouseDown={e => {
-                    dragging.current = true;
-                    startX.current = e.clientX;
-                    startW.current = width;
+                    if ((e.target as HTMLElement).closest(".vc-sv-titlebar-btns")) return;
+                    dragRef.current = { active: true, startMouseX: e.clientX, startMouseY: e.clientY, startPosX: pos.x, startPosY: pos.y };
                     e.preventDefault();
                 }}
-            />
-            <div className="vc-sv-header">
-                <span className="vc-sv-title">{channelLabel}</span>
-                <button
-                    className="vc-sv-close"
-                    onClick={() => setSplitChannel(null)}
-                    title="Fermer"
-                >
-                    ✕
-                </button>
-            </div>
-
-            <div className="vc-sv-messages">
-                {loading && <div className="vc-sv-loading">Chargement…</div>}
-                {!loading && messages.length === 0 && (
-                    <div className="vc-sv-empty">Aucun message à afficher.</div>
-                )}
-                {messages.map(msg => (
-                    <div key={msg.id} className="vc-sv-message">
-                        <span className="vc-sv-author">
-                            {msg.author.global_name ?? msg.author.username}
-                        </span>
-                        {msg.content && (
-                            <span className="vc-sv-content">{msg.content}</span>
-                        )}
-                        {msg.attachments.length > 0 && (
-                            <span className="vc-sv-attachments">
-                                {msg.attachments.map(a => (
-                                    <a key={a.url} href={a.url} target="_blank" rel="noreferrer">
-                                        {a.filename}
-                                    </a>
-                                ))}
-                            </span>
-                        )}
-                    </div>
-                ))}
-                <div ref={messagesEndRef} />
-            </div>
-
-            <div className="vc-sv-composer">
-                <textarea
-                    ref={textareaRef}
-                    className="vc-sv-input"
-                    placeholder="Envoyer un message… (Entrée pour envoyer, Maj+Entrée pour sauter une ligne)"
-                    value={draft}
-                    onChange={e => setDraft(e.currentTarget.value)}
-                    onKeyDown={handleKeyDown}
-                    disabled={sending}
-                    rows={1}
-                />
-                <div className="vc-sv-composer-actions">
+            >
+                <span className="vc-sv-icon">💬</span>
+                <span className="vc-sv-channel-name">{channelLabel}</span>
+                <div className="vc-sv-titlebar-btns">
                     <button
-                        className="vc-sv-refresh"
+                        className="vc-sv-btn-refresh"
                         onClick={() => channelId && fetchMessages(channelId)}
                         title="Actualiser"
                         disabled={loading}
-                    >
-                        ↺
-                    </button>
+                    >↺</button>
                     <button
-                        className="vc-sv-send"
-                        onClick={handleSend}
-                        disabled={!draft.trim() || sending}
-                        title="Envoyer"
-                    >
-                        ➤
-                    </button>
+                        className="vc-sv-btn-close"
+                        onClick={() => setSplitChannel(null)}
+                        title="Fermer"
+                    >✕</button>
                 </div>
             </div>
+
+            {/* Messages */}
+            <div className="vc-sv-messages">
+                {loading && <div className="vc-sv-state">Chargement…</div>}
+                {!loading && messages.length === 0 && (
+                    <div className="vc-sv-state">Aucun message.</div>
+                )}
+                {messages.map(msg => {
+                    const name = msg.author.global_name ?? msg.author.username;
+                    const initials = name.slice(0, 2).toUpperCase();
+                    const ts = new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                    return (
+                        <div key={msg.id} className="vc-sv-msg">
+                            <div className="vc-sv-avatar">{initials}</div>
+                            <div className="vc-sv-msg-body">
+                                <div className="vc-sv-msg-header">
+                                    <span className="vc-sv-msg-author">{name}</span>
+                                    <span className="vc-sv-msg-time">{ts}</span>
+                                </div>
+                                {msg.content && <div className="vc-sv-msg-content">{msg.content}</div>}
+                                {msg.attachments.map(a => (
+                                    <a key={a.url} className="vc-sv-attachment" href={a.url} target="_blank" rel="noreferrer">
+                                        📎 {a.filename}
+                                    </a>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                })}
+                <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input bar */}
+            <div className="vc-sv-bar">
+                <textarea
+                    ref={textareaRef}
+                    className="vc-sv-input"
+                    placeholder={`Écrire dans ${channelLabel}…`}
+                    value={draft}
+                    rows={1}
+                    disabled={sending}
+                    onChange={e => setDraft(e.currentTarget.value)}
+                    onKeyDown={onKeyDown}
+                />
+                <button
+                    className="vc-sv-send"
+                    onClick={handleSend}
+                    disabled={!draft.trim() || sending}
+                    title="Envoyer"
+                >➤</button>
+            </div>
+
+            {/* Resize handle — bottom-right corner */}
+            <div
+                className="vc-sv-resize"
+                onMouseDown={e => {
+                    resizeRef.current = { active: true, startMouseX: e.clientX, startMouseY: e.clientY, startW: size.w, startH: size.h };
+                    e.preventDefault();
+                }}
+            />
         </div>,
         document.body
     );
@@ -230,12 +252,12 @@ const userContextPatch = makeMenuPatch(props => props.channel?.id);
 
 // --- Plugin ---
 
-let panelRoot: ReturnType<typeof createRoot> | null = null;
-let panelContainer: HTMLDivElement | null = null;
+let popupRoot: ReturnType<typeof createRoot> | null = null;
+let popupContainer: HTMLDivElement | null = null;
 
 export default definePlugin({
     name: "SplitView",
-    description: "Ouvre une deuxième conversation en panneau latéral, côte à côte avec le canal actif.",
+    description: "Ouvre une deuxième conversation dans une fenêtre flottante, draggable et redimensionnable.",
     authors: [{ name: "Flocord", id: 0n }],
     tags: ["Chat", "Utility"],
 
@@ -246,22 +268,22 @@ export default definePlugin({
     },
 
     start() {
-        panelContainer = document.createElement("div");
-        panelContainer.id = "vc-split-view-root";
-        document.body.appendChild(panelContainer);
-        panelRoot = createRoot(panelContainer);
-        panelRoot.render(
+        popupContainer = document.createElement("div");
+        popupContainer.id = "vc-split-view-root";
+        document.body.appendChild(popupContainer);
+        popupRoot = createRoot(popupContainer);
+        popupRoot.render(
             <ErrorBoundary noop>
-                <SplitPanel />
+                <SplitPopup />
             </ErrorBoundary>
         );
     },
 
     stop() {
         setSplitChannel(null);
-        panelRoot?.unmount();
-        panelContainer?.remove();
-        panelRoot = null;
-        panelContainer = null;
+        popupRoot?.unmount();
+        popupContainer?.remove();
+        popupRoot = null;
+        popupContainer = null;
     },
 });
