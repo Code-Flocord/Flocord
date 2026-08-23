@@ -107,7 +107,7 @@ function MediaPlayerPanel() {
 
     return (
         <div className="vc-mp-panel">
-            <div className="vc-mp-track">
+            <div className="vc-mp-row">
                 {thumbSrc
                     ? <img className="vc-mp-art" src={thumbSrc} alt="" />
                     : <div className="vc-mp-art vc-mp-art-placeholder">🎵</div>
@@ -116,27 +116,20 @@ function MediaPlayerPanel() {
                     <div className="vc-mp-title" title={info.title}>{info.title || "Inconnu"}</div>
                     <div className="vc-mp-artist" title={info.artist}>{info.artist || appName}</div>
                 </div>
-                <div className="vc-mp-source">{appName}</div>
-            </div>
-
-            <div className="vc-mp-controls">
-                <button className="vc-mp-btn" onClick={() => control("previous")} title="Précédent">
-                    <IconPrev />
-                </button>
-                <button className="vc-mp-btn vc-mp-btn-main" onClick={() => control(isPlaying ? "pause" : "play")} title={isPlaying ? "Pause" : "Lecture"}>
-                    {isPlaying ? <IconPause /> : <IconPlay />}
-                </button>
-                <button className="vc-mp-btn" onClick={() => control("next")} title="Suivant">
-                    <IconNext />
-                </button>
-            </div>
-
-            <div className="vc-mp-progress-area">
-                <span className="vc-mp-time">{fmt(info.pos)}</span>
-                <div className="vc-mp-bar">
-                    <div className="vc-mp-bar-fill" style={{ width: `${progress}%` }} />
+                <div className="vc-mp-controls">
+                    <button className="vc-mp-btn" onClick={() => control("previous")} title="Précédent">
+                        <IconPrev />
+                    </button>
+                    <button className="vc-mp-btn vc-mp-btn-main" onClick={() => control(isPlaying ? "pause" : "play")} title={isPlaying ? "Pause" : "Lecture"}>
+                        {isPlaying ? <IconPause /> : <IconPlay />}
+                    </button>
+                    <button className="vc-mp-btn" onClick={() => control("next")} title="Suivant">
+                        <IconNext />
+                    </button>
                 </div>
-                <span className="vc-mp-time">{fmt(info.dur)}</span>
+            </div>
+            <div className="vc-mp-bar">
+                <div className="vc-mp-bar-fill" style={{ width: `${progress}%` }} />
             </div>
         </div>
     );
