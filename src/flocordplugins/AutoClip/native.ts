@@ -5,14 +5,33 @@ import path from "path";
 let _ws: fs.WriteStream | null = null;
 let _tmpPath = "";
 
-// Sets up the display-media handler so the renderer's getDisplayMedia()
-// is silently fulfilled with loopback audio — no OS picker shown.
-export async function setupCapture(_: IpcMainInvokeEvent): Promise<boolean> {
+// Returns all screen sources with a 320×180 thumbnail (data URL) for the settings picker.
+export async function getScreenSources(_: IpcMainInvokeEvent): Promise<Array<{
+    id: string;
+    name: string;
+    thumbnail: string;
+}>> {
+    const sources = await desktopCapturer.getSources({
+        types: ["screen"],
+        thumbnailSize: { width: 320, height: 180 },
+    });
+    return sources.map(s => ({
+        id: s.id,
+        name: s.name,
+        thumbnail: s.thumbnail.toDataURL(),
+    }));
+}
+
+// Sets up the display-media handler so getDisplayMedia() in the renderer
+// is silently fulfilled with the chosen screen + loopback audio.
+export async function setupCapture(_: IpcMainInvokeEvent, screenId: string): Promise<boolean> {
     try {
         session.defaultSession.setDisplayMediaRequestHandler(async (_req, callback) => {
             const sources = await desktopCapturer.getSources({ types: ["screen"] });
-            if (sources.length > 0) {
-                callback({ video: sources[0], audio: "loopback" });
+            const target =
+                (screenId ? sources.find(s => s.id === screenId) : null) ?? sources[0];
+            if (target) {
+                callback({ video: target, audio: "loopback" });
             } else {
                 callback({});
             }
@@ -23,26 +42,21 @@ export async function setupCapture(_: IpcMainInvokeEvent): Promise<boolean> {
     }
 }
 
-// Removes our handler after recording ends.
 export async function teardownCapture(_: IpcMainInvokeEvent): Promise<void> {
     try {
         (session.defaultSession as any).setDisplayMediaRequestHandler(null);
     } catch {}
 }
 
-// Opens a temp .webm file for streaming chunks during recording.
 export async function openTempFile(_: IpcMainInvokeEvent): Promise<void> {
     _tmpPath = path.join(app.getPath("temp"), `flocord_clip_${Date.now()}.webm`);
     _ws = fs.createWriteStream(_tmpPath);
 }
 
-// Writes a MediaRecorder chunk directly to the temp file (no RAM buffering).
 export async function appendChunk(_: IpcMainInvokeEvent, data: Uint8Array): Promise<void> {
     if (_ws) _ws.write(Buffer.from(data));
 }
 
-// keep=true → moves temp file to Documents/FlocordClips/ and returns the path.
-// keep=false → deletes the temp file.
 export async function finishClip(
     _: IpcMainInvokeEvent,
     keep: boolean,
@@ -71,7 +85,6 @@ export async function finishClip(
     return dest;
 }
 
-// Opens Documents/FlocordClips/ in Explorer.
 export async function openClipsFolder(_: IpcMainInvokeEvent): Promise<void> {
     const dir = path.join(app.getPath("documents"), "FlocordClips");
     fs.mkdirSync(dir, { recursive: true });
