@@ -17,12 +17,12 @@ const settings = definePluginSettings({
     allowMentions: {
         type: OptionType.BOOLEAN,
         description: "Recevoir les notifications pour les mentions directes (@toi, @everyone, @here)",
-        default: true,
+        default: false,
     },
     allowDMs: {
         type: OptionType.BOOLEAN,
         description: "Recevoir les notifications pour les messages privés (DM)",
-        default: true,
+        default: false,
     },
     keywords: {
         type: OptionType.STRING,
