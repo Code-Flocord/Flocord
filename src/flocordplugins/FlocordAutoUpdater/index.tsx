@@ -3,7 +3,7 @@ import { showNotification } from "@api/Notifications";
 import { relaunch } from "@utils/native";
 
 const VERSION_URL = "https://raw.githubusercontent.com/Code-Flocord/FlocordCLI/master/version.json";
-const CURRENT_VERSION = "1.0.4";
+const CURRENT_VERSION = "1.0.5";
 
 const Native = VencordNative.pluginHelpers.FlocordAutoUpdater as PluginNative<typeof import("./native")>;
 
