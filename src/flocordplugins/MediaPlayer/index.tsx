@@ -3,6 +3,7 @@ import "./styles.css";
 import ErrorBoundary from "@components/ErrorBoundary";
 import definePlugin, { type PluginNative } from "@utils/types";
 import { React } from "@webpack/common";
+import { createRoot } from "react-dom/client";
 
 import type { MediaInfo } from "./native";
 
@@ -25,11 +26,8 @@ function resolveAppName(appId: string): string {
     for (const [key, name] of Object.entries(APP_NAMES)) {
         if (appId.toLowerCase().includes(key.toLowerCase())) return name;
     }
-    // Use the last segment of the AppUserModelId
     return appId.split("!").pop()?.split(".").pop() ?? "Musique";
 }
-
-// --- Formatting ---
 
 function fmt(s: number): string {
     if (!isFinite(s) || s < 0) return "0:00";
@@ -37,8 +35,6 @@ function fmt(s: number): string {
     const ss = Math.floor(s % 60);
     return `${m}:${ss.toString().padStart(2, "0")}`;
 }
-
-// --- Icons ---
 
 function IconPrev() {
     return (
@@ -72,11 +68,10 @@ function IconPause() {
     );
 }
 
-// --- Main panel ---
-
 function MediaPlayerPanel() {
     const [info, setInfo] = React.useState<MediaInfo | null>(null);
     const [thumbSrc, setThumbSrc] = React.useState<string | null>(null);
+    const [nativeError, setNativeError] = React.useState(false);
     const lastTrackRef = React.useRef<string>("");
 
     React.useEffect(() => {
@@ -85,24 +80,22 @@ function MediaPlayerPanel() {
         async function poll() {
             while (alive) {
                 try {
+                    // This will throw if VencordNative.pluginHelpers.MediaPlayer is undefined
                     const result = await Native.getMediaInfo();
                     if (!alive) break;
 
+                    setNativeError(false);
                     setInfo(result);
 
-                    // Update thumbnail only when track changes
                     const trackKey = `${result?.title}|${result?.artist}`;
                     if (result && trackKey !== lastTrackRef.current) {
                         lastTrackRef.current = trackKey;
-                        if (result.thumb) {
-                            setThumbSrc(`data:image/jpeg;base64,${result.thumb}`);
-                        } else {
-                            setThumbSrc(null);
-                        }
+                        setThumbSrc(result.thumb ? `data:image/jpeg;base64,${result.thumb}` : null);
                     }
-                } catch { /* ignore */ }
+                } catch {
+                    setNativeError(true);
+                }
 
-                // Wait 2s between polls
                 await new Promise(r => setTimeout(r, 2000));
             }
         }
@@ -110,6 +103,14 @@ function MediaPlayerPanel() {
         poll();
         return () => { alive = false; };
     }, []);
+
+    if (nativeError) {
+        return (
+            <div className="vc-mp-panel vc-mp-error">
+                <span>MediaPlayer: native non disponible</span>
+            </div>
+        );
+    }
 
     if (!info || info.status === "Closed" || info.status === "Stopped") return null;
 
@@ -119,14 +120,12 @@ function MediaPlayerPanel() {
 
     async function control(action: "play" | "pause" | "next" | "previous") {
         await Native.sendControl(action);
-        // Optimistic UI update
         if (action === "play") setInfo(prev => prev ? { ...prev, status: "Playing" } : prev);
         if (action === "pause") setInfo(prev => prev ? { ...prev, status: "Paused" } : prev);
     }
 
     return (
         <div className="vc-mp-panel">
-            {/* Track info row */}
             <div className="vc-mp-track">
                 {thumbSrc
                     ? <img className="vc-mp-art" src={thumbSrc} alt="" />
@@ -139,32 +138,18 @@ function MediaPlayerPanel() {
                 <div className="vc-mp-source">{appName}</div>
             </div>
 
-            {/* Controls */}
             <div className="vc-mp-controls">
-                <button
-                    className="vc-mp-btn"
-                    onClick={() => control("previous")}
-                    title="Précédent"
-                >
+                <button className="vc-mp-btn" onClick={() => control("previous")} title="Précédent">
                     <IconPrev />
                 </button>
-                <button
-                    className="vc-mp-btn vc-mp-btn-main"
-                    onClick={() => control(isPlaying ? "pause" : "play")}
-                    title={isPlaying ? "Pause" : "Lecture"}
-                >
+                <button className="vc-mp-btn vc-mp-btn-main" onClick={() => control(isPlaying ? "pause" : "play")} title={isPlaying ? "Pause" : "Lecture"}>
                     {isPlaying ? <IconPause /> : <IconPlay />}
                 </button>
-                <button
-                    className="vc-mp-btn"
-                    onClick={() => control("next")}
-                    title="Suivant"
-                >
+                <button className="vc-mp-btn" onClick={() => control("next")} title="Suivant">
                     <IconNext />
                 </button>
             </div>
 
-            {/* Progress bar */}
             <div className="vc-mp-progress-area">
                 <span className="vc-mp-time">{fmt(info.pos)}</span>
                 <div className="vc-mp-bar">
@@ -176,7 +161,8 @@ function MediaPlayerPanel() {
     );
 }
 
-// --- Plugin ---
+let _root: ReturnType<typeof createRoot> | null = null;
+let _container: HTMLDivElement | null = null;
 
 export default definePlugin({
     name: "MediaPlayer",
@@ -184,25 +170,25 @@ export default definePlugin({
     authors: [{ name: "Flocord", id: 0n }],
     tags: ["Media", "Utility"],
 
-    patches: [
-        {
-            // Injects above the account panel (same position as Voix connectée)
-            find: "#{intl::USER_PROFILE_ACCOUNT_POPOUT_BUTTON_A11Y_LABEL}",
-            replacement: {
-                match: /(?<=\i\.jsxs?\)\()(\i),{(?=[^}]*?userTag:\i,occluded:)/,
-                replace: "$self.PanelWrapper,{VencordOriginal:$1,",
-            },
-        },
-    ],
+    start() {
+        if (!IS_DISCORD_DESKTOP) return;
 
-    PanelWrapper({ VencordOriginal, ...props }: { VencordOriginal: React.ComponentType<any>; [k: string]: any; }) {
-        return (
-            <>
-                <ErrorBoundary noop>
-                    <MediaPlayerPanel />
-                </ErrorBoundary>
-                <VencordOriginal {...props} />
-            </>
+        _container = document.createElement("div");
+        _container.id = "vc-mp-root";
+        document.body.appendChild(_container);
+
+        _root = createRoot(_container);
+        _root.render(
+            <ErrorBoundary>
+                <MediaPlayerPanel />
+            </ErrorBoundary>
         );
+    },
+
+    stop() {
+        _root?.unmount();
+        _root = null;
+        _container?.remove();
+        _container = null;
     },
 });

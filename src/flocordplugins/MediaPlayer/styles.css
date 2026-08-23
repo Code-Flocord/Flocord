@@ -1,5 +1,22 @@
 /* =============================================
-   MediaPlayer — bottom-left panel
+   MediaPlayer — portal container (fixed bottom-left)
+   ============================================= */
+
+#vc-mp-root {
+    position: fixed;
+    bottom: 56px;      /* just above the Discord account panel (~52px) */
+    left: 8px;
+    width: 232px;
+    z-index: 100;
+    pointer-events: none; /* let clicks through when panel is hidden */
+}
+
+#vc-mp-root > * {
+    pointer-events: auto;
+}
+
+/* =============================================
+   MediaPlayer panel
    ============================================= */
 
 .vc-mp-panel {
@@ -11,6 +28,12 @@
     flex-direction: column;
     gap: 6px;
     user-select: none;
+}
+
+.vc-mp-error {
+    font-size: 11px;
+    color: var(--text-danger, #f04747);
+    padding: 6px 8px;
 }
 
 /* --- Track info --- */
