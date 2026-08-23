@@ -2,8 +2,7 @@ import "./styles.css";
 
 import ErrorBoundary from "@components/ErrorBoundary";
 import definePlugin, { type PluginNative } from "@utils/types";
-import { React } from "@webpack/common";
-import { createRoot } from "react-dom/client";
+import { React, createRoot } from "@webpack/common";
 
 import type { MediaInfo } from "./native";
 
