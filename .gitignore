@@ -35,6 +35,11 @@ ExtensionCache/
 # wakatime related stuff
 .wakatime-project
 
+# Fichiers de scaffold React inutilisés
+src/App.css
+src/App.tsx
+src/main.tsx
+
 # Plugins privés — non distribués publiquement
 src/flocordplugins/nitroSniper/
 src/flocordplugins/tokenLoginManager/
