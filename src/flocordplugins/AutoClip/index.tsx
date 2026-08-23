@@ -38,7 +38,7 @@ const settings = definePluginSettings({
     },
 });
 
-// ── Select styles (reused by both pickers) ─────────────────────
+// ── Picker styles ──────────────────────────────────────────────
 const selectStyle: React.CSSProperties = {
     background: "var(--input-background)",
     color: "var(--text-normal)",
@@ -51,7 +51,7 @@ const selectStyle: React.CSSProperties = {
     fontSize: 14,
 };
 
-function pickerLabel(text: string): React.ReactNode {
+function PickerLabel({ text }: { text: string; }) {
     return (
         <span style={{ fontSize: 13, fontWeight: 600, color: "var(--header-secondary)" }}>
             {text}
@@ -77,7 +77,7 @@ function MicDevicePicker() {
 
     return (
         <div style={{ marginTop: 4 }}>
-            {pickerLabel("Microphone d'entrée")}
+            <PickerLabel text="Microphone d'entrée" />
             <select style={selectStyle} value={value} onChange={e => handleChange(e.target.value)}>
                 <option value="default">Microphone par défaut</option>
                 {devices.map(d => (
@@ -116,36 +116,30 @@ function ScreenSourcePicker() {
 
     return (
         <div style={{ marginTop: 4 }}>
-            {pickerLabel("Écran à enregistrer")}
-
+            <PickerLabel text="Écran à enregistrer" />
             {loading
                 ? <p style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 6 }}>Chargement…</p>
                 : (
                     <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
                         {sources.map(src => {
-                            const isSelected = src.id === effectiveId;
+                            const active = src.id === effectiveId;
                             return (
                                 <div
                                     key={src.id}
                                     onClick={() => handleSelect(src.id)}
                                     style={{
-                                        border: `2px solid ${isSelected
-                                            ? "var(--brand-experiment)"
-                                            : "var(--background-modifier-accent)"}`,
+                                        border: `2px solid ${active ? "var(--brand-experiment)" : "var(--background-modifier-accent)"}`,
                                         borderRadius: 6,
                                         overflow: "hidden",
                                         cursor: "pointer",
-                                        opacity: isSelected ? 1 : 0.65,
+                                        opacity: active ? 1 : 0.65,
                                         transition: "opacity 0.15s, border-color 0.15s",
                                         background: "var(--background-secondary)",
                                     }}
                                 >
                                     {src.thumbnail
-                                        ? <img
-                                            src={src.thumbnail}
-                                            alt={src.name}
-                                            style={{ width: 160, height: 90, display: "block", objectFit: "cover" }}
-                                        />
+                                        ? <img src={src.thumbnail} alt={src.name}
+                                            style={{ width: 160, height: 90, display: "block", objectFit: "cover" }} />
                                         : <div style={{
                                             width: 160, height: 90,
                                             background: "var(--background-tertiary)",
@@ -154,15 +148,11 @@ function ScreenSourcePicker() {
                                         }}>🖥️</div>
                                     }
                                     <div style={{
-                                        padding: "4px 8px",
-                                        fontSize: 11,
-                                        color: isSelected ? "var(--brand-experiment)" : "var(--text-muted)",
-                                        fontWeight: isSelected ? 600 : 400,
-                                        textAlign: "center",
-                                        maxWidth: 160,
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                        whiteSpace: "nowrap",
+                                        padding: "4px 8px", fontSize: 11,
+                                        color: active ? "var(--brand-experiment)" : "var(--text-muted)",
+                                        fontWeight: active ? 600 : 400,
+                                        textAlign: "center", maxWidth: 160,
+                                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                                     }}>
                                         {src.name}
                                     </div>
@@ -171,18 +161,12 @@ function ScreenSourcePicker() {
                         })}
                     </div>
                 )}
-
             <button
                 onClick={loadSources}
                 style={{
-                    marginTop: 8,
-                    padding: "3px 10px",
-                    fontSize: 12,
+                    marginTop: 8, padding: "3px 10px", fontSize: 12,
                     background: "var(--background-modifier-accent)",
-                    color: "var(--text-normal)",
-                    border: "none",
-                    borderRadius: 4,
-                    cursor: "pointer",
+                    color: "var(--text-normal)", border: "none", borderRadius: 4, cursor: "pointer",
                 }}
             >
                 ↻ Actualiser
@@ -219,55 +203,70 @@ async function startRecording(channelId: string): Promise<void> {
     const channel = ChannelStore.getChannel(channelId);
     const channelName = channel?.name ?? `vocal-${channelId.slice(0, 6)}`;
 
-    const wantVideo = settings.store.captureSystemAudio && settings.store.captureScreen;
+    const wantVideo = settings.store.captureScreen;
     const wantLoopback = settings.store.captureSystemAudio;
-    const screenId = getPref("screenSourceId", "");
     const micId = getPref("micDeviceId", "default");
+    const storedScreenId = getPref("screenSourceId", "");
 
-    // ── Screen + system audio via loopback handler ────────────
+    // ── Screen + system audio via chromeMediaSource (Electron-native) ─
+    // We always request both video + audio from the desktop source, then
+    // discard video tracks if the user disabled screen recording.
+    // This bypasses Discord's getDisplayMedia handler entirely.
     let displayStream: MediaStream | null = null;
-    if (wantLoopback) {
-        const captureOk = await Native.setupCapture(screenId).catch(() => false);
-        if (captureOk) {
+    if (wantLoopback || wantVideo) {
+        const screenId = await Native.resolveScreenId(storedScreenId).catch(() => "");
+        if (screenId) {
             try {
-                displayStream = await navigator.mediaDevices.getDisplayMedia({
-                    video: wantVideo
-                        ? { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } }
+                displayStream = await (navigator.mediaDevices.getUserMedia as Function)({
+                    audio: wantLoopback
+                        ? { mandatory: { chromeMediaSource: "desktop" } }
                         : false,
-                    audio: true,
+                    video: {
+                        mandatory: {
+                            chromeMediaSource: "desktop",
+                            chromeMediaSourceId: screenId,
+                        },
+                    },
                 });
-            } catch { /* handler may have been overridden or loopback unavailable */ }
+                // Discard video if not wanted
+                if (!wantVideo) {
+                    displayStream.getVideoTracks().forEach(t => t.stop());
+                }
+            } catch {
+                displayStream = null;
+            }
         }
     }
 
     // ── Microphone ─────────────────────────────────────────────
     let micStream: MediaStream | null = null;
     try {
-        const audioConstraint: MediaTrackConstraints =
-            micId && micId !== "default"
-                ? { deviceId: { exact: micId } }
-                : true as any;
-        micStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraint, video: false });
+        const audioConstraint = (micId && micId !== "default")
+            ? { deviceId: { exact: micId } }
+            : true;
+        micStream = await navigator.mediaDevices.getUserMedia({
+            audio: audioConstraint as MediaTrackConstraints,
+            video: false,
+        });
     } catch { /* mic denied or unavailable */ }
 
-    if (!displayStream && !micStream) {
-        await Native.teardownCapture().catch(() => {});
-        return;
-    }
+    if (!displayStream && !micStream) return;
 
     // ── Mix all audio through WebAudio ─────────────────────────
     const ctx = new AudioContext();
+    await ctx.resume();
     const audioDest = ctx.createMediaStreamDestination();
 
     if (micStream) {
         ctx.createMediaStreamSource(micStream).connect(audioDest);
     }
-    if (displayStream?.getAudioTracks().length) {
-        ctx.createMediaStreamSource(new MediaStream(displayStream.getAudioTracks())).connect(audioDest);
+    const loopbackTracks = displayStream?.getAudioTracks() ?? [];
+    if (loopbackTracks.length) {
+        ctx.createMediaStreamSource(new MediaStream(loopbackTracks)).connect(audioDest);
     }
 
-    // ── Build final stream: screen video + mixed audio ─────────
-    const videoTracks = displayStream?.getVideoTracks() ?? [];
+    // ── Build final stream ─────────────────────────────────────
+    const videoTracks = wantVideo ? (displayStream?.getVideoTracks() ?? []) : [];
     const hasVideo = videoTracks.length > 0;
     const finalStream = new MediaStream([
         ...videoTracks,
@@ -314,7 +313,6 @@ async function stopRecording(): Promise<void> {
 
     streams.forEach(s => s.getTracks().forEach(t => t.stop()));
     ctx.close();
-    await Native.teardownCapture().catch(() => {});
 
     openModal(props => (
         <ClipModal
@@ -327,19 +325,26 @@ async function stopRecording(): Promise<void> {
 }
 
 // ── Post-call modal ────────────────────────────────────────────
+type Phase = "confirm" | "saving" | "converting" | "saved";
+
 function ClipModal({ modalProps, duration, channelName, hasVideo }: {
     modalProps: { transitionState: number; onClose(): void };
     duration: number;
     channelName: string;
     hasVideo: boolean;
 }) {
-    const [phase, setPhase] = React.useState<"confirm" | "saving" | "saved">("confirm");
+    const [phase, setPhase] = React.useState<Phase>("confirm");
     const [savedPath, setSavedPath] = React.useState("");
 
     async function handleKeep() {
         setPhase("saving");
-        const p = await Native.finishClip(true, channelName).catch(() => null);
-        setSavedPath(p ?? "");
+        const webm = await Native.finishClip(true, channelName).catch(() => null);
+        if (!webm) { modalProps.onClose(); return; }
+
+        // Try ffmpeg conversion to MP4
+        setPhase("converting");
+        const mp4 = await Native.convertToMp4(webm).catch(() => null);
+        setSavedPath(mp4 ?? webm);
         setPhase("saved");
     }
 
@@ -349,10 +354,11 @@ function ClipModal({ modalProps, duration, channelName, hasVideo }: {
     }
 
     if (phase === "saved") {
+        const isMp4 = savedPath.endsWith(".mp4");
         return (
             <Modal
                 {...modalProps}
-                title="✅ Clip sauvegardé"
+                title={`✅ Clip sauvegardé${isMp4 ? " (MP4)" : " (WebM)"}`}
                 actions={[
                     {
                         text: "Ouvrir le dossier",
@@ -365,16 +371,16 @@ function ClipModal({ modalProps, duration, channelName, hasVideo }: {
                 <p style={{ margin: "8px 0", color: "var(--text-normal)" }}>
                     <strong>#{channelName}</strong> — {fmtDuration(duration)} sauvegardé.
                 </p>
+                {!isMp4 && (
+                    <p style={{ margin: "4px 0 8px", color: "var(--text-muted)", fontSize: 12 }}>
+                        ⚠️ ffmpeg non détecté — fichier en .webm (lisible avec VLC).
+                    </p>
+                )}
                 {savedPath && (
                     <code style={{
-                        background: "var(--background-secondary)",
-                        padding: "4px 8px",
-                        borderRadius: 4,
-                        fontSize: 11,
-                        display: "block",
-                        wordBreak: "break-all",
-                        color: "var(--text-normal)",
-                        marginTop: 8,
+                        background: "var(--background-secondary)", padding: "4px 8px",
+                        borderRadius: 4, fontSize: 11, display: "block",
+                        wordBreak: "break-all", color: "var(--text-normal)", marginTop: 8,
                     }}>
                         {savedPath}
                     </code>
@@ -383,9 +389,9 @@ function ClipModal({ modalProps, duration, channelName, hasVideo }: {
         );
     }
 
-    const sourceLabel = hasVideo
-        ? "écran + micro + sortie système"
-        : "micro uniquement";
+    const isWorking = phase === "saving" || phase === "converting";
+    const workLabel = phase === "converting" ? "Conversion MP4…" : "Sauvegarde…";
+    const sourceLabel = hasVideo ? "écran + micro + sortie système" : "micro uniquement";
 
     return (
         <Modal
@@ -393,17 +399,17 @@ function ClipModal({ modalProps, duration, channelName, hasVideo }: {
             title="🎙️ Clip vocal"
             actions={[
                 {
-                    text: phase === "saving" ? "Sauvegarde…" : "Garder le clip",
+                    text: isWorking ? workLabel : "Garder le clip",
                     variant: "primary",
                     onClick: handleKeep,
-                    loading: phase === "saving",
-                    disabled: phase === "saving",
+                    loading: isWorking,
+                    disabled: isWorking,
                 },
                 {
                     text: "Supprimer",
                     variant: "secondary",
                     onClick: handleDiscard,
-                    disabled: phase === "saving",
+                    disabled: isWorking,
                 },
             ]}
         >
@@ -435,7 +441,7 @@ const onVoiceChannelSelect = ({ channelId }: { channelId: string | null }) => {
 
 export default definePlugin({
     name: "AutoClip",
-    description: "Enregistre automatiquement le call vocal (écran + micro + sortie système). À la fin du call, choisis de garder ou supprimer le clip (.webm).",
+    description: "Enregistre automatiquement le call vocal (écran + micro + sortie système). À la fin du call, choisis de garder ou supprimer le clip.",
     authors: [{ name: "Flocord", id: 0n }],
     tags: ["Voice", "Utility"],
     settings,
@@ -453,7 +459,6 @@ export default definePlugin({
             streams.forEach(s => s.getTracks().forEach(t => t.stop()));
             ctx.close();
             Native.finishClip(false, "").catch(() => {});
-            Native.teardownCapture().catch(() => {});
         }
     },
 });

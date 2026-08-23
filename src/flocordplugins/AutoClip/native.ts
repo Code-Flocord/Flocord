@@ -1,11 +1,14 @@
-import { IpcMainInvokeEvent, app, session, desktopCapturer, shell } from "electron";
+import { IpcMainInvokeEvent, app, shell, desktopCapturer } from "electron";
 import fs from "fs";
 import path from "path";
+import { execFile } from "child_process";
+import { promisify } from "util";
+
+const execFileAsync = promisify(execFile);
 
 let _ws: fs.WriteStream | null = null;
 let _tmpPath = "";
 
-// Returns all screen sources with a 320×180 thumbnail (data URL) for the settings picker.
 export async function getScreenSources(_: IpcMainInvokeEvent): Promise<Array<{
     id: string;
     name: string;
@@ -22,30 +25,16 @@ export async function getScreenSources(_: IpcMainInvokeEvent): Promise<Array<{
     }));
 }
 
-// Sets up the display-media handler so getDisplayMedia() in the renderer
-// is silently fulfilled with the chosen screen + loopback audio.
-export async function setupCapture(_: IpcMainInvokeEvent, screenId: string): Promise<boolean> {
-    try {
-        session.defaultSession.setDisplayMediaRequestHandler(async (_req, callback) => {
-            const sources = await desktopCapturer.getSources({ types: ["screen"] });
-            const target =
-                (screenId ? sources.find(s => s.id === screenId) : null) ?? sources[0];
-            if (target) {
-                callback({ video: target, audio: "loopback" });
-            } else {
-                callback({});
-            }
-        });
-        return true;
-    } catch {
-        return false;
-    }
-}
-
-export async function teardownCapture(_: IpcMainInvokeEvent): Promise<void> {
-    try {
-        (session.defaultSession as any).setDisplayMediaRequestHandler(null);
-    } catch {}
+// Returns the source ID of the first (or chosen) screen — used by the renderer
+// to build a chromeMediaSourceId constraint for getUserMedia.
+export async function resolveScreenId(
+    _: IpcMainInvokeEvent,
+    preferred: string,
+): Promise<string> {
+    const sources = await desktopCapturer.getSources({ types: ["screen"] });
+    return (preferred ? sources.find(s => s.id === preferred) : null)?.id
+        ?? sources[0]?.id
+        ?? "";
 }
 
 export async function openTempFile(_: IpcMainInvokeEvent): Promise<void> {
@@ -80,9 +69,30 @@ export async function finishClip(
 
     const ts = new Date().toISOString().replace(/[:.]/g, "-").replace("T", "_").slice(0, 19);
     const safe = channelName.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 40);
-    const dest = path.join(dir, `${ts}_${safe}.webm`);
-    fs.renameSync(tmp, dest);
-    return dest;
+    const webm = path.join(dir, `${ts}_${safe}.webm`);
+    fs.renameSync(tmp, webm);
+    return webm;
+}
+
+// Attempts an ffmpeg re-encode from webm → mp4.
+// On success: deletes the webm and returns the mp4 path.
+// On failure (ffmpeg absent / error): returns null and leaves the webm intact.
+export async function convertToMp4(_: IpcMainInvokeEvent, webmPath: string): Promise<string | null> {
+    const mp4Path = webmPath.replace(/\.webm$/, ".mp4");
+    try {
+        await execFileAsync("ffmpeg", [
+            "-i", webmPath,
+            "-c:v", "libx264",
+            "-preset", "fast",
+            "-c:a", "aac",
+            "-movflags", "+faststart",
+            "-y", mp4Path,
+        ], { timeout: 600_000 });   // 10 min max for long calls
+        try { fs.unlinkSync(webmPath); } catch {}
+        return mp4Path;
+    } catch {
+        return null;
+    }
 }
 
 export async function openClipsFolder(_: IpcMainInvokeEvent): Promise<void> {
