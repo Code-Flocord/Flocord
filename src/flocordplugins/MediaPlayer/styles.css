@@ -1,20 +1,19 @@
-/* ── Container ─────────────────────────────────────────── */
 .vc-mp-panel {
     display: flex;
     flex-direction: column;
-    gap: 5px;
-    padding: 7px 8px 6px;
+    gap: 6px;
+    padding: 8px;
     margin: 0 0 4px;
     background: var(--background-secondary-alt, #292b2f);
-    border-radius: 8px;
+    border-radius: 10px;
     user-select: none;
 }
 
-/* ── Row 1: art | meta | source badge | controls ───────── */
-.vc-mp-row {
+/* Main row: art + info */
+.vc-mp-main {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     min-width: 0;
 }
 
@@ -23,30 +22,37 @@
 }
 
 .vc-mp-art {
-    width: 40px;
-    height: 40px;
+    width: 50px;
+    height: 50px;
     border-radius: 6px;
     object-fit: cover;
     display: block;
-    background: var(--background-tertiary, #202225);
+    background: var(--background-tertiary, #1e1f22);
 }
 
-.vc-mp-art-placeholder {
+.vc-mp-no-art {
+    width: 50px;
+    height: 50px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
-    color: var(--text-muted, #72767d);
-    background: var(--background-tertiary, #202225);
+    font-size: 22px;
+    background: var(--background-tertiary, #1e1f22);
+    color: var(--text-muted, #80848e);
 }
 
-.vc-mp-meta {
+/* Info column: title / sub / controls */
+.vc-mp-info {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
 }
 
 .vc-mp-title {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--header-primary, #f2f3f5);
     white-space: nowrap;
@@ -55,7 +61,7 @@
     line-height: 1.3;
 }
 
-.vc-mp-artist {
+.vc-mp-sub {
     font-size: 11px;
     color: var(--text-muted, #80848e);
     white-space: nowrap;
@@ -64,31 +70,37 @@
     line-height: 1.3;
 }
 
-.vc-mp-source {
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    color: var(--brand-experiment, #5865f2);
-    flex-shrink: 0;
-    align-self: flex-start;
-    padding-top: 1px;
+.vc-mp-artist {
+    color: var(--text-muted, #80848e);
 }
 
+.vc-mp-dot {
+    color: var(--text-muted, #80848e);
+    opacity: 0.6;
+}
+
+.vc-mp-source {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    color: var(--brand-experiment, #5865f2);
+}
+
+/* Controls inline in info column */
 .vc-mp-controls {
     display: flex;
     align-items: center;
-    gap: 1px;
-    flex-shrink: 0;
+    gap: 2px;
+    margin-top: 3px;
 }
 
-/* ── Buttons ────────────────────────────────────────────── */
 .vc-mp-btn {
     background: none;
     border: none;
     color: var(--interactive-normal, #b5bac1);
     cursor: pointer;
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -103,30 +115,23 @@
     color: var(--header-primary, #f2f3f5);
 }
 
-.vc-mp-btn-main {
-    width: 28px;
-    height: 28px;
+.vc-mp-btn-play {
+    width: 30px;
+    height: 30px;
     background: var(--brand-experiment, #5865f2);
     color: #ffffff;
 }
 
-.vc-mp-btn-main:hover {
+.vc-mp-btn-play:hover {
     background: var(--brand-experiment-560, #4752c4);
     color: #ffffff;
 }
 
-.vc-mp-vol-btn {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
-}
-
-/* ── Row 2: time + progress bar + volume ────────────────── */
-.vc-mp-bottom {
+/* Footer: timestamp + progress bar */
+.vc-mp-footer {
     display: flex;
     align-items: center;
-    gap: 5px;
-    min-width: 0;
+    gap: 6px;
 }
 
 .vc-mp-time {
@@ -143,7 +148,6 @@
     background: var(--background-modifier-accent, rgba(255,255,255,0.09));
     border-radius: 3px;
     overflow: hidden;
-    min-width: 0;
 }
 
 .vc-mp-bar-fill {
@@ -151,39 +155,4 @@
     background: var(--brand-experiment, #5865f2);
     border-radius: 3px;
     transition: width 1s linear;
-}
-
-/* ── Volume slider ──────────────────────────────────────── */
-.vc-mp-vol-slider {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 52px;
-    height: 3px;
-    border-radius: 3px;
-    background: var(--background-modifier-accent, rgba(255,255,255,0.09));
-    cursor: pointer;
-    flex-shrink: 0;
-    outline: none;
-    border: none;
-}
-
-.vc-mp-vol-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--header-primary, #f2f3f5);
-    cursor: pointer;
-    transition: background 0.1s, transform 0.1s;
-}
-
-.vc-mp-vol-slider:hover::-webkit-slider-thumb {
-    background: var(--brand-experiment, #5865f2);
-    transform: scale(1.2);
-}
-
-.vc-mp-vol-slider::-webkit-slider-runnable-track {
-    height: 3px;
-    border-radius: 3px;
 }
