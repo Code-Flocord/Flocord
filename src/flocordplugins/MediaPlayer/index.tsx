@@ -62,16 +62,32 @@ function IconPause() {
         </svg>
     );
 }
+function IconVol({ pct }: { pct: number }) {
+    if (pct === 0) return (
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z" />
+        </svg>
+    );
+    if (pct < 50) return (
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z" />
+        </svg>
+    );
+    return (
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+        </svg>
+    );
+}
 
 function MediaPlayerPanel() {
     const [info, setInfo] = React.useState<MediaInfo | null>(null);
-    const [thumbSrc, setThumbSrc] = React.useState<string | null>(null);
-    const [imgError, setImgError] = React.useState(false);
-    const lastTrackRef = React.useRef<string>("");
+    const [localVol, setLocalVol] = React.useState(100);
+    const lastTrackRef = React.useRef("");
+    const volDebounce = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
     React.useEffect(() => {
         let alive = true;
-
         async function poll() {
             while (alive) {
                 try {
@@ -79,77 +95,80 @@ function MediaPlayerPanel() {
                     if (!alive) break;
                     setInfo(result);
                     if (result) {
-                        const trackKey = `${result.title}|${result.artist}`;
-                        if (trackKey !== lastTrackRef.current) {
-                            lastTrackRef.current = trackKey;
-                            setImgError(false);
-                            setThumbSrc(result.thumb ? `data:image/jpeg;base64,${result.thumb}` : null);
-                        }
+                        const key = `${result.title}|${result.artist}`;
+                        if (key !== lastTrackRef.current) lastTrackRef.current = key;
+                        if (result.volume !== null) setLocalVol(result.volume);
                     }
                 } catch { /* ignore */ }
                 await new Promise(r => setTimeout(r, 2000));
             }
         }
-
         poll();
         return () => { alive = false; };
     }, []);
 
-    if (!info || info.status === "Closed" || info.status === "Stopped") return null;
+    if (!info) return null;
 
     const isPlaying = info.status === "Playing";
     const progress = info.dur > 0 ? Math.min(100, (info.pos / info.dur) * 100) : 0;
     const appName = resolveAppName(info.app);
+    const canVolume = info.source === "spotify" && info.volume !== null;
 
     async function control(action: "play" | "pause" | "next" | "previous") {
         await Native.sendControl(action);
-        if (action === "play") setInfo(prev => prev ? { ...prev, status: "Playing" } : prev);
-        if (action === "pause") setInfo(prev => prev ? { ...prev, status: "Paused" } : prev);
+        setInfo(prev => prev ? { ...prev, status: action === "play" ? "Playing" : action === "pause" ? "Paused" : prev.status } : prev);
     }
 
-    function handleImgError() {
-        if (!imgError && thumbSrc?.includes("jpeg")) {
-            setImgError(true);
-            setThumbSrc(prev => prev?.replace("image/jpeg", "image/png") ?? null);
-        }
+    function onVolChange(e: React.ChangeEvent<HTMLInputElement>) {
+        const val = parseInt(e.target.value, 10);
+        setLocalVol(val);
+        if (volDebounce.current) clearTimeout(volDebounce.current);
+        volDebounce.current = setTimeout(() => {
+            Native.setSpotifyVolume(val).catch(() => {});
+        }, 200);
     }
 
     return (
         <div className="vc-mp-panel">
             <div className="vc-mp-main">
                 <div className="vc-mp-art-wrap">
-                    {thumbSrc && !imgError
-                        ? <img className="vc-mp-art" src={thumbSrc} alt="" onError={handleImgError} />
-                        : thumbSrc
-                            ? <img className="vc-mp-art" src={thumbSrc} alt="" />
-                            : <div className="vc-mp-art vc-mp-no-art">♪</div>
+                    {info.thumb
+                        ? <img className="vc-mp-art" src={info.thumb} alt="" />
+                        : <div className="vc-mp-art vc-mp-no-art">♪</div>
                     }
                 </div>
                 <div className="vc-mp-info">
                     <div className="vc-mp-title" title={info.title}>{info.title || "Inconnu"}</div>
                     <div className="vc-mp-sub">
-                        <span className="vc-mp-artist">{info.artist || appName}</span>
-                        {info.artist && <span className="vc-mp-dot"> · </span>}
-                        {info.artist && <span className="vc-mp-source">{appName}</span>}
+                        <span>{info.artist || appName}</span>
+                        {info.artist && <><span className="vc-mp-dot"> · </span><span className="vc-mp-src">{appName}</span></>}
                     </div>
                     <div className="vc-mp-controls">
-                        <button className="vc-mp-btn" onClick={() => control("previous")} title="Précédent">
-                            <IconPrev />
-                        </button>
+                        <button className="vc-mp-btn" onClick={() => control("previous")} title="Précédent"><IconPrev /></button>
                         <button className="vc-mp-btn vc-mp-btn-play" onClick={() => control(isPlaying ? "pause" : "play")} title={isPlaying ? "Pause" : "Lecture"}>
                             {isPlaying ? <IconPause /> : <IconPlay />}
                         </button>
-                        <button className="vc-mp-btn" onClick={() => control("next")} title="Suivant">
-                            <IconNext />
-                        </button>
+                        <button className="vc-mp-btn" onClick={() => control("next")} title="Suivant"><IconNext /></button>
+                        {canVolume && (
+                            <div className="vc-mp-vol">
+                                <IconVol pct={localVol} />
+                                <input
+                                    type="range"
+                                    className="vc-mp-vol-slider"
+                                    min={0}
+                                    max={100}
+                                    value={localVol}
+                                    onChange={onVolChange}
+                                    title={`Volume Spotify : ${localVol}%`}
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
             <div className="vc-mp-footer">
                 <span className="vc-mp-time">{fmt(info.pos)}</span>
-                <div className="vc-mp-bar">
-                    <div className="vc-mp-bar-fill" style={{ width: `${progress}%` }} />
-                </div>
+                <div className="vc-mp-bar"><div className="vc-mp-bar-fill" style={{ width: `${progress}%` }} /></div>
                 <span className="vc-mp-time">{fmt(info.dur)}</span>
             </div>
         </div>
@@ -158,7 +177,7 @@ function MediaPlayerPanel() {
 
 export default definePlugin({
     name: "MediaPlayer",
-    description: "Contrôle musical dans le panneau bas-gauche. Compatible Spotify, YouTube Music, VLC, et tout lecteur Windows sans connexion requise.",
+    description: "Contrôle musical dans le panneau bas-gauche. Spotify via API locale (volume, art HD) + SMTC pour VLC, Chrome, etc.",
     authors: [{ name: "Flocord", id: 0n }],
     tags: ["Media", "Utility"],
 
@@ -172,12 +191,10 @@ export default definePlugin({
         },
     ],
 
-    PanelWrapper({ VencordOriginal, ...props }: { VencordOriginal: React.ComponentType<any>; [k: string]: any; }) {
+    PanelWrapper({ VencordOriginal, ...props }: { VencordOriginal: React.ComponentType<any>; [k: string]: any }) {
         return (
             <>
-                <ErrorBoundary noop>
-                    <MediaPlayerPanel />
-                </ErrorBoundary>
+                <ErrorBoundary noop><MediaPlayerPanel /></ErrorBoundary>
                 <VencordOriginal {...props} />
             </>
         );

@@ -9,7 +9,6 @@
     user-select: none;
 }
 
-/* Main row: art + info */
 .vc-mp-main {
     display: flex;
     align-items: center;
@@ -17,9 +16,8 @@
     min-width: 0;
 }
 
-.vc-mp-art-wrap {
-    flex-shrink: 0;
-}
+/* Album art */
+.vc-mp-art-wrap { flex-shrink: 0; }
 
 .vc-mp-art {
     width: 50px;
@@ -42,7 +40,7 @@
     color: var(--text-muted, #80848e);
 }
 
-/* Info column: title / sub / controls */
+/* Info column */
 .vc-mp-info {
     flex: 1;
     min-width: 0;
@@ -70,23 +68,16 @@
     line-height: 1.3;
 }
 
-.vc-mp-artist {
-    color: var(--text-muted, #80848e);
-}
+.vc-mp-dot { opacity: 0.5; }
 
-.vc-mp-dot {
-    color: var(--text-muted, #80848e);
-    opacity: 0.6;
-}
-
-.vc-mp-source {
-    font-size: 10px;
+.vc-mp-src {
     font-weight: 700;
+    font-size: 10px;
     letter-spacing: 0.4px;
     color: var(--brand-experiment, #5865f2);
 }
 
-/* Controls inline in info column */
+/* Controls row */
 .vc-mp-controls {
     display: flex;
     align-items: center;
@@ -106,8 +97,8 @@
     align-items: center;
     justify-content: center;
     padding: 0;
-    transition: background 0.12s, color 0.12s;
     flex-shrink: 0;
+    transition: background 0.12s, color 0.12s;
 }
 
 .vc-mp-btn:hover {
@@ -119,15 +110,52 @@
     width: 30px;
     height: 30px;
     background: var(--brand-experiment, #5865f2);
-    color: #ffffff;
+    color: #fff;
 }
 
 .vc-mp-btn-play:hover {
     background: var(--brand-experiment-560, #4752c4);
-    color: #ffffff;
+    color: #fff;
 }
 
-/* Footer: timestamp + progress bar */
+/* Volume (Spotify only) */
+.vc-mp-vol {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    margin-left: 4px;
+    color: var(--text-muted, #80848e);
+}
+
+.vc-mp-vol-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 56px;
+    height: 3px;
+    border-radius: 3px;
+    background: var(--background-modifier-accent, rgba(255,255,255,0.09));
+    cursor: pointer;
+    outline: none;
+    border: none;
+}
+
+.vc-mp-vol-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--header-primary, #f2f3f5);
+    cursor: pointer;
+    transition: background 0.1s, transform 0.1s;
+}
+
+.vc-mp-vol-slider:hover::-webkit-slider-thumb {
+    background: var(--brand-experiment, #5865f2);
+    transform: scale(1.2);
+}
+
+/* Progress bar + timestamps */
 .vc-mp-footer {
     display: flex;
     align-items: center;

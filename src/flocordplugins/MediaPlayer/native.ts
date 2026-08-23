@@ -1,10 +1,117 @@
 import { IpcMainInvokeEvent } from "electron";
 import { execFile } from "child_process";
 import { promisify } from "util";
+import https from "https";
 
 const execFileAsync = promisify(execFile);
 
-// PS5.1 WinRT async helper via reflection on WindowsRuntimeSystemExtensions.AsTask<T>.
+// ── Spotify local token (port 4381 — no registration needed) ─
+
+let _tok = "";
+let _tokExp = 0;
+
+function httpsReq(
+    options: https.RequestOptions,
+): Promise<{ status: number; body: string }> {
+    return new Promise((resolve, reject) => {
+        const r = https.request(options, res => {
+            let body = "";
+            res.on("data", c => (body += c));
+            res.on("end", () => resolve({ status: res.statusCode ?? 0, body }));
+        });
+        r.on("error", reject);
+        r.setTimeout(3000, () => { r.destroy(); reject(new Error("timeout")); });
+        r.end();
+    });
+}
+
+async function getSpotifyToken(): Promise<string | null> {
+    if (_tok && Date.now() < _tokExp - 60_000) return _tok;
+    try {
+        const { body } = await httpsReq({
+            hostname: "127.0.0.1",
+            port: 4381,
+            path: "/token",
+            method: "GET",
+            headers: { Origin: "https://open.spotify.com" },
+            rejectUnauthorized: false,
+        });
+        const j = JSON.parse(body);
+        if (!j.accessToken) return null;
+        _tok = j.accessToken;
+        _tokExp = j.accessTokenExpirationTimestampMs ?? Date.now() + 3_600_000;
+        return _tok;
+    } catch {
+        return null;
+    }
+}
+
+async function spotifyReq(
+    token: string,
+    method: string,
+    path: string,
+): Promise<{ status: number; body: string } | null> {
+    try {
+        return await httpsReq({
+            hostname: "api.spotify.com",
+            path,
+            method,
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Length": "0",
+            },
+        });
+    } catch {
+        return null;
+    }
+}
+
+interface SpotifyPlayer {
+    is_playing?: boolean;
+    progress_ms?: number;
+    item?: {
+        name?: string;
+        duration_ms?: number;
+        artists?: Array<{ name: string }>;
+        album?: { images?: Array<{ url: string; width: number }> };
+    };
+    device?: { volume_percent?: number };
+}
+
+async function getFromSpotify(): Promise<MediaInfo | null> {
+    const token = await getSpotifyToken();
+    if (!token) return null;
+
+    const res = await spotifyReq(token, "GET", "/v1/me/player");
+    if (!res || !res.body || res.status === 204) return null;
+    if (res.status === 401) { _tok = ""; _tokExp = 0; return null; }
+
+    try {
+        const p = JSON.parse(res.body) as SpotifyPlayer;
+        if (!p.item) return null;
+
+        const images = p.item.album?.images ?? [];
+        const thumb = (images.find(i => (i.width ?? 0) >= 300) ?? images[0])?.url ?? "";
+        const artist = (p.item.artists ?? []).map(a => a.name).join(", ");
+
+        return {
+            title: p.item.name ?? "",
+            artist,
+            status: p.is_playing ? "Playing" : "Paused",
+            pos: Math.round((p.progress_ms ?? 0) / 1000),
+            dur: Math.round((p.item.duration_ms ?? 0) / 1000),
+            thumb,
+            app: "Spotify.exe",
+            volume: p.device?.volume_percent ?? null,
+            source: "spotify",
+        };
+    } catch {
+        return null;
+    }
+}
+
+// ── SMTC fallback (VLC, Chrome, etc.) ────────────────────────
+
 const AWAIT_HELPER = `
 Add-Type -AssemblyName System.Runtime.WindowsRuntime -EA SilentlyContinue
 $_asT=([System.WindowsRuntimeSystemExtensions].GetMethods()|Where-Object{$_.Name-eq'AsTask'-and$_.IsGenericMethodDefinition-and$_.GetParameters().Count-eq 1})[0]
@@ -14,7 +121,7 @@ function WrtAwait($op,[type]$t){$_asT.MakeGenericMethod($t).Invoke($null,@($op))
 function runPS(script: string): Promise<string> {
     return execFileAsync("powershell.exe", [
         "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
-        "-Command", script
+        "-Command", script,
     ], { timeout: 12000 })
         .then(r => r.stdout.trim())
         .catch(() => "{}");
@@ -22,7 +129,6 @@ function runPS(script: string): Promise<string> {
 
 const INFO_SCRIPT = String.raw`
 [Console]::OutputEncoding=[System.Text.Encoding]::UTF8
-$ErrorActionPreference='Stop'
 ${AWAIT_HELPER}
 try {
     [void][Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager,Windows.Media.Control,ContentType=WindowsRuntime]
@@ -40,7 +146,7 @@ try {
         $st=WrtAwait ($p.Thumbnail.OpenReadAsync()) ([Windows.Storage.Streams.IRandomAccessStreamWithContentType])
         $dr=[Windows.Storage.Streams.DataReader]::new($st.GetInputStreamAt(0))
         $n=[int](WrtAwait ($dr.LoadAsync([uint32]$st.Size)) ([uint32]))
-        if($n -gt 0){$buf=[byte[]]::new($n);$dr.ReadBytes($buf);$b64=[Convert]::ToBase64String($buf)}
+        if($n -gt 0){$buf=[byte[]]::new($n);$dr.ReadBytes($buf);$b64="data:image/jpeg;base64,$([Convert]::ToBase64String($buf))"}
     }catch{}
     [ordered]@{
         title=if($p.Title){$p.Title}else{''}
@@ -54,46 +160,83 @@ try {
 }catch{'{}'}
 `.trim();
 
-function controlScript(method: string): string {
-    return String.raw`
-${AWAIT_HELPER}
-try{
-    [void][Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager,Windows.Media.Control,ContentType=WindowsRuntime]
-    $sm=WrtAwait ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync()) ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager])
-    $s=$sm.GetSessions()|Where-Object{$_.GetPlaybackInfo().PlaybackStatus.ToString()-eq'Playing'}|Select-Object -First 1
-    if(-not $s){$s=$sm.GetCurrentSession()}
-    if($s){WrtAwait ($s.${method}()) ([bool])|Out-Null}
-}catch{}
-`.trim();
-}
-
-export interface MediaInfo {
-    title: string;
-    artist: string;
-    status: "Playing" | "Paused" | "Stopped" | "Closed" | "Opened" | "Changing";
-    pos: number;
-    dur: number;
-    thumb: string;
-    app: string;
-}
-
-export async function getMediaInfo(_: IpcMainInvokeEvent): Promise<MediaInfo | null> {
+async function getFromSMTC(): Promise<MediaInfo | null> {
     const raw = await runPS(INFO_SCRIPT);
     try {
-        const parsed = JSON.parse(raw);
-        if (!parsed?.title && !parsed?.artist) return null;
-        return parsed as MediaInfo;
+        const p = JSON.parse(raw);
+        if (!p?.title && !p?.artist) return null;
+        const st = p.status;
+        if (st === "Stopped" || st === "Closed") return null;
+        return {
+            title: p.title ?? "",
+            artist: p.artist ?? "",
+            status: st === "Playing" ? "Playing" : "Paused",
+            pos: p.pos ?? 0,
+            dur: p.dur ?? 0,
+            thumb: p.thumb ?? "",
+            app: p.app ?? "",
+            volume: null,
+            source: "smtc",
+        };
     } catch {
         return null;
     }
 }
 
-export async function sendControl(_: IpcMainInvokeEvent, action: "play" | "pause" | "next" | "previous"): Promise<void> {
-    const methodMap = {
-        play: "TryPlayAsync",
-        pause: "TryPauseAsync",
-        next: "TrySkipNextAsync",
-        previous: "TrySkipPreviousAsync",
-    };
-    await runPS(controlScript(methodMap[action]));
+// ── Exports ───────────────────────────────────────────────────
+
+export interface MediaInfo {
+    title: string;
+    artist: string;
+    status: "Playing" | "Paused";
+    pos: number;
+    dur: number;
+    thumb: string;       // HTTPS URL (Spotify) or data URI (SMTC)
+    app: string;
+    volume: number | null; // 0-100, only for Spotify
+    source: "spotify" | "smtc";
+}
+
+export async function getMediaInfo(_: IpcMainInvokeEvent): Promise<MediaInfo | null> {
+    const spotify = await getFromSpotify();
+    if (spotify) return spotify;
+    return getFromSMTC();
+}
+
+export async function sendControl(
+    _: IpcMainInvokeEvent,
+    action: "play" | "pause" | "next" | "previous",
+): Promise<void> {
+    const token = await getSpotifyToken();
+    if (token) {
+        const routes: Record<string, [string, string]> = {
+            play: ["PUT", "/v1/me/player/play"],
+            pause: ["PUT", "/v1/me/player/pause"],
+            next: ["POST", "/v1/me/player/next"],
+            previous: ["POST", "/v1/me/player/previous"],
+        };
+        const [method, path] = routes[action];
+        await spotifyReq(token, method, path);
+        return;
+    }
+    // SMTC fallback
+    const m = { play: "TryPlayAsync", pause: "TryPauseAsync", next: "TrySkipNextAsync", previous: "TrySkipPreviousAsync" }[action];
+    await runPS(`${AWAIT_HELPER}
+try{
+    [void][Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager,Windows.Media.Control,ContentType=WindowsRuntime]
+    $sm=WrtAwait ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync()) ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager])
+    $s=$sm.GetSessions()|Where-Object{$_.GetPlaybackInfo().PlaybackStatus.ToString()-eq'Playing'}|Select-Object -First 1
+    if(-not $s){$s=$sm.GetCurrentSession()}
+    if($s){WrtAwait ($s.${m}()) ([bool])|Out-Null}
+}catch{}`);
+}
+
+export async function setSpotifyVolume(
+    _: IpcMainInvokeEvent,
+    percent: number,
+): Promise<void> {
+    const token = await getSpotifyToken();
+    if (!token) return;
+    const pct = Math.max(0, Math.min(100, Math.round(percent)));
+    await spotifyReq(token, "PUT", `/v1/me/player/volume?volume_percent=${pct}`);
 }
