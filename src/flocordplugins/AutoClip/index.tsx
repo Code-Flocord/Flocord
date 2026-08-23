@@ -4,42 +4,47 @@ import { ChannelStore, FluxDispatcher, Modal, React, openModal } from "@webpack/
 
 const Native = VencordNative.pluginHelpers.AutoClip as PluginNative<typeof import("./native")>;
 
-// ── Preferences stored in localStorage (device/screen IDs) ────
-const PREF = "Flocord_AutoClip_";
-function getPref(key: string, def = ""): string {
-    try { return localStorage.getItem(PREF + key) ?? def; }
-    catch { return def; }
-}
-function setPref(key: string, val: string): void {
-    try { localStorage.setItem(PREF + key, val); } catch {}
-}
+// ── localStorage prefs (dynamic device names) ──────────────────
+const K = "Flocord_AutoClip_";
+const getPref = (k: string, d = "") => { try { return localStorage.getItem(K + k) ?? d; } catch { return d; } };
+const setPref = (k: string, v: string) => { try { localStorage.setItem(K + k, v); } catch {} };
 
-// ── Settings ───────────────────────────────────────────────────
+// ── Settings panel ─────────────────────────────────────────────
 const settings = definePluginSettings({
     captureSystemAudio: {
         type: OptionType.BOOLEAN,
-        description: "Enregistrer la sortie audio système (loopback)",
+        description: "Enregistrer la sortie audio système (loopback WASAPI)",
         default: true,
     },
     captureScreen: {
         type: OptionType.BOOLEAN,
-        description: "Enregistrer l'écran (vidéo) en plus de l'audio",
+        description: "Enregistrer l'écran (vidéo)",
         default: true,
+    },
+    ffmpegStatus: {
+        type: OptionType.COMPONENT,
+        description: "",
+        component: FfmpegStatus,
     },
     micPicker: {
         type: OptionType.COMPONENT,
         description: "Microphone d'entrée",
-        component: MicDevicePicker,
+        component: MicPicker,
+    },
+    outputPicker: {
+        type: OptionType.COMPONENT,
+        description: "Sortie audio (loopback)",
+        component: OutputPicker,
     },
     screenPicker: {
         type: OptionType.COMPONENT,
         description: "Écran à enregistrer",
-        component: ScreenSourcePicker,
+        component: ScreenPicker,
     },
 });
 
-// ── Picker styles ──────────────────────────────────────────────
-const selectStyle: React.CSSProperties = {
+// ── Shared picker styles ───────────────────────────────────────
+const selectSt: React.CSSProperties = {
     background: "var(--input-background)",
     color: "var(--text-normal)",
     border: "1px solid var(--background-modifier-accent)",
@@ -47,318 +52,248 @@ const selectStyle: React.CSSProperties = {
     padding: "5px 8px",
     width: "100%",
     marginTop: 6,
-    cursor: "pointer",
     fontSize: 14,
+    cursor: "pointer",
 };
 
-function PickerLabel({ text }: { text: string; }) {
+function Label({ t }: { t: string }) {
+    return <span style={{ fontSize: 13, fontWeight: 600, color: "var(--header-secondary)" }}>{t}</span>;
+}
+
+// ── ffmpeg status banner ───────────────────────────────────────
+function FfmpegStatus() {
+    const [ok, setOk] = React.useState<boolean | null>(null);
+    React.useEffect(() => { Native.checkFfmpeg().then(setOk).catch(() => setOk(false)); }, []);
+
+    if (ok === null) return null;
     return (
-        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--header-secondary)" }}>
-            {text}
-        </span>
+        <div style={{
+            padding: "6px 10px", borderRadius: 4, fontSize: 12, marginBottom: 4,
+            background: ok ? "rgba(59,165,93,0.15)" : "rgba(237,66,69,0.15)",
+            color: ok ? "var(--green-360)" : "var(--red-400)",
+        }}>
+            {ok
+                ? "✔ ffmpeg détecté — enregistrement MP4 actif."
+                : "✖ ffmpeg introuvable — installe-le et ajoute-le au PATH Windows pour activer l'enregistrement."}
+        </div>
     );
 }
 
-// ── Microphone picker ──────────────────────────────────────────
-function MicDevicePicker() {
-    const [devices, setDevices] = React.useState<MediaDeviceInfo[]>([]);
-    const [value, setValue] = React.useState(() => getPref("micDeviceId", "default"));
+// ── Mic picker (WASAPI inputs) ─────────────────────────────────
+function MicPicker() {
+    const [devices, setDevices] = React.useState<string[]>([]);
+    const [value, setValue] = React.useState(() => getPref("mic", ""));
 
     React.useEffect(() => {
-        navigator.mediaDevices.enumerateDevices()
-            .then(all => setDevices(all.filter(d => d.kind === "audioinput")))
-            .catch(() => {});
+        Native.listWasapiDevices("input").then(setDevices).catch(() => {});
     }, []);
 
-    function handleChange(v: string) {
-        setValue(v);
-        setPref("micDeviceId", v);
-    }
+    const handle = (v: string) => { setValue(v); setPref("mic", v); };
 
     return (
         <div style={{ marginTop: 4 }}>
-            <PickerLabel text="Microphone d'entrée" />
-            <select style={selectStyle} value={value} onChange={e => handleChange(e.target.value)}>
-                <option value="default">Microphone par défaut</option>
-                {devices.map(d => (
-                    <option key={d.deviceId} value={d.deviceId}>
-                        {d.label || `Micro ${d.deviceId.slice(0, 8)}…`}
-                    </option>
-                ))}
+            <Label t="Microphone d'entrée" />
+            <select style={selectSt} value={value} onChange={e => handle(e.target.value)}>
+                <option value="">Microphone par défaut</option>
+                {devices.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
         </div>
     );
 }
 
-// ── Screen source picker ───────────────────────────────────────
-interface ScreenSource { id: string; name: string; thumbnail: string; }
+// ── Output picker (WASAPI outputs → loopback) ──────────────────
+function OutputPicker() {
+    const [devices, setDevices] = React.useState<string[]>([]);
+    const [value, setValue] = React.useState(() => getPref("output", ""));
 
-function ScreenSourcePicker() {
-    const [sources, setSources] = React.useState<ScreenSource[]>([]);
-    const [loading, setLoading] = React.useState(true);
-    const [selected, setSelected] = React.useState(() => getPref("screenSourceId", ""));
+    React.useEffect(() => {
+        Native.listWasapiDevices("output").then(setDevices).catch(() => {});
+    }, []);
 
-    function loadSources() {
-        setLoading(true);
-        Native.getScreenSources()
-            .then(s => { setSources(s); setLoading(false); })
-            .catch(() => setLoading(false));
-    }
-
-    React.useEffect(() => { loadSources(); }, []);
-
-    function handleSelect(id: string) {
-        setSelected(id);
-        setPref("screenSourceId", id);
-    }
-
-    const effectiveId = selected || sources[0]?.id || "";
+    const handle = (v: string) => { setValue(v); setPref("output", v); };
 
     return (
         <div style={{ marginTop: 4 }}>
-            <PickerLabel text="Écran à enregistrer" />
+            <Label t="Sortie audio (loopback)" />
+            <select style={selectSt} value={value} onChange={e => handle(e.target.value)}>
+                <option value="">Sortie par défaut</option>
+                {devices.map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+        </div>
+    );
+}
+
+// ── Screen picker (visual thumbnails) ─────────────────────────
+interface SrcInfo { id: string; name: string; thumbnail: string; displayIndex: number; }
+
+function ScreenPicker() {
+    const [sources, setSources] = React.useState<SrcInfo[]>([]);
+    const [loading, setLoading] = React.useState(true);
+    const [sel, setSel] = React.useState(() => getPref("screenId", ""));
+
+    const load = () => {
+        setLoading(true);
+        Native.getScreenSources().then(s => { setSources(s); setLoading(false); }).catch(() => setLoading(false));
+    };
+
+    React.useEffect(load, []);
+
+    const handle = (id: string, idx: number) => {
+        setSel(id);
+        setPref("screenId", id);
+        setPref("screenIdx", String(idx));
+    };
+
+    const eff = sel || sources[0]?.id || "";
+
+    return (
+        <div style={{ marginTop: 4 }}>
+            <Label t="Écran à enregistrer" />
             {loading
-                ? <p style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 6 }}>Chargement…</p>
+                ? <p style={{ color: "var(--text-muted)", fontSize: 12, margin: "6px 0 0" }}>Chargement…</p>
                 : (
                     <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
                         {sources.map(src => {
-                            const active = src.id === effectiveId;
+                            const active = src.id === eff;
                             return (
                                 <div
                                     key={src.id}
-                                    onClick={() => handleSelect(src.id)}
+                                    onClick={() => handle(src.id, src.displayIndex)}
                                     style={{
                                         border: `2px solid ${active ? "var(--brand-experiment)" : "var(--background-modifier-accent)"}`,
-                                        borderRadius: 6,
-                                        overflow: "hidden",
-                                        cursor: "pointer",
-                                        opacity: active ? 1 : 0.65,
+                                        borderRadius: 6, overflow: "hidden", cursor: "pointer",
+                                        opacity: active ? 1 : 0.6,
                                         transition: "opacity 0.15s, border-color 0.15s",
                                         background: "var(--background-secondary)",
                                     }}
                                 >
                                     {src.thumbnail
-                                        ? <img src={src.thumbnail} alt={src.name}
-                                            style={{ width: 160, height: 90, display: "block", objectFit: "cover" }} />
-                                        : <div style={{
-                                            width: 160, height: 90,
-                                            background: "var(--background-tertiary)",
-                                            display: "flex", alignItems: "center", justifyContent: "center",
-                                            fontSize: 24,
-                                        }}>🖥️</div>
+                                        ? <img src={src.thumbnail} style={{ width: 160, height: 90, display: "block", objectFit: "cover" }} />
+                                        : <div style={{ width: 160, height: 90, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>🖥️</div>
                                     }
                                     <div style={{
-                                        padding: "4px 8px", fontSize: 11,
+                                        padding: "4px 8px", fontSize: 11, textAlign: "center",
                                         color: active ? "var(--brand-experiment)" : "var(--text-muted)",
                                         fontWeight: active ? 600 : 400,
-                                        textAlign: "center", maxWidth: 160,
-                                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                                    }}>
-                                        {src.name}
-                                    </div>
+                                        maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                                    }}>{src.name}</div>
                                 </div>
                             );
                         })}
                     </div>
-                )}
+                )
+            }
             <button
-                onClick={loadSources}
+                onClick={load}
                 style={{
                     marginTop: 8, padding: "3px 10px", fontSize: 12,
                     background: "var(--background-modifier-accent)",
                     color: "var(--text-normal)", border: "none", borderRadius: 4, cursor: "pointer",
                 }}
-            >
-                ↻ Actualiser
-            </button>
+            >↻ Actualiser</button>
         </div>
     );
 }
 
 // ── Recording state ────────────────────────────────────────────
-interface Recording {
-    recorder: MediaRecorder;
-    ctx: AudioContext;
-    streams: MediaStream[];
+interface ActiveRec {
     startTime: number;
     channelName: string;
-    hasVideo: boolean;
 }
 
-let recording: Recording | null = null;
+let active: ActiveRec | null = null;
 
-function fmtDuration(ms: number): string {
+function fmtDur(ms: number): string {
     const s = Math.floor(ms / 1000);
-    const h = Math.floor(s / 3600);
-    const m = Math.floor((s % 3600) / 60);
-    const sec = s % 60;
-    if (h > 0) return `${h}h ${m}m ${sec}s`;
-    if (m > 0) return `${m}m ${sec}s`;
-    return `${sec}s`;
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+    return h > 0 ? `${h}h ${m}m ${sec}s` : m > 0 ? `${m}m ${sec}s` : `${sec}s`;
 }
 
 async function startRecording(channelId: string): Promise<void> {
-    if (recording) return;
+    if (active) return;
 
     const channel = ChannelStore.getChannel(channelId);
     const channelName = channel?.name ?? `vocal-${channelId.slice(0, 6)}`;
 
-    const wantVideo = settings.store.captureScreen;
-    const wantLoopback = settings.store.captureSystemAudio;
-    const micId = getPref("micDeviceId", "default");
-    const storedScreenId = getPref("screenSourceId", "");
+    const displayIndex = settings.store.captureScreen
+        ? parseInt(getPref("screenIdx", "0"), 10) || 0
+        : -1;
 
-    // ── Screen + system audio via chromeMediaSource (Electron-native) ─
-    // We always request both video + audio from the desktop source, then
-    // discard video tracks if the user disabled screen recording.
-    // This bypasses Discord's getDisplayMedia handler entirely.
-    let displayStream: MediaStream | null = null;
-    if (wantLoopback || wantVideo) {
-        const screenId = await Native.resolveScreenId(storedScreenId).catch(() => "");
-        if (screenId) {
-            try {
-                displayStream = await (navigator.mediaDevices.getUserMedia as Function)({
-                    audio: wantLoopback
-                        ? { mandatory: { chromeMediaSource: "desktop" } }
-                        : false,
-                    video: {
-                        mandatory: {
-                            chromeMediaSource: "desktop",
-                            chromeMediaSourceId: screenId,
-                        },
-                    },
-                });
-                // Discard video if not wanted
-                if (!wantVideo) {
-                    displayStream.getVideoTracks().forEach(t => t.stop());
-                }
-            } catch {
-                displayStream = null;
-            }
-        }
+    const result = await Native.startRecord({
+        displayIndex,
+        systemAudio: settings.store.captureSystemAudio,
+        micDevice: getPref("mic", ""),
+        outputDevice: getPref("output", ""),
+    }).catch(() => ({ ok: false, error: "startRecord threw" }));
+
+    if (!result.ok) {
+        // ffmpeg failed to start — silently skip recording
+        return;
     }
 
-    // ── Microphone ─────────────────────────────────────────────
-    let micStream: MediaStream | null = null;
-    try {
-        const audioConstraint = (micId && micId !== "default")
-            ? { deviceId: { exact: micId } }
-            : true;
-        micStream = await navigator.mediaDevices.getUserMedia({
-            audio: audioConstraint as MediaTrackConstraints,
-            video: false,
-        });
-    } catch { /* mic denied or unavailable */ }
-
-    if (!displayStream && !micStream) return;
-
-    // ── Mix all audio through WebAudio ─────────────────────────
-    const ctx = new AudioContext();
-    await ctx.resume();
-    const audioDest = ctx.createMediaStreamDestination();
-
-    if (micStream) {
-        ctx.createMediaStreamSource(micStream).connect(audioDest);
-    }
-    const loopbackTracks = displayStream?.getAudioTracks() ?? [];
-    if (loopbackTracks.length) {
-        ctx.createMediaStreamSource(new MediaStream(loopbackTracks)).connect(audioDest);
-    }
-
-    // ── Build final stream ─────────────────────────────────────
-    const videoTracks = wantVideo ? (displayStream?.getVideoTracks() ?? []) : [];
-    const hasVideo = videoTracks.length > 0;
-    const finalStream = new MediaStream([
-        ...videoTracks,
-        ...audioDest.stream.getAudioTracks(),
-    ]);
-
-    const mimeType = (() => {
-        if (hasVideo) {
-            for (const m of ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"]) {
-                if (MediaRecorder.isTypeSupported(m)) return m;
-            }
-        }
-        for (const m of ["audio/webm;codecs=opus", "audio/webm"]) {
-            if (MediaRecorder.isTypeSupported(m)) return m;
-        }
-        return "video/webm";
-    })();
-
-    const recorder = new MediaRecorder(finalStream, { mimeType });
-    await Native.openTempFile();
-
-    recorder.ondataavailable = async e => {
-        if (e.data.size > 0) {
-            const buf = await e.data.arrayBuffer();
-            Native.appendChunk(new Uint8Array(buf)).catch(() => {});
-        }
-    };
-
-    recorder.start(1000);
-
-    const streams = [displayStream, micStream].filter(Boolean) as MediaStream[];
-    recording = { recorder, ctx, streams, startTime: Date.now(), channelName, hasVideo };
+    active = { startTime: Date.now(), channelName };
 }
 
 async function stopRecording(): Promise<void> {
-    if (!recording) return;
-    const { recorder, ctx, streams, startTime, channelName, hasVideo } = recording;
-    recording = null;
+    if (!active) return;
+    const { startTime, channelName } = active;
+    active = null;
 
-    await new Promise<void>(resolve => {
-        recorder.onstop = () => resolve();
-        recorder.stop();
-    });
-
-    streams.forEach(s => s.getTracks().forEach(t => t.stop()));
-    ctx.close();
+    const tmpPath = await Native.stopRecord().catch(() => null);
 
     openModal(props => (
         <ClipModal
             modalProps={props}
             duration={Date.now() - startTime}
             channelName={channelName}
-            hasVideo={hasVideo}
+            tmpPath={tmpPath}
         />
     ));
 }
 
 // ── Post-call modal ────────────────────────────────────────────
-type Phase = "confirm" | "saving" | "converting" | "saved";
-
-function ClipModal({ modalProps, duration, channelName, hasVideo }: {
+function ClipModal({ modalProps, duration, channelName, tmpPath }: {
     modalProps: { transitionState: number; onClose(): void };
     duration: number;
     channelName: string;
-    hasVideo: boolean;
+    tmpPath: string | null;
 }) {
-    const [phase, setPhase] = React.useState<Phase>("confirm");
+    const [phase, setPhase] = React.useState<"confirm" | "saving" | "saved">("confirm");
     const [savedPath, setSavedPath] = React.useState("");
 
     async function handleKeep() {
+        if (!tmpPath) { modalProps.onClose(); return; }
         setPhase("saving");
-        const webm = await Native.finishClip(true, channelName).catch(() => null);
-        if (!webm) { modalProps.onClose(); return; }
-
-        // Try ffmpeg conversion to MP4
-        setPhase("converting");
-        const mp4 = await Native.convertToMp4(webm).catch(() => null);
-        setSavedPath(mp4 ?? webm);
+        const p = await Native.finishClip(true, tmpPath, channelName).catch(() => null);
+        setSavedPath(p ?? "");
         setPhase("saved");
     }
 
     async function handleDiscard() {
-        await Native.finishClip(false, channelName).catch(() => {});
+        if (tmpPath) await Native.finishClip(false, tmpPath, channelName).catch(() => {});
         modalProps.onClose();
     }
 
-    if (phase === "saved") {
-        const isMp4 = savedPath.endsWith(".mp4");
+    if (!tmpPath) {
         return (
             <Modal
                 {...modalProps}
-                title={`✅ Clip sauvegardé${isMp4 ? " (MP4)" : " (WebM)"}`}
+                title="⚠️ Enregistrement indisponible"
+                actions={[{ text: "OK", variant: "primary", onClick: modalProps.onClose }]}
+            >
+                <p style={{ color: "var(--text-normal)", margin: "8px 0" }}>
+                    ffmpeg n'est pas installé ou introuvable dans le PATH.<br />
+                    Installe ffmpeg et redémarre Discord.
+                </p>
+            </Modal>
+        );
+    }
+
+    if (phase === "saved") {
+        return (
+            <Modal
+                {...modalProps}
+                title="✅ Clip sauvegardé"
                 actions={[
                     {
                         text: "Ouvrir le dossier",
@@ -368,30 +303,19 @@ function ClipModal({ modalProps, duration, channelName, hasVideo }: {
                     { text: "OK", variant: "primary", onClick: modalProps.onClose },
                 ]}
             >
-                <p style={{ margin: "8px 0", color: "var(--text-normal)" }}>
-                    <strong>#{channelName}</strong> — {fmtDuration(duration)} sauvegardé.
+                <p style={{ color: "var(--text-normal)", margin: "8px 0" }}>
+                    <strong>#{channelName}</strong> — {fmtDur(duration)}
                 </p>
-                {!isMp4 && (
-                    <p style={{ margin: "4px 0 8px", color: "var(--text-muted)", fontSize: 12 }}>
-                        ⚠️ ffmpeg non détecté — fichier en .webm (lisible avec VLC).
-                    </p>
-                )}
                 {savedPath && (
                     <code style={{
                         background: "var(--background-secondary)", padding: "4px 8px",
                         borderRadius: 4, fontSize: 11, display: "block",
                         wordBreak: "break-all", color: "var(--text-normal)", marginTop: 8,
-                    }}>
-                        {savedPath}
-                    </code>
+                    }}>{savedPath}</code>
                 )}
             </Modal>
         );
     }
-
-    const isWorking = phase === "saving" || phase === "converting";
-    const workLabel = phase === "converting" ? "Conversion MP4…" : "Sauvegarde…";
-    const sourceLabel = hasVideo ? "écran + micro + sortie système" : "micro uniquement";
 
     return (
         <Modal
@@ -399,66 +323,59 @@ function ClipModal({ modalProps, duration, channelName, hasVideo }: {
             title="🎙️ Clip vocal"
             actions={[
                 {
-                    text: isWorking ? workLabel : "Garder le clip",
+                    text: phase === "saving" ? "Sauvegarde…" : "Garder le clip",
                     variant: "primary",
                     onClick: handleKeep,
-                    loading: isWorking,
-                    disabled: isWorking,
+                    loading: phase === "saving",
+                    disabled: phase === "saving",
                 },
                 {
                     text: "Supprimer",
                     variant: "secondary",
                     onClick: handleDiscard,
-                    disabled: isWorking,
+                    disabled: phase === "saving",
                 },
             ]}
         >
-            <p style={{ margin: "8px 0", color: "var(--text-normal)", fontSize: 14 }}>
+            <p style={{ color: "var(--text-normal)", fontSize: 14, margin: "8px 0" }}>
                 Salon <strong>#{channelName}</strong>
             </p>
             <p style={{ margin: 0, fontSize: 28, fontWeight: 700, color: "var(--header-primary)" }}>
-                {fmtDuration(duration)}
+                {fmtDur(duration)}
             </p>
             <p style={{ margin: "4px 0 8px", color: "var(--text-muted)", fontSize: 13 }}>
-                enregistré — {sourceLabel}
+                MP4 — écran + micro + sortie système
             </p>
         </Modal>
     );
 }
 
-// ── Flux handler + plugin ──────────────────────────────────────
-const onVoiceChannelSelect = ({ channelId }: { channelId: string | null }) => {
+// ── Flux ──────────────────────────────────────────────────────
+const onSelect = ({ channelId }: { channelId: string | null }) => {
     if (channelId) {
-        if (recording) {
-            stopRecording().then(() => startRecording(channelId)).catch(() => {});
-        } else {
-            startRecording(channelId).catch(() => {});
-        }
+        if (active) stopRecording().then(() => startRecording(channelId)).catch(() => {});
+        else startRecording(channelId).catch(() => {});
     } else {
-        if (recording) stopRecording().catch(() => {});
+        if (active) stopRecording().catch(() => {});
     }
 };
 
 export default definePlugin({
     name: "AutoClip",
-    description: "Enregistre automatiquement le call vocal (écran + micro + sortie système). À la fin du call, choisis de garder ou supprimer le clip.",
+    description: "Enregistre automatiquement le call vocal via ffmpeg (écran + micro + sortie système → MP4). Nécessite ffmpeg dans le PATH.",
     authors: [{ name: "Flocord", id: 0n }],
     tags: ["Voice", "Utility"],
     settings,
 
-    start() {
-        FluxDispatcher.subscribe("VOICE_CHANNEL_SELECT", onVoiceChannelSelect);
-    },
+    start() { FluxDispatcher.subscribe("VOICE_CHANNEL_SELECT", onSelect); },
 
     stop() {
-        FluxDispatcher.unsubscribe("VOICE_CHANNEL_SELECT", onVoiceChannelSelect);
-        if (recording) {
-            const { recorder, ctx, streams } = recording;
-            recording = null;
-            recorder.stop();
-            streams.forEach(s => s.getTracks().forEach(t => t.stop()));
-            ctx.close();
-            Native.finishClip(false, "").catch(() => {});
+        FluxDispatcher.unsubscribe("VOICE_CHANNEL_SELECT", onSelect);
+        if (active) {
+            active = null;
+            Native.stopRecord()
+                .then(p => { if (p) Native.finishClip(false, p, "").catch(() => {}); })
+                .catch(() => {});
         }
     },
 });
