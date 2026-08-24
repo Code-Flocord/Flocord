@@ -3,7 +3,7 @@ import { relaunch } from "@utils/native";
 import { ConfirmModal, Modal, closeModal, openModal } from "@webpack/common";
 import { React } from "@webpack/common";
 
-const CURRENT_VERSION = "1.0.24";
+const CURRENT_VERSION = "1.0.25";
 
 const Native = VencordNative.pluginHelpers.FlocordAutoUpdater as PluginNative<typeof import("./native")>;
 
@@ -103,3 +103,4 @@ export default definePlugin({
         setTimeout(() => checkAndUpdate().catch(() => {}), 15_000);
     },
 });
+
