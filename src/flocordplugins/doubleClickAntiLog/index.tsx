@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Vencord, a Discord client mod
  * Copyright (c) 2026 Vendicated and contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -19,24 +19,24 @@ const settings = definePluginSettings({
     },
     emptyMessage: {
         type: OptionType.BOOLEAN,
-        description: "Envoyer un message vide (invisible) à la place du message supprimé",
+        description: "Envoyer un message vide (invisible) Ã  la place du message supprimÃ©",
         default: true
     },
     blockMessage: {
         type: OptionType.STRING,
-        description: "Texte à envoyer à la place si le message vide est désactivé",
+        description: "Texte Ã  envoyer Ã  la place si le message vide est dÃ©sactivÃ©",
         default: "x"
     },
     deleteInterval: {
         type: OptionType.NUMBER,
-        description: "Délai entre la suppression de l'ancien et du nouveau message (ms) - pour AntiLog",
+        description: "DÃ©lai entre la suppression de l'ancien et du nouveau message (ms) - pour AntiLog",
         default: 200,
         min: 100,
         max: 5000
     },
     requireModifier: {
         type: OptionType.BOOLEAN,
-        description: "Nécessiter Shift ou Ctrl lors du double-clic",
+        description: "NÃ©cessiter Shift ou Ctrl lors du double-clic",
         default: false
     },
     showNotification: {
@@ -57,7 +57,7 @@ async function sendReplacementMessage(channelId: string, content: string, nonce:
     }
 
     return new Promise(resolve => {
-        // Écouter MESSAGE_CREATE pour récupérer l'ID du message de remplacement
+        // Ã‰couter MESSAGE_CREATE pour rÃ©cupÃ©rer l'ID du message de remplacement
         const messageCreateListener = (event: any) => {
             const message = event?.message;
             if (message && message.channel_id === channelId && message.nonce === nonce) {
@@ -68,7 +68,7 @@ async function sendReplacementMessage(channelId: string, content: string, nonce:
 
         FluxDispatcher.subscribe("MESSAGE_CREATE", messageCreateListener);
 
-        // Timeout après 5 secondes pour éviter d'attendre indéfiniment
+        // Timeout aprÃ¨s 5 secondes pour Ã©viter d'attendre indÃ©finiment
         setTimeout(() => {
             FluxDispatcher.unsubscribe("MESSAGE_CREATE", messageCreateListener);
             resolve(null);
@@ -104,13 +104,13 @@ function messageDeleteWrapper(channelId: string, messageId: string) {
 
 async function performAntiLogDeletion(messageId: string, channelId: string, blockMessage: string, deleteInterval: number) {
     try {
-        // Vérifier que MessageActions est disponible
+        // VÃ©rifier que MessageActions est disponible
         if (!MessageActions?.deleteMessage || !MessageActions?._sendMessage) {
             console.error("[DoubleClickAntiLog] MessageActions n'est pas disponible");
             return false;
         }
 
-        // ÉTAPE 1: Dispatcher MESSAGE_DELETE avec mlDeleted: true pour que MessageLogger et MessageLoggerEnhanced ignorent le message
+        // Ã‰TAPE 1: Dispatcher MESSAGE_DELETE avec mlDeleted: true pour que MessageLogger et MessageLoggerEnhanced ignorent le message
         FluxDispatcher.dispatch({
             type: "MESSAGE_DELETE",
             channelId: channelId,
@@ -118,21 +118,21 @@ async function performAntiLogDeletion(messageId: string, channelId: string, bloc
             mlDeleted: true
         });
 
-        // Petit délai pour que l'événement soit traité
+        // Petit dÃ©lai pour que l'Ã©vÃ©nement soit traitÃ©
         await sleep(100);
 
-        // ÉTAPE 2: Envoyer un message de remplacement avec le même nonce que le message original
-        // Cela remplace le message dans le cache de MessageLoggerEnhanced (cacheSentMessages) grâce au glitch du nonce
+        // Ã‰TAPE 2: Envoyer un message de remplacement avec le mÃªme nonce que le message original
+        // Cela remplace le message dans le cache de MessageLoggerEnhanced (cacheSentMessages) grÃ¢ce au glitch du nonce
         const replacementMessageId = await sendReplacementMessage(channelId, blockMessage, messageId);
 
-        // Délai entre l'envoi et la suppression (réduit à 1 seconde minimum)
+        // DÃ©lai entre l'envoi et la suppression (rÃ©duit Ã  1 seconde minimum)
         const deleteDelay = Math.max(deleteInterval, 1000); // Minimum 1 seconde
         await sleep(deleteDelay);
 
-        // ÉTAPE 3: Supprimer le message original
+        // Ã‰TAPE 3: Supprimer le message original
         messageDeleteWrapper(channelId, messageId);
 
-        // ÉTAPE 4: Supprimer le message de remplacement après un délai
+        // Ã‰TAPE 4: Supprimer le message de remplacement aprÃ¨s un dÃ©lai
         if (replacementMessageId) {
             await sleep(deleteDelay);
             messageDeleteWrapper(channelId, replacementMessageId);
@@ -148,44 +148,44 @@ async function performAntiLogDeletion(messageId: string, channelId: string, bloc
 export default definePlugin({
     name: "DoubleClickAntiLog",
     description: "Double-cliquez sur vos messages pour les supprimer avec AntiLog (masque MessageLogger)",
-    authors: [{ name: "Bashcord", id: 1234567890123456789n }],
+    authors: [{ name: "Flocord", id: 0n }],
     dependencies: ["MessageEventsAPI"],
     settings,
 
     onMessageClick(msg: any, channel: any, event: MouseEvent) {
         try {
-            // Vérifier si le plugin est activé
+            // VÃ©rifier si le plugin est activÃ©
             if (!settings.store.enabled) return;
 
-            // Vérifier si c'est un double-clic
+            // VÃ©rifier si c'est un double-clic
             if (!event || event.detail !== 2) return;
 
-            // Vérifier si un modificateur est requis
+            // VÃ©rifier si un modificateur est requis
             if (settings.store.requireModifier && !event.ctrlKey && !event.shiftKey) return;
 
-            // Vérifier que le message et le canal sont valides
+            // VÃ©rifier que le message et le canal sont valides
             if (!msg || !channel || !msg.id || !channel.id) return;
 
-            // Vérifier si c'est notre message
+            // VÃ©rifier si c'est notre message
             const currentUser = UserStore.getCurrentUser();
             if (!currentUser || !msg.author || msg.author.id !== currentUser.id) return;
 
-            // Vérifier que le message n'est pas déjà supprimé
+            // VÃ©rifier que le message n'est pas dÃ©jÃ  supprimÃ©
             if (msg.deleted === true) return;
 
-            // Vérifier que le message est envoyé
+            // VÃ©rifier que le message est envoyÃ©
             if (msg.state !== "SENT") return;
 
-            // Empêcher le comportement par défaut
+            // EmpÃªcher le comportement par dÃ©faut
             event.preventDefault();
             event.stopPropagation();
 
-            // Afficher une notification si activée
+            // Afficher une notification si activÃ©e
             if (settings.store.showNotification) {
                 console.log(`[DoubleClickAntiLog] Suppression AntiLog du message ${msg.id}`);
             }
 
-            // Effectuer la suppression AntiLog de manière asynchrone
+            // Effectuer la suppression AntiLog de maniÃ¨re asynchrone
             performAntiLogDeletion(
                 msg.id,
                 channel.id,

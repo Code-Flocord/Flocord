@@ -64,6 +64,9 @@
             ],
             "@flocordplugins/*": [
                 "./src/flocordplugins/*"
+            ],
+            "@nightcordplugins/*": [
+                "./src/flocordplugins/*"
             ]
         },
         "plugins": [

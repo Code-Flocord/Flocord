@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Vencord, a Discord client mod
  * Copyright (c) 2026 Vendicated and contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -8,7 +8,7 @@ import definePlugin from "@utils/types";
 import { findByPropsLazy, findStoreLazy } from "@webpack";
 import { UserStore } from "@webpack/common";
 
-// Récupération des stores et actions nécessaires
+// RÃ©cupÃ©ration des stores et actions nÃ©cessaires
 const VoiceStateStore = findStoreLazy("VoiceStateStore");
 const ChannelActions = findByPropsLazy("selectVoiceChannel");
 
@@ -52,25 +52,25 @@ let reconnectAttemptsInWindow = 0;
 
 let originalSelectVoiceChannel: any = null;
 
-// Fonction pour marquer une déconnexion comme volontaire
+// Fonction pour marquer une dÃ©connexion comme volontaire
 function markVoluntaryDisconnect() {
     isVoluntaryDisconnect = true;
-    console.log("[AntiDéco] Déconnexion volontaire marquée");
+    console.log("[AntiDÃ©co] DÃ©connexion volontaire marquÃ©e");
     if (disconnectTimeout) clearTimeout(disconnectTimeout);
     disconnectTimeout = setTimeout(() => {
         isVoluntaryDisconnect = false;
-        console.log("[AntiDéco] Flag de déconnexion volontaire reseté");
+        console.log("[AntiDÃ©co] Flag de dÃ©connexion volontaire resetÃ©");
     }, FLAG_RESET_MS);
 }
 
 // Fonction pour marquer un changement de canal
 function markChannelSwitch() {
     isChannelSwitching = true;
-    console.log("[AntiDéco] Changement de canal en cours");
+    console.log("[AntiDÃ©co] Changement de canal en cours");
     if (switchTimeout) clearTimeout(switchTimeout);
     switchTimeout = setTimeout(() => {
         isChannelSwitching = false;
-        console.log("[AntiDéco] Flag de changement de canal reseté");
+        console.log("[AntiDÃ©co] Flag de changement de canal resetÃ©");
     }, FLAG_RESET_MS);
 }
 
@@ -136,7 +136,7 @@ function scheduleReconnect(oldChannelId: string, currentUserId: string) {
             }
 
             if (!canAttemptReconnect()) {
-                console.log("[AntiDéco] Reconnexion ignorée (cooldown / limite de tentatives)");
+                console.log("[AntiDÃ©co] Reconnexion ignorÃ©e (cooldown / limite de tentatives)");
                 pendingReconnectChannelId = null;
                 return;
             }
@@ -146,83 +146,80 @@ function scheduleReconnect(oldChannelId: string, currentUserId: string) {
             setTimeout(() => {
                 try {
                     markInternalReconnect();
-                    console.log(`[AntiDéco] Tentative de reconnexion au salon ${oldChannelId}`);
+                    console.log(`[AntiDÃ©co] Tentative de reconnexion au salon ${oldChannelId}`);
                     if (originalSelectVoiceChannel) {
                         originalSelectVoiceChannel.call(ChannelActions, oldChannelId);
                     } else {
                         ChannelActions.selectVoiceChannel(oldChannelId);
                     }
                 } catch (error) {
-                    console.error("[AntiDéco] Erreur lors de la reconnexion:", error);
+                    console.error("[AntiDÃ©co] Erreur lors de la reconnexion:", error);
                 } finally {
                     pendingReconnectChannelId = null;
                 }
             }, RECONNECT_ATTEMPT_DELAY_MS);
         } catch (error) {
             pendingReconnectChannelId = null;
-            console.error("[AntiDéco] Erreur dans scheduleReconnect:", error);
+            console.error("[AntiDÃ©co] Erreur dans scheduleReconnect:", error);
         }
     }, RECONNECT_CHECK_DELAY_MS);
 }
 
 export default definePlugin({
-    name: "AntiDéconnexion",
-    description: "Reconnecte automatiquement au salon vocal en cas de déconnexion forcée",
-    authors: [{
-        name: "Bash",
-        id: 1327483363518582784n
-    }],
+    name: "AntiDÃ©connexion",
+    description: "Reconnecte automatiquement au salon vocal en cas de dÃ©connexion forcÃ©e",
+    authors: [{ name: "Flocord", id: 0n }],
 
-    // Utilisation du système flux pour écouter les événements vocaux
+    // Utilisation du systÃ¨me flux pour Ã©couter les Ã©vÃ©nements vocaux
     flux: {
         VOICE_STATE_UPDATES({ voiceStates }: { voiceStates: VoiceState[]; }) {
-            // Vérification de sécurité pour l'utilisateur actuel
+            // VÃ©rification de sÃ©curitÃ© pour l'utilisateur actuel
             const currentUser = UserStore.getCurrentUser();
             if (!currentUser) {
-                console.warn("[AntiDéco] Utilisateur actuel non disponible");
+                console.warn("[AntiDÃ©co] Utilisateur actuel non disponible");
                 return;
             }
 
             const currentUserId = currentUser.id;
 
-            // Traitement de chaque changement d'état vocal
+            // Traitement de chaque changement d'Ã©tat vocal
             for (const state of voiceStates) {
                 const { userId, channelId, oldChannelId } = state;
 
-                // On ne s'intéresse qu'aux événements de l'utilisateur actuel
+                // On ne s'intÃ©resse qu'aux Ã©vÃ©nements de l'utilisateur actuel
                 if (userId !== currentUserId) continue;
 
-                // Détection d'une déconnexion :
-                // L'utilisateur était dans un salon (oldChannelId existe)
+                // DÃ©tection d'une dÃ©connexion :
+                // L'utilisateur Ã©tait dans un salon (oldChannelId existe)
                 // mais n'est plus dans aucun salon (channelId est null/undefined)
                 if (oldChannelId && !channelId) {
-                    console.log(`[AntiDéco] Déconnexion détectée du salon ${oldChannelId}`);
+                    console.log(`[AntiDÃ©co] DÃ©connexion dÃ©tectÃ©e du salon ${oldChannelId}`);
 
-                    // Vérifier si c'est une déconnexion volontaire
+                    // VÃ©rifier si c'est une dÃ©connexion volontaire
                     if (isVoluntaryDisconnect) {
-                        console.log("[AntiDéco] Déconnexion volontaire confirmée, pas de reconnexion");
+                        console.log("[AntiDÃ©co] DÃ©connexion volontaire confirmÃ©e, pas de reconnexion");
                         continue;
                     }
 
-                    // Vérifier si c'est un changement de canal en cours
+                    // VÃ©rifier si c'est un changement de canal en cours
                     if (isChannelSwitching) {
-                        console.log("[AntiDéco] Changement de canal en cours, pas de reconnexion");
+                        console.log("[AntiDÃ©co] Changement de canal en cours, pas de reconnexion");
                         continue;
                     }
 
-                    // Ignorer les événements déclenchés par la reconnexion interne
+                    // Ignorer les Ã©vÃ©nements dÃ©clenchÃ©s par la reconnexion interne
                     if (internalReconnectInProgress) {
-                        console.log("[AntiDéco] Déconnexion liée à une reconnexion interne, ignorée");
+                        console.log("[AntiDÃ©co] DÃ©connexion liÃ©e Ã  une reconnexion interne, ignorÃ©e");
                         continue;
                     }
 
-                    console.log(`[AntiDéco] Déconnexion FORCÉE détectée du salon ${oldChannelId}`);
+                    console.log(`[AntiDÃ©co] DÃ©connexion FORCÃ‰E dÃ©tectÃ©e du salon ${oldChannelId}`);
                     scheduleReconnect(oldChannelId, currentUserId);
                 }
             }
         },
 
-        // Écouter les actions de déconnexion volontaire
+        // Ã‰couter les actions de dÃ©connexion volontaire
         VOICE_CHANNEL_SELECT({ channelId }: { channelId: string | null; }) {
             if (internalReconnectInProgress) return;
 
@@ -234,12 +231,12 @@ export default definePlugin({
 
             if (currentVoiceState?.channelId) {
                 if (channelId === null) {
-                    // Déconnexion volontaire
-                    console.log("[AntiDéco] Action de déconnexion volontaire détectée via VOICE_CHANNEL_SELECT");
+                    // DÃ©connexion volontaire
+                    console.log("[AntiDÃ©co] Action de dÃ©connexion volontaire dÃ©tectÃ©e via VOICE_CHANNEL_SELECT");
                     markVoluntaryDisconnect();
                 } else if (channelId !== currentVoiceState.channelId) {
                     // Changement de canal
-                    console.log(`[AntiDéco] Changement de canal détecté via VOICE_CHANNEL_SELECT (${currentVoiceState.channelId} -> ${channelId})`);
+                    console.log(`[AntiDÃ©co] Changement de canal dÃ©tectÃ© via VOICE_CHANNEL_SELECT (${currentVoiceState.channelId} -> ${channelId})`);
                     markChannelSwitch();
                 }
             }
@@ -247,18 +244,18 @@ export default definePlugin({
     },
 
     start() {
-        console.log("[AntiDéco] Plugin AntiDéconnexion initialisé");
+        console.log("[AntiDÃ©co] Plugin AntiDÃ©connexion initialisÃ©");
 
-        // Vérification que les stores sont disponibles
+        // VÃ©rification que les stores sont disponibles
         if (!ChannelActions || !VoiceStateStore || !UserStore) {
-            console.error("[AntiDéco] Erreur : Stores Discord non disponibles");
+            console.error("[AntiDÃ©co] Erreur : Stores Discord non disponibles");
             return;
         }
 
         // Sauvegarder la fonction originale
         originalSelectVoiceChannel = ChannelActions.selectVoiceChannel;
 
-        // Écouter les événements de clic sur le bouton de déconnexion
+        // Ã‰couter les Ã©vÃ©nements de clic sur le bouton de dÃ©connexion
         ChannelActions.selectVoiceChannel = function (channelId: string | null) {
             if (internalReconnectInProgress) {
                 return originalSelectVoiceChannel.call(this, channelId);
@@ -272,12 +269,12 @@ export default definePlugin({
 
             if (currentVoiceState?.channelId) {
                 if (channelId === null) {
-                    // Déconnexion volontaire
-                    console.log("[AntiDéco] Déconnexion volontaire interceptée via selectVoiceChannel");
+                    // DÃ©connexion volontaire
+                    console.log("[AntiDÃ©co] DÃ©connexion volontaire interceptÃ©e via selectVoiceChannel");
                     markVoluntaryDisconnect();
                 } else if (channelId !== currentVoiceState.channelId) {
                     // Changement de canal
-                    console.log(`[AntiDéco] Changement de canal intercepté via selectVoiceChannel (${currentVoiceState.channelId} -> ${channelId})`);
+                    console.log(`[AntiDÃ©co] Changement de canal interceptÃ© via selectVoiceChannel (${currentVoiceState.channelId} -> ${channelId})`);
                     markChannelSwitch();
                 }
             }
@@ -287,7 +284,7 @@ export default definePlugin({
     },
 
     stop() {
-        console.log("[AntiDéco] Plugin AntiDéconnexion arrêté");
+        console.log("[AntiDÃ©co] Plugin AntiDÃ©connexion arrÃªtÃ©");
 
         // Restaurer la fonction originale
         if (originalSelectVoiceChannel && ChannelActions) {

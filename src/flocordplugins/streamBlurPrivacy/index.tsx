@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Vencord, a Discord client mod
  * Copyright (c) 2026 Vendicated and contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -14,7 +14,7 @@ import { findByPropsLazy } from "@webpack";
 import { FluxDispatcher, Menu, UserStore } from "@webpack/common";
 import { Channel } from "discord-types/general";
 
-// Modules Discord pour détecter quand l'utilisateur stream
+// Modules Discord pour dÃ©tecter quand l'utilisateur stream
 const StreamStore = findByPropsLazy("getActiveStreamForUser", "getAllActiveStreams");
 const RTCConnectionStore = findByPropsLazy("getMediaSessionId");
 
@@ -24,7 +24,7 @@ const PLUGIN_NAME = "StreamBlurPrivacy";
 const BLUR_INTENSITY = "10px";
 const BLUR_CSS_ID = "streamblur-privacy-css";
 
-// État global du plugin (conversations floutées, état du stream, etc.)
+// Ã‰tat global du plugin (conversations floutÃ©es, Ã©tat du stream, etc.)
 let blurredChannels: Set<string> = new Set();
 let styleElement: HTMLStyleElement | null = null;
 let activeChannelId: string | null = null;
@@ -80,12 +80,12 @@ function debugLog(message: string) {
 	}
 }
 
-// Inspecte la structure du DOM pour identifier les sélecteurs CSS corrects des messages
+// Inspecte la structure du DOM pour identifier les sÃ©lecteurs CSS corrects des messages
 function inspectMessageDOM(): void {
 	try {
 		console.log("[StreamBlurPrivacy] ===== DOM INSPECTION START =====");
 
-		// On teste plusieurs sélecteurs CSS pour trouver les messages et diagnostiquer les problèmes
+		// On teste plusieurs sÃ©lecteurs CSS pour trouver les messages et diagnostiquer les problÃ¨mes
 		const selectors = [
 			"[class*='containerCozy']",
 			"[class*='containerCompact']",
@@ -106,7 +106,7 @@ function inspectMessageDOM(): void {
 			}
 		}
 
-		// Vérifie si le CSS de floutage a bien été injecté dans la page
+		// VÃ©rifie si le CSS de floutage a bien Ã©tÃ© injectÃ© dans la page
 		const styleEl = document.getElementById(BLUR_CSS_ID);
 		if (styleEl && styleEl.textContent) {
 			console.log(`[StreamBlurPrivacy] Blur CSS is present (${styleEl.textContent.length} chars)`);
@@ -120,7 +120,7 @@ function inspectMessageDOM(): void {
 			console.warn("[StreamBlurPrivacy] Blur CSS not found or empty!");
 		}
 
-		// Vérifie que les styles CSS s'appliquent correctement sur un message
+		// VÃ©rifie que les styles CSS s'appliquent correctement sur un message
 		const testEl = document.querySelector("[class*='containerCozy']") as HTMLElement;
 		if (testEl) {
 			const computed = window.getComputedStyle(testEl);
@@ -133,7 +133,7 @@ function inspectMessageDOM(): void {
 	}
 }
 
-// Récupère depuis la sauvegarde la liste des conversations à flouter
+// RÃ©cupÃ¨re depuis la sauvegarde la liste des conversations Ã  flouter
 async function loadBlurredChannels(): Promise<void> {
 	try {
 		const stored = await DataStore.get(DATASTORE_KEY);
@@ -146,7 +146,7 @@ async function loadBlurredChannels(): Promise<void> {
 	}
 }
 
-// Sauvegarde la liste des conversations floutées pour qu'elle persiste après redémarrage
+// Sauvegarde la liste des conversations floutÃ©es pour qu'elle persiste aprÃ¨s redÃ©marrage
 async function saveBlurredChannels(): Promise<void> {
 	try {
 		await DataStore.set(DATASTORE_KEY, Array.from(blurredChannels));
@@ -156,7 +156,7 @@ async function saveBlurredChannels(): Promise<void> {
 	}
 }
 
-// Détecte si l'utilisateur est actuellement en train de streamer (utilise 3 méthodes de secours)
+// DÃ©tecte si l'utilisateur est actuellement en train de streamer (utilise 3 mÃ©thodes de secours)
 function isStreaming(): boolean {
 	try {
 		const currentUser = UserStore?.getCurrentUser?.();
@@ -165,14 +165,14 @@ function isStreaming(): boolean {
 			return false;
 		}
 
-		// Méthode 1 : Vérifier via StreamStore (la plus fiable)
+		// MÃ©thode 1 : VÃ©rifier via StreamStore (la plus fiable)
 		const userStream = StreamStore?.getActiveStreamForUser?.(currentUser.id);
 		if (userStream) {
 			debugLog("Stream detected via getActiveStreamForUser");
 			return true;
 		}
 
-		// Méthode 2 : Vérifier si l'utilisateur a un stream actif dans la liste globale
+		// MÃ©thode 2 : VÃ©rifier si l'utilisateur a un stream actif dans la liste globale
 		const allStreams = StreamStore?.getAllActiveStreams?.();
 		if (allStreams && allStreams.length > 0) {
 			const myStream = allStreams.find((s: any) => s.ownerId === currentUser.id);
@@ -182,7 +182,7 @@ function isStreaming(): boolean {
 			}
 		}
 
-		// Méthode 3 : Vérifier via la connexion RTC (fallback au cas où les autres méthodes échouent)
+		// MÃ©thode 3 : VÃ©rifier via la connexion RTC (fallback au cas oÃ¹ les autres mÃ©thodes Ã©chouent)
 		const mediaSessionId = RTCConnectionStore?.getMediaSessionId?.();
 		if (mediaSessionId) {
 			const state = RTCConnectionStore?.getState?.();
@@ -211,17 +211,17 @@ function injectBlurCSS(channelId: string, intensity: number = settings.store.blu
 	}
 
 	const blurValue = `${intensity}px`;
-	// On cible UNIQUEMENT les messages pour éviter de flouter toute l'interface Discord en dehors du chat
+	// On cible UNIQUEMENT les messages pour Ã©viter de flouter toute l'interface Discord en dehors du chat
 	const css = `
 		/* Stream Blur Privacy - Conversation active ${channelId} */
 
-		/* Floute UNIQUEMENT à l'intérieur de la zone de chat (contexte du message listing) */
+		/* Floute UNIQUEMENT Ã  l'intÃ©rieur de la zone de chat (contexte du message listing) */
 		ol[data-list-id="chat-messages"] li[id*="chat-messages"],
 		ol[data-list-id="chat-messages"] div[role="article"] {
 			filter: blur(${blurValue}) !important;
 		}
 
-		/* Les conteneurs de contenu des messages - utilisés par ID pour éviter les conflits */
+		/* Les conteneurs de contenu des messages - utilisÃ©s par ID pour Ã©viter les conflits */
 		div[id*="message-content"],
 		div[id*="message-accessories"],
 		div[id*="message-username"],
@@ -230,7 +230,7 @@ function injectBlurCSS(channelId: string, intensity: number = settings.store.blu
 			filter: blur(${blurValue}) !important;
 		}
 
-		/* Texte des messages - UNIQUEMENT à l'intérieur des messages */
+		/* Texte des messages - UNIQUEMENT Ã  l'intÃ©rieur des messages */
 		div[id*="message-content"] span,
 		div[id*="message-content"] div,
 		div[id*="message-username"] span,
@@ -239,7 +239,7 @@ function injectBlurCSS(channelId: string, intensity: number = settings.store.blu
 			filter: blur(${blurValue}) !important;
 		}
 
-		/* Avatars et timestamps dans les en-têtes de messages */
+		/* Avatars et timestamps dans les en-tÃªtes de messages */
 		div[id*="message-content"] img,
 		img[class*="avatar_"],
 		div[id*="message-timestamp"],
@@ -247,7 +247,7 @@ function injectBlurCSS(channelId: string, intensity: number = settings.store.blu
 			filter: blur(${blurValue}) !important;
 		}
 
-		/* Les vidéos et intégrations (embeds) - UNIQUEMENT dans les messages */
+		/* Les vidÃ©os et intÃ©grations (embeds) - UNIQUEMENT dans les messages */
 		div[id*="message-accessories"] > div,
 		div[id*="message-accessories"] img,
 		div[id*="message-accessories"] video {
@@ -265,12 +265,12 @@ function injectBlurCSS(channelId: string, intensity: number = settings.store.blu
 
 	if (settings.store.debugMode) {
 		console.log("[StreamBlurPrivacy] Full CSS injected:\n", styleElement.textContent);
-		// Petit délai pour s'assurer que le CSS est appliqué avant l'inspection du DOM
+		// Petit dÃ©lai pour s'assurer que le CSS est appliquÃ© avant l'inspection du DOM
 		setTimeout(() => inspectMessageDOM(), 100);
 	}
 }
 
-// Enlève le CSS de floutage du DOM
+// EnlÃ¨ve le CSS de floutage du DOM
 function removeBlurCSS(channelId?: string): void {
 	debugLog(`Removing blur CSS${channelId ? ` for channel: ${channelId}` : ""}`);
 
@@ -280,7 +280,7 @@ function removeBlurCSS(channelId?: string): void {
 	}
 }
 
-// Met à jour l'état du floutage en fonction des conditions actuelles (stream actif, config, etc.)
+// Met Ã  jour l'Ã©tat du floutage en fonction des conditions actuelles (stream actif, config, etc.)
 function updateBlurState(): void {
 	debugLog(`Updating blur state: Stream=${isCurrentlyStreaming}, ActiveChannel=${activeChannelId}`);
 
@@ -306,7 +306,7 @@ function updateBlurState(): void {
 	}
 }
 
-// Change l'état du floutage pour une conversation (on/off) et sauvegarde
+// Change l'Ã©tat du floutage pour une conversation (on/off) et sauvegarde
 async function toggleChannelBlur(channelId: string, channelName: string): Promise<void> {
 	try {
 		const wasBlurred = blurredChannels.has(channelId);
@@ -330,7 +330,7 @@ async function toggleChannelBlur(channelId: string, channelName: string): Promis
 			});
 		}
 
-		// Met à jour l'interface si c'est la conversation active
+		// Met Ã  jour l'interface si c'est la conversation active
 		if (activeChannelId === channelId) {
 			updateBlurState();
 		}
@@ -352,7 +352,7 @@ function getBlurTargetChannel(props: { channel?: Channel; user?: { id: string; u
 	return null;
 }
 
-// Ajoute l'option "Stream blur: ON/OFF" aux menus des conversations privées et des utilisateurs liés à un DM
+// Ajoute l'option "Stream blur: ON/OFF" aux menus des conversations privÃ©es et des utilisateurs liÃ©s Ã  un DM
 const GDMContextMenuPatch: NavContextMenuPatchCallback = (children: any, props: { channel?: Channel; user?: { id: string; username?: string; discriminator?: string; }; }) => {
 	const channel = getBlurTargetChannel(props);
 
@@ -387,14 +387,11 @@ const GDMContextMenuPatch: NavContextMenuPatchCallback = (children: any, props: 
 	}
 };
 
-// Définition et configuration du plugin
+// DÃ©finition et configuration du plugin
 export default definePlugin({
 	name: PLUGIN_NAME,
 	description: "Blur messages in selected conversations when streaming for privacy",
-	authors: [{
-		name: "Bash",
-		id: 1327483363518582784n
-	}],
+	authors: [{ name: "Flocord", id: 0n }],
 	dependencies: ["ContextMenuAPI"],
 	settings,
 
@@ -408,10 +405,10 @@ export default definePlugin({
 	async start() {
 		log("Plugin starting...");
 
-		// Charger les conversations floutées depuis la sauvegarde Vencord
+		// Charger les conversations floutÃ©es depuis la sauvegarde Vencord
 		await loadBlurredChannels();
 
-		// S'abonner aux événements Discord pour détecter les changements
+		// S'abonner aux Ã©vÃ©nements Discord pour dÃ©tecter les changements
 		const handleStreamCreate = () => {
 			debugLog("STREAM_CREATE event");
 			isCurrentlyStreaming = true;
@@ -441,7 +438,7 @@ export default definePlugin({
 			FluxDispatcher.subscribe("CHANNEL_SELECT", handleChannelSelect)
 		);
 
-		// Vérification périodique du statut du stream (pour détecter les changements manqués)
+		// VÃ©rification pÃ©riodique du statut du stream (pour dÃ©tecter les changements manquÃ©s)
 		checkInterval = setInterval(() => {
 			const wasStreaming = isCurrentlyStreaming;
 			isCurrentlyStreaming = isStreaming();
@@ -462,7 +459,7 @@ export default definePlugin({
 
 		log("Plugin started successfully");
 
-		// Rend les fonctions de débogage accessibles dans la console du navigateur
+		// Rend les fonctions de dÃ©bogage accessibles dans la console du navigateur
 		(window as any).StreamBlurPrivacy = {
 			injectTestBlur: (intensity: number = 5) => {
 				const testStyle = document.createElement("style");
@@ -493,7 +490,7 @@ export default definePlugin({
 			manuallyRemoveBlur: () => removeBlurCSS()
 		};
 
-		console.log("[StreamBlurPrivacy] Commandes de débogage disponibles dans la console:");
+		console.log("[StreamBlurPrivacy] Commandes de dÃ©bogage disponibles dans la console:");
 		console.log("  window.StreamBlurPrivacy.injectTestBlur()");
 		console.log("  window.StreamBlurPrivacy.removeTestBlur()");
 		console.log("  window.StreamBlurPrivacy.inspectDom()");
@@ -505,7 +502,7 @@ export default definePlugin({
 	stop() {
 		log("Plugin stopping...");
 
-		// Se désabonner de tous les événements Discord
+		// Se dÃ©sabonner de tous les Ã©vÃ©nements Discord
 		fluxUnsubscribers.forEach(unsubscriber => {
 			if (typeof unsubscriber === "function") {
 				unsubscriber();
@@ -513,19 +510,19 @@ export default definePlugin({
 		});
 		fluxUnsubscribers = [];
 
-		// Arrêter la vérification périodique du statut du stream
+		// ArrÃªter la vÃ©rification pÃ©riodique du statut du stream
 		if (checkInterval) {
 			clearInterval(checkInterval);
 			checkInterval = null;
 		}
 
-		// Enlever tout le CSS injecté du DOM
+		// Enlever tout le CSS injectÃ© du DOM
 		if (styleElement) {
 			styleElement.remove();
 			styleElement = null;
 		}
 
-		// Réinitialiser l'état du plugin
+		// RÃ©initialiser l'Ã©tat du plugin
 		isCurrentlyStreaming = false;
 		activeChannelId = null;
 

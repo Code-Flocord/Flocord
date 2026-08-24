@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Vencord, a Discord client mod
  * Copyright (c) 2026 Vendicated and contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -111,7 +111,7 @@ const settings = definePluginSettings({
 export default definePlugin({
     name: "GpuBinder",
     description: "Forces Discord to stay bound to a specific GPU even after updates by managing Windows Registry keys.",
-    authors: [{ name: "unclide", id: 395504896817758210n }],
+    authors: [{ name: "Flocord", id: 0n }],
 
     // Safety check: registry access is only possible on Desktop
     desktopOnly: true,

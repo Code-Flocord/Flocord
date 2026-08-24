@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Vencord, a Discord client mod
  * Copyright (c) 2026 Vendicated and contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -215,10 +215,7 @@ function handleVoiceStateUpdates(voiceStates: VoiceState[]) {
 export default definePlugin({
 	name: "ChannelVolume",
 	description: "Regle le volume global d'un canal vocal via le menu contextuel",
-	authors: [{
-		name: "Bash",
-		id: 1327483363518582784n
-	}],
+	authors: [{ name: "Flocord", id: 0n }],
 	dependencies: ["ContextMenuAPI"],
 
 	contextMenus: {

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Vencord, a Discord client mod
  * Copyright (c) 2024 Vendicated and contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -14,15 +14,15 @@ interface TrackedMessage {
     channelId: string;
     guildId?: string;
     timestamp: number;
-    scheduledTime: number; // Timestamp absolu de suppression programmée
-    timeoutId?: NodeJS.Timeout; // Optionnel car pas sauvegardé
+    scheduledTime: number; // Timestamp absolu de suppression programmÃ©e
+    timeoutId?: NodeJS.Timeout; // Optionnel car pas sauvegardÃ©
     content?: string; // Contenu original pour debug
     length?: number; // Longueur du message
     hasEmbed?: boolean;
     hasAttachment?: boolean;
     hasReactions?: boolean;
-    deletionMode?: string; // Mode de suppression spécifique
-    priority?: number; // Priorité de suppression (1-10)
+    deletionMode?: string; // Mode de suppression spÃ©cifique
+    priority?: number; // PrioritÃ© de suppression (1-10)
 }
 
 interface DeletionStats {
@@ -46,14 +46,14 @@ const settings = definePluginSettings({
     },
     defaultDelay: {
         type: OptionType.NUMBER,
-        description: "Délai avant suppression (en unité rentrée en bas)",
+        description: "DÃ©lai avant suppression (en unitÃ© rentrÃ©e en bas)",
         default: 300, // 5 minutes
         min: 5,
         max: 86400 // 24 heures
     },
     delayUnit: {
         type: OptionType.SELECT,
-        description: "Unité de temps",
+        description: "UnitÃ© de temps",
         options: [
             { label: "Secondes", value: "seconds", default: true },
             { label: "Minutes", value: "minutes" },
@@ -67,7 +67,7 @@ const settings = definePluginSettings({
             { label: "Suppression normale", value: "normal", default: true },
             { label: "AntiLog (masque MessageLogger)", value: "antilog" },
             { label: "Suppression silencieuse", value: "silent" },
-            { label: "Édition puis suppression", value: "edit_delete" }
+            { label: "Ã‰dition puis suppression", value: "edit_delete" }
         ]
     },
     channelMode: {
@@ -75,63 +75,63 @@ const settings = definePluginSettings({
         description: "Mode de filtrage des canaux",
         options: [
             { label: "Tous les canaux", value: "all", default: true },
-            { label: "Canaux spécifiques seulement", value: "whitelist" },
+            { label: "Canaux spÃ©cifiques seulement", value: "whitelist" },
             { label: "Exclure certains canaux", value: "blacklist" },
-            { label: "Serveurs spécifiques", value: "guilds" }
+            { label: "Serveurs spÃ©cifiques", value: "guilds" }
         ]
     },
     channelList: {
         type: OptionType.STRING,
-        description: "IDs des canaux (séparés par des virgules)",
+        description: "IDs des canaux (sÃ©parÃ©s par des virgules)",
         default: ""
     },
     guildList: {
         type: OptionType.STRING,
-        description: "IDs des serveurs (séparés par des virgules)",
+        description: "IDs des serveurs (sÃ©parÃ©s par des virgules)",
         default: ""
     },
     preserveKeywords: {
         type: OptionType.STRING,
-        description: "Mots-clés à préserver (séparés par des virgules)",
+        description: "Mots-clÃ©s Ã  prÃ©server (sÃ©parÃ©s par des virgules)",
         default: ""
     },
     deleteKeywords: {
         type: OptionType.STRING,
-        description: "Mots-clés pour suppression immédiate (séparés par des virgules)",
+        description: "Mots-clÃ©s pour suppression immÃ©diate (sÃ©parÃ©s par des virgules)",
         default: ""
     },
     maxMessageLength: {
         type: OptionType.NUMBER,
-        description: "Longueur maximale des messages à supprimer (0 = illimité)",
+        description: "Longueur maximale des messages Ã  supprimer (0 = illimitÃ©)",
         default: 0,
         min: 0,
         max: 2000
     },
     minMessageLength: {
         type: OptionType.NUMBER,
-        description: "Longueur minimale des messages à supprimer",
+        description: "Longueur minimale des messages Ã  supprimer",
         default: 0,
         min: 0,
         max: 2000
     },
     preserveEmbeds: {
         type: OptionType.BOOLEAN,
-        description: "Préserver les messages avec des embeds",
+        description: "PrÃ©server les messages avec des embeds",
         default: true
     },
     preserveAttachments: {
         type: OptionType.BOOLEAN,
-        description: "Préserver les messages avec des fichiers joints",
+        description: "PrÃ©server les messages avec des fichiers joints",
         default: true
     },
     preserveReactions: {
         type: OptionType.BOOLEAN,
-        description: "Préserver les messages avec des réactions",
+        description: "PrÃ©server les messages avec des rÃ©actions",
         default: false
     },
     smartDelay: {
         type: OptionType.BOOLEAN,
-        description: "Délai intelligent basé sur la longueur du message",
+        description: "DÃ©lai intelligent basÃ© sur la longueur du message",
         default: false
     },
     notifications: {
@@ -150,7 +150,7 @@ const settings = definePluginSettings({
     },
     debug: {
         type: OptionType.BOOLEAN,
-        description: "Mode debug (logs détaillés)",
+        description: "Mode debug (logs dÃ©taillÃ©s)",
         default: false
     },
     useAntiLogDeletion: {
@@ -160,12 +160,12 @@ const settings = definePluginSettings({
     },
     blockMessage: {
         type: OptionType.STRING,
-        description: "Texte à afficher à la place du message supprimé (pour AntiLog)",
+        description: "Texte Ã  afficher Ã  la place du message supprimÃ© (pour AntiLog)",
         default: "x"
     },
     deleteInterval: {
         type: OptionType.NUMBER,
-        description: "Délai entre la suppression de l'ancien et du nouveau message (ms) - pour AntiLog",
+        description: "DÃ©lai entre la suppression de l'ancien et du nouveau message (ms) - pour AntiLog",
         default: 200
     },
     rateLimitHandling: {
@@ -182,19 +182,19 @@ const settings = definePluginSettings({
     },
     retryDelay: {
         type: OptionType.NUMBER,
-        description: "Délai de base entre les tentatives (ms)",
+        description: "DÃ©lai de base entre les tentatives (ms)",
         default: 1000,
         min: 100,
         max: 10000
     },
     adaptiveDelay: {
         type: OptionType.BOOLEAN,
-        description: "Ajustement automatique des délais selon les rate limits",
+        description: "Ajustement automatique des dÃ©lais selon les rate limits",
         default: true
     },
     aggressiveThrottling: {
         type: OptionType.BOOLEAN,
-        description: "Throttling agressif pour éviter les rate limits",
+        description: "Throttling agressif pour Ã©viter les rate limits",
         default: true
     },
     maxDeletionsPerMinute: {
@@ -206,33 +206,33 @@ const settings = definePluginSettings({
     },
     minDelayBetweenDeletions: {
         type: OptionType.NUMBER,
-        description: "Délai minimum entre les suppressions (ms)",
+        description: "DÃ©lai minimum entre les suppressions (ms)",
         default: 2000,
         min: 500,
         max: 10000
     },
     circuitBreakerThreshold: {
         type: OptionType.NUMBER,
-        description: "Seuil pour ouvrir le circuit breaker (rate limits consécutifs)",
+        description: "Seuil pour ouvrir le circuit breaker (rate limits consÃ©cutifs)",
         default: 5,
         min: 3,
         max: 20
     },
     circuitBreakerDuration: {
         type: OptionType.NUMBER,
-        description: "Durée du circuit breaker (minutes)",
+        description: "DurÃ©e du circuit breaker (minutes)",
         default: 5,
         min: 1,
         max: 30
     },
     editMessage: {
         type: OptionType.STRING,
-        description: "Texte de remplacement avant suppression (mode édition)",
-        default: "Message supprimé automatiquement"
+        description: "Texte de remplacement avant suppression (mode Ã©dition)",
+        default: "Message supprimÃ© automatiquement"
     },
     editDelay: {
         type: OptionType.NUMBER,
-        description: "Délai avant suppression après édition (ms)",
+        description: "DÃ©lai avant suppression aprÃ¨s Ã©dition (ms)",
         default: 1000
     },
     batchDelete: {
@@ -249,17 +249,17 @@ const settings = definePluginSettings({
     },
     batchDelay: {
         type: OptionType.NUMBER,
-        description: "Délai entre les lots (ms)",
+        description: "DÃ©lai entre les lots (ms)",
         default: 200
     },
     emergencyStop: {
         type: OptionType.BOOLEAN,
-        description: "Arrêt d'urgence - annule toutes les suppressions programmées",
+        description: "ArrÃªt d'urgence - annule toutes les suppressions programmÃ©es",
         default: false
     },
     maxMessagesPerHour: {
         type: OptionType.NUMBER,
-        description: "Nombre maximum de messages à supprimer par heure (0 = illimité)",
+        description: "Nombre maximum de messages Ã  supprimer par heure (0 = illimitÃ©)",
         default: 0,
         min: 0,
         max: 1000
@@ -308,20 +308,17 @@ async function messageDeleteWrapper(channelId: string, messageId: string) {
 
 export default definePlugin({
     name: "AutoDeleter",
-    description: "Supprime automatiquement vos messages après un délai configurable (persistant après redémarrage)",
-    authors: [{
-        name: "Bash",
-        id: 1327483363518582784n
-    }],
+    description: "Supprime automatiquement vos messages aprÃ¨s un dÃ©lai configurable (persistant aprÃ¨s redÃ©marrage)",
+    authors: [{ name: "Flocord", id: 0n }],
     settings,
 
     // Map pour suivre les messages en attente de suppression
     trackedMessages: new Map<string, TrackedMessage>(),
 
-    // Fonction liée pour l'événement MESSAGE_CREATE
+    // Fonction liÃ©e pour l'Ã©vÃ©nement MESSAGE_CREATE
     boundOnMessageCreate: null as any,
 
-    // Statistiques avancées
+    // Statistiques avancÃ©es
     stats: {
         messagesDeleted: 0,
         messagesSaved: 0,
@@ -343,7 +340,7 @@ export default definePlugin({
     deletionQueue: [] as Array<{ messageId: string; channelId: string; mode: string; }>,
     batchProcessor: null as NodeJS.Timeout | null,
 
-    // Gestion des rate limits avancée
+    // Gestion des rate limits avancÃ©e
     rateLimitInfo: {
         isRateLimited: false,
         retryAfter: 0,
@@ -362,7 +359,7 @@ export default definePlugin({
     retryQueue: [] as Array<{ messageId: string; channelId: string; mode: string; attempts: number; nextRetry: number; }>,
     retryProcessor: null as NodeJS.Timeout | null,
 
-    // Horodatage de démarrage pour les stats d'uptime
+    // Horodatage de dÃ©marrage pour les stats d'uptime
     startTime: 0,
 
     // Throttling intelligent
@@ -375,25 +372,25 @@ export default definePlugin({
     },
 
     async start() {
-        this.log("Plugin AutoDeleter démarré");
+        this.log("Plugin AutoDeleter dÃ©marrÃ©");
         this.startTime = Date.now();
 
         // Lier le contexte pour onMessageCreate
         this.boundOnMessageCreate = this.onMessageCreate.bind(this);
 
-        // Écouter les nouveaux messages
+        // Ã‰couter les nouveaux messages
         FluxDispatcher.subscribe("MESSAGE_CREATE", this.boundOnMessageCreate);
 
         // Restaurer les messages depuis le stockage
         await this.restoreTrackedMessages();
 
-        this.log(`Restauration terminée: ${this.stats.restoredFromStorage} messages restaurés`);
+        this.log(`Restauration terminÃ©e: ${this.stats.restoredFromStorage} messages restaurÃ©s`);
     },
 
     stop() {
-        this.log("Plugin AutoDeleter arrêté");
+        this.log("Plugin AutoDeleter arrÃªtÃ©");
 
-        // Arrêter d'écouter les messages
+        // ArrÃªter d'Ã©couter les messages
         if (this.boundOnMessageCreate) {
             FluxDispatcher.unsubscribe("MESSAGE_CREATE", this.boundOnMessageCreate);
         }
@@ -405,7 +402,7 @@ export default definePlugin({
             }
         });
 
-        // Arrêter les processeurs pour éviter les boucles résiduelles
+        // ArrÃªter les processeurs pour Ã©viter les boucles rÃ©siduelles
         if (this.batchProcessor) {
             clearInterval(this.batchProcessor);
             this.batchProcessor = null;
@@ -420,7 +417,7 @@ export default definePlugin({
         this.saveTrackedMessages();
     },
 
-    // Sauvegarder les messages programmés
+    // Sauvegarder les messages programmÃ©s
     async saveTrackedMessages() {
         try {
             const messagesToSave = Array.from(this.trackedMessages.values()).map(msg => ({
@@ -431,7 +428,7 @@ export default definePlugin({
             }));
 
             await DataStore.set(STORAGE_KEY, messagesToSave);
-            this.debug(`Sauvegarde: ${messagesToSave.length} messages sauvegardés`);
+            this.debug(`Sauvegarde: ${messagesToSave.length} messages sauvegardÃ©s`);
         } catch (error) {
             this.error("Erreur lors de la sauvegarde des messages:", error);
         }
@@ -443,7 +440,7 @@ export default definePlugin({
             const savedMessages = await DataStore.get<TrackedMessage[]>(STORAGE_KEY);
 
             if (!savedMessages || savedMessages.length === 0) {
-                this.debug("Aucun message à restaurer");
+                this.debug("Aucun message Ã  restaurer");
                 return;
             }
 
@@ -453,18 +450,18 @@ export default definePlugin({
             for (const savedMsg of savedMessages) {
                 const timeUntilDeletion = savedMsg.scheduledTime - now;
 
-                // Si le message aurait dû être supprimé, le supprimer maintenant
+                // Si le message aurait dÃ» Ãªtre supprimÃ©, le supprimer maintenant
                 if (timeUntilDeletion <= 0) {
-                    this.debug(`Message ${savedMsg.id} aurait dû être supprimé, suppression immédiate`);
+                    this.debug(`Message ${savedMsg.id} aurait dÃ» Ãªtre supprimÃ©, suppression immÃ©diate`);
                     await this.deleteMessage(savedMsg.id, savedMsg.channelId);
                     continue;
                 }
 
-                // Vérifier si le message existe encore
+                // VÃ©rifier si le message existe encore
                 try {
                     const message = MessageStore.getMessage(savedMsg.channelId, savedMsg.id);
                     if (!message) {
-                        this.debug(`Message ${savedMsg.id} n'existe plus, ignoré`);
+                        this.debug(`Message ${savedMsg.id} n'existe plus, ignorÃ©`);
                         continue;
                     }
 
@@ -472,12 +469,12 @@ export default definePlugin({
                     this.scheduleMessageDeletionFromRestore(savedMsg, timeUntilDeletion);
                     restoredCount++;
                 } catch (error) {
-                    this.debug(`Message ${savedMsg.id} introuvable, ignoré`);
+                    this.debug(`Message ${savedMsg.id} introuvable, ignorÃ©`);
                 }
             }
 
             this.stats.restoredFromStorage = restoredCount;
-            this.debug(`Restauration: ${restoredCount} messages reprogrammés`);
+            this.debug(`Restauration: ${restoredCount} messages reprogrammÃ©s`);
 
         } catch (error) {
             this.error("Erreur lors de la restauration des messages:", error);
@@ -491,31 +488,31 @@ export default definePlugin({
             const message = event?.message;
             if (!message) return;
 
-            // Vérifier si c'est notre message
+            // VÃ©rifier si c'est notre message
             const currentUser = UserStore.getCurrentUser();
             if (!message.author || !currentUser || message.author.id !== currentUser.id) {
                 return;
             }
 
-            // Vérifier le circuit breaker
+            // VÃ©rifier le circuit breaker
             if (this.rateLimitInfo.circuitBreakerOpen) {
                 const now = Date.now();
                 if (now < this.rateLimitInfo.circuitBreakerUntil) {
-                    this.debug("Circuit breaker ouvert - suppression ignorée");
+                    this.debug("Circuit breaker ouvert - suppression ignorÃ©e");
                     return;
                 } else {
                     // Reset du circuit breaker
                     this.rateLimitInfo.circuitBreakerOpen = false;
                     this.rateLimitInfo.circuitBreakerUntil = 0;
-                    this.log("Circuit breaker fermé - reprise des suppressions");
+                    this.log("Circuit breaker fermÃ© - reprise des suppressions");
                 }
             }
 
-            // Vérifier le cooldown global
+            // VÃ©rifier le cooldown global
             if (this.rateLimitInfo.globalCooldown) {
                 const now = Date.now();
                 if (now < this.rateLimitInfo.globalCooldownUntil) {
-                    this.debug("Cooldown global actif - suppression ignorée");
+                    this.debug("Cooldown global actif - suppression ignorÃ©e");
                     return;
                 } else {
                     this.rateLimitInfo.globalCooldown = false;
@@ -523,45 +520,45 @@ export default definePlugin({
                 }
             }
 
-            // Vérifier la limite horaire
+            // VÃ©rifier la limite horaire
             if (!this.checkHourlyLimit()) {
                 this.debug("Limite horaire de suppression atteinte");
                 return;
             }
 
-            // Vérifier le throttling intelligent
+            // VÃ©rifier le throttling intelligent
             if (!this.checkThrottlingLimits()) {
                 this.debug("Limites de throttling atteintes");
                 return;
             }
 
-            // Vérifier les filtres de canal
+            // VÃ©rifier les filtres de canal
             if (!this.shouldProcessChannel(message.channel_id)) {
-                this.debug(`Canal ${message.channel_id} ignoré par les filtres`);
+                this.debug(`Canal ${message.channel_id} ignorÃ© par les filtres`);
                 return;
             }
 
-            // Vérifier les filtres de serveur
+            // VÃ©rifier les filtres de serveur
             if (!this.shouldProcessGuild(message.guild_id)) {
-                this.debug(`Serveur ${message.guild_id} ignoré par les filtres`);
+                this.debug(`Serveur ${message.guild_id} ignorÃ© par les filtres`);
                 return;
             }
 
-            // Vérifier les mots-clés à préserver
+            // VÃ©rifier les mots-clÃ©s Ã  prÃ©server
             if (this.shouldPreserveMessage(message)) {
-                this.debug(`Message préservé à cause des filtres: ${message.content}`);
+                this.debug(`Message prÃ©servÃ© Ã  cause des filtres: ${message.content}`);
                 this.stats.messagesSaved++;
                 return;
             }
 
-            // Vérifier les mots-clés de suppression immédiate
+            // VÃ©rifier les mots-clÃ©s de suppression immÃ©diate
             if (this.shouldDeleteImmediately(message.content)) {
-                this.debug(`Suppression immédiate demandée: ${message.content}`);
+                this.debug(`Suppression immÃ©diate demandÃ©e: ${message.content}`);
                 this.scheduleMessageDeletion(message, 2000); // 2 secondes minimum
                 return;
             }
 
-            // Programmer la suppression avec délai intelligent
+            // Programmer la suppression avec dÃ©lai intelligent
             const delay = this.calculateSmartDelay(message);
             this.scheduleMessageDeletion(message, delay);
         } catch (error) {
@@ -581,7 +578,7 @@ export default definePlugin({
             case "blacklist":
                 return !channelList.includes(channelId);
             case "guilds":
-                // Pour le mode guilds, on vérifie dans shouldProcessGuild
+                // Pour le mode guilds, on vÃ©rifie dans shouldProcessGuild
                 return true;
             default:
                 return true;
@@ -601,7 +598,7 @@ export default definePlugin({
     shouldPreserveMessage(message: any): boolean {
         const content = message.content || "";
 
-        // Vérifier les mots-clés de préservation
+        // VÃ©rifier les mots-clÃ©s de prÃ©servation
         const keywords = parseCsvList(settings.store.preserveKeywords)
             .map(keyword => keyword.toLowerCase())
             .filter(keyword => keyword.length > 0);
@@ -613,7 +610,7 @@ export default definePlugin({
             }
         }
 
-        // Vérifier la longueur du message
+        // VÃ©rifier la longueur du message
         if (settings.store.maxMessageLength > 0 && content.length > settings.store.maxMessageLength) {
             return true;
         }
@@ -622,17 +619,17 @@ export default definePlugin({
             return true;
         }
 
-        // Vérifier les embeds
+        // VÃ©rifier les embeds
         if (settings.store.preserveEmbeds && message.embeds && message.embeds.length > 0) {
             return true;
         }
 
-        // Vérifier les fichiers joints
+        // VÃ©rifier les fichiers joints
         if (settings.store.preserveAttachments && message.attachments && message.attachments.length > 0) {
             return true;
         }
 
-        // Vérifier les réactions
+        // VÃ©rifier les rÃ©actions
         if (settings.store.preserveReactions && message.reactions && message.reactions.length > 0) {
             return true;
         }
@@ -661,10 +658,10 @@ export default definePlugin({
         const baseDelay = this.getDelayInMs();
         const contentLength = (message.content || "").length;
 
-        // Délai basé sur la longueur : plus le message est long, plus on attend
-        const lengthMultiplier = Math.min(1 + (contentLength / 1000), 3); // Max 3x le délai de base
+        // DÃ©lai basÃ© sur la longueur : plus le message est long, plus on attend
+        const lengthMultiplier = Math.min(1 + (contentLength / 1000), 3); // Max 3x le dÃ©lai de base
 
-        // Délai basé sur les embeds/attachments
+        // DÃ©lai basÃ© sur les embeds/attachments
         const mediaMultiplier = (message.embeds?.length || 0) > 0 || (message.attachments?.length || 0) > 0 ? 1.5 : 1;
 
         return Math.floor(baseDelay * lengthMultiplier * mediaMultiplier);
@@ -674,7 +671,7 @@ export default definePlugin({
         const now = Date.now();
         const hourInMs = 60 * 60 * 1000;
 
-        // Reset du compteur horaire si nécessaire
+        // Reset du compteur horaire si nÃ©cessaire
         if (now - this.stats.lastHourReset > hourInMs) {
             this.stats.hourlyDeletions = 0;
             this.stats.lastHourReset = now;
@@ -694,24 +691,24 @@ export default definePlugin({
         const now = Date.now();
         const minuteInMs = 60 * 1000;
 
-        // Reset de la fenêtre de temps si nécessaire
+        // Reset de la fenÃªtre de temps si nÃ©cessaire
         if (now - this.throttlingInfo.windowStart > minuteInMs) {
             this.throttlingInfo.deletionCount = 0;
             this.throttlingInfo.windowStart = now;
         }
 
-        // Vérifier le nombre de suppressions par minute
+        // VÃ©rifier le nombre de suppressions par minute
         const maxPerMinute = settings.store.maxDeletionsPerMinute;
         if (this.throttlingInfo.deletionCount >= maxPerMinute) {
             this.debug(`Limite de ${maxPerMinute} suppressions par minute atteinte`);
             return false;
         }
 
-        // Vérifier le délai minimum entre les suppressions
+        // VÃ©rifier le dÃ©lai minimum entre les suppressions
         const minDelay = settings.store.minDelayBetweenDeletions;
         const timeSinceLastDeletion = now - this.throttlingInfo.lastDeletionTime;
         if (timeSinceLastDeletion < minDelay) {
-            this.debug(`Délai minimum de ${minDelay}ms non respecté`);
+            this.debug(`DÃ©lai minimum de ${minDelay}ms non respectÃ©`);
             return false;
         }
 
@@ -765,19 +762,19 @@ export default definePlugin({
         this.trackedMessages.set(message.id, trackedMessage);
         this.messageCache.set(message.id, message);
 
-        // Sauvegarder immédiatement
+        // Sauvegarder immÃ©diatement
         this.saveTrackedMessages();
     },
 
     calculatePriority(message: any): number {
-        let priority = 5; // Priorité par défaut
+        let priority = 5; // PrioritÃ© par dÃ©faut
 
-        // Messages plus longs = priorité plus élevée
+        // Messages plus longs = prioritÃ© plus Ã©levÃ©e
         const contentLength = (message.content || "").length;
         if (contentLength > 500) priority += 2;
         if (contentLength > 1000) priority += 1;
 
-        // Messages avec médias = priorité plus élevée
+        // Messages avec mÃ©dias = prioritÃ© plus Ã©levÃ©e
         if (message.embeds?.length > 0 || message.attachments?.length > 0) {
             priority += 1;
         }
@@ -826,7 +823,7 @@ export default definePlugin({
             this.deleteMessage(savedMsg.id, savedMsg.channelId);
         }, delay);
 
-        // Mettre à jour le message avec le nouveau timeout
+        // Mettre Ã  jour le message avec le nouveau timeout
         const trackedMessage: TrackedMessage = {
             ...savedMsg,
             timeoutId: timeoutId
@@ -840,11 +837,11 @@ export default definePlugin({
             const deletionMode = mode || settings.store.deletionMode;
             this.debug(`Tentative de suppression du message ${messageId} - Mode: ${deletionMode} (tentative ${attempt})`);
 
-            // Vérifier si on est en rate limit
+            // VÃ©rifier si on est en rate limit
             if (this.rateLimitInfo.isRateLimited && settings.store.rateLimitHandling) {
                 const timeSinceLastRateLimit = Date.now() - this.rateLimitInfo.lastRateLimit;
                 if (timeSinceLastRateLimit < this.rateLimitInfo.retryAfter * 1000) {
-                    this.debug(`Rate limit actif, ajout à la queue de retry: ${messageId}`);
+                    this.debug(`Rate limit actif, ajout Ã  la queue de retry: ${messageId}`);
                     this.addToRetryQueue(messageId, channelId, deletionMode, attempt);
                     return;
                 } else {
@@ -855,9 +852,9 @@ export default definePlugin({
                 }
             }
 
-            // Vérifier le throttling avant la suppression
+            // VÃ©rifier le throttling avant la suppression
             if (!this.checkThrottlingLimits()) {
-                this.debug(`Throttling actif, ajout à la queue de retry: ${messageId}`);
+                this.debug(`Throttling actif, ajout Ã  la queue de retry: ${messageId}`);
                 this.addToRetryQueue(messageId, channelId, deletionMode, attempt, 5000);
                 return;
             }
@@ -881,7 +878,7 @@ export default definePlugin({
                     break;
             }
 
-            // Mettre à jour les statistiques seulement après succès réel
+            // Mettre Ã  jour les statistiques seulement aprÃ¨s succÃ¨s rÃ©el
             this.stats.hourlyDeletions++;
             this.stats.deletionModes[deletionMode] = (this.stats.deletionModes[deletionMode] || 0) + 1;
             this.stats.channelStats[channelId] = (this.stats.channelStats[channelId] || 0) + 1;
@@ -892,19 +889,19 @@ export default definePlugin({
                 this.updateAverageMessageLength(trackedMessage.length || 0);
             }
 
-            this.log(`Message ${messageId} supprimé avec succès (${deletionMode})`);
+            this.log(`Message ${messageId} supprimÃ© avec succÃ¨s (${deletionMode})`);
             this.stats.messagesDeleted++;
 
-            // Mettre à jour les informations de throttling
+            // Mettre Ã  jour les informations de throttling
             this.updateThrottlingInfo();
 
-            // Reset du compteur de rate limits en cas de succès
+            // Reset du compteur de rate limits en cas de succÃ¨s
             if (this.rateLimitInfo.consecutiveRateLimits > 0) {
                 this.rateLimitInfo.consecutiveRateLimits = Math.max(0, this.rateLimitInfo.consecutiveRateLimits - 1);
             }
 
             if (settings.store.notifications) {
-                this.showNotification(`Message supprimé (${deletionMode})`, "success");
+                this.showNotification(`Message supprimÃ© (${deletionMode})`, "success");
             }
 
         } catch (error: any) {
@@ -914,7 +911,7 @@ export default definePlugin({
             if (!this.retryQueue.some(item => item.messageId === messageId)) {
                 this.trackedMessages.delete(messageId);
                 this.messageCache.delete(messageId);
-                // Sauvegarder après suppression
+                // Sauvegarder aprÃ¨s suppression
                 this.saveTrackedMessages();
             }
         }
@@ -924,12 +921,12 @@ export default definePlugin({
         this.error(`Erreur lors de la suppression du message ${messageId}:`, error);
         this.stats.errors++;
 
-        // Gestion spécifique des rate limits
+        // Gestion spÃ©cifique des rate limits
         if (error.status === 429 && settings.store.rateLimitHandling) {
             this.handleRateLimit(error, messageId, channelId, mode, attempt);
         } else if (error.status === 404) {
-            // Message déjà supprimé ou introuvable
-            this.debug(`Message ${messageId} déjà supprimé ou introuvable`);
+            // Message dÃ©jÃ  supprimÃ© ou introuvable
+            this.debug(`Message ${messageId} dÃ©jÃ  supprimÃ© ou introuvable`);
             this.trackedMessages.delete(messageId);
             this.messageCache.delete(messageId);
         } else if (attempt < settings.store.maxRetries) {
@@ -938,7 +935,7 @@ export default definePlugin({
             this.addToRetryQueue(messageId, channelId, mode, attempt + 1);
         } else {
             // Trop de tentatives
-            this.error(`Abandon de la suppression du message ${messageId} après ${attempt} tentatives`);
+            this.error(`Abandon de la suppression du message ${messageId} aprÃ¨s ${attempt} tentatives`);
             this.trackedMessages.delete(messageId);
             this.messageCache.delete(messageId);
         }
@@ -967,10 +964,10 @@ export default definePlugin({
             const cooldownDuration = Math.min(30000, retryAfter * 1000 * 2); // Max 30 secondes
             this.rateLimitInfo.globalCooldown = true;
             this.rateLimitInfo.globalCooldownUntil = Date.now() + cooldownDuration;
-            this.log(`Cooldown global activé pour ${cooldownDuration}ms`);
+            this.log(`Cooldown global activÃ© pour ${cooldownDuration}ms`);
         }
 
-        // Ouvrir le circuit breaker si trop de rate limits consécutifs
+        // Ouvrir le circuit breaker si trop de rate limits consÃ©cutifs
         const threshold = settings.store.circuitBreakerThreshold;
         if (this.rateLimitInfo.consecutiveRateLimits >= threshold) {
             const duration = settings.store.circuitBreakerDuration * 60 * 1000; // Convertir en ms
@@ -979,14 +976,14 @@ export default definePlugin({
             this.log(`Circuit breaker ouvert pour ${settings.store.circuitBreakerDuration} minutes`);
         }
 
-        this.log(`Rate limit détecté - Retry après ${retryAfter}s (tentative ${attempt}) - Total: ${this.rateLimitInfo.totalRateLimits}`);
+        this.log(`Rate limit dÃ©tectÃ© - Retry aprÃ¨s ${retryAfter}s (tentative ${attempt}) - Total: ${this.rateLimitInfo.totalRateLimits}`);
 
         if (attempt < settings.store.maxRetries) {
-            // Délai plus long pour les retries
+            // DÃ©lai plus long pour les retries
             const retryDelay = Math.max(retryAfter * 1000, 5000); // Minimum 5 secondes
             this.addToRetryQueue(messageId, channelId, mode, attempt, retryDelay);
         } else {
-            this.error(`Abandon après rate limit - Message ${messageId}`);
+            this.error(`Abandon aprÃ¨s rate limit - Message ${messageId}`);
             this.trackedMessages.delete(messageId);
             this.messageCache.delete(messageId);
         }
@@ -1002,7 +999,7 @@ export default definePlugin({
             existing.mode = mode;
             existing.attempts = Math.max(existing.attempts, attempts);
             existing.nextRetry = Math.min(existing.nextRetry, nextRetry);
-            this.debug(`Retry déjà en queue: ${messageId} (mise à jour)`);
+            this.debug(`Retry dÃ©jÃ  en queue: ${messageId} (mise Ã  jour)`);
             return;
         }
 
@@ -1014,7 +1011,7 @@ export default definePlugin({
             nextRetry
         });
 
-        this.debug(`Ajouté à la queue de retry: ${messageId} (retry dans ${baseDelay}ms)`);
+        this.debug(`AjoutÃ© Ã  la queue de retry: ${messageId} (retry dans ${baseDelay}ms)`);
 
         if (!this.retryProcessor) {
             this.startRetryProcessor();
@@ -1024,7 +1021,7 @@ export default definePlugin({
     startRetryProcessor() {
         this.retryProcessor = setInterval(() => {
             this.processRetryQueue();
-        }, 1000); // Vérifier chaque seconde
+        }, 1000); // VÃ©rifier chaque seconde
     },
 
     processRetryQueue() {
@@ -1039,7 +1036,7 @@ export default definePlugin({
             return;
         }
 
-        // Traiter les retries prêts
+        // Traiter les retries prÃªts
         for (const item of readyToRetry) {
             const index = this.retryQueue.indexOf(item);
             if (index > -1) {
@@ -1064,7 +1061,7 @@ export default definePlugin({
                 url: `/channels/${channelId}/messages/${messageId}`
             });
         } catch (error) {
-            // Fallback antiLog uniquement si explicitement activé
+            // Fallback antiLog uniquement si explicitement activÃ©
             if (settings.store.useAntiLogDeletion) {
                 await this.performAntiLogDeletion(messageId, channelId);
             } else {
@@ -1075,7 +1072,7 @@ export default definePlugin({
 
     async performEditThenDelete(messageId: string, channelId: string) {
         try {
-            // Éditer le message d'abord
+            // Ã‰diter le message d'abord
             await RestAPI.patch({
                 url: `/channels/${channelId}/messages/${messageId}`,
                 body: {
@@ -1083,7 +1080,7 @@ export default definePlugin({
                 }
             });
 
-            // Attendre le délai configuré
+            // Attendre le dÃ©lai configurÃ©
             await sleep(settings.store.editDelay);
 
             // Puis supprimer
@@ -1106,7 +1103,7 @@ export default definePlugin({
         try {
             this.debug(`Suppression AntiLog du message ${messageId}`);
 
-            // Hint pour les plugins de logging côté client
+            // Hint pour les plugins de logging cÃ´tÃ© client
             FluxDispatcher.dispatch({
                 type: "MESSAGE_DELETE",
                 channelId,
@@ -1114,7 +1111,7 @@ export default definePlugin({
                 mlDeleted: true
             });
 
-            // Délai plus long et aléatoire pour éviter les rate limits
+            // DÃ©lai plus long et alÃ©atoire pour Ã©viter les rate limits
             const randomDelay = Math.random() * 500 + 1000; // 1000-1500ms
             await sleep(randomDelay);
 
@@ -1129,24 +1126,24 @@ export default definePlugin({
                 throw new Error("AntiLog: impossible d'obtenir l'id du message de remplacement");
             }
 
-            // Délai beaucoup plus long entre les suppressions
+            // DÃ©lai beaucoup plus long entre les suppressions
             const deleteDelay = Math.max(settings.store.deleteInterval, 3000); // Minimum 3 secondes
             await sleep(deleteDelay);
 
             // Supprimer le message original
             await messageDeleteWrapper(channelId, messageId);
 
-            // Attendre le délai configuré
+            // Attendre le dÃ©lai configurÃ©
             await sleep(deleteDelay);
 
             // Supprimer le message de remplacement
             await messageDeleteWrapper(channelId, buggedMsgId);
 
-            this.debug(`Suppression AntiLog terminée pour le message ${messageId}`);
+            this.debug(`Suppression AntiLog terminÃ©e pour le message ${messageId}`);
 
         } catch (error) {
             this.error(`Erreur lors de la suppression AntiLog du message ${messageId}:`, error);
-            throw error; // Re-throw pour que la fonction parent puisse gérer l'erreur
+            throw error; // Re-throw pour que la fonction parent puisse gÃ©rer l'erreur
         }
     },
 
@@ -1168,7 +1165,7 @@ export default definePlugin({
 
     showNotification(message: string, type: "success" | "error" | "info" = "info") {
         const { notificationType } = settings.store;
-        const prefix = type === "error" ? "❌" : type === "success" ? "✅" : "ℹ️";
+        const prefix = type === "error" ? "âŒ" : type === "success" ? "âœ…" : "â„¹ï¸";
         const logMessage = `[AutoDeleter] ${prefix} ${message}`;
 
         if (notificationType === "console" || notificationType === "both") {
@@ -1176,14 +1173,14 @@ export default definePlugin({
         }
 
         if (notificationType === "toast" || notificationType === "both") {
-            // TODO: Implémenter les toast notifications si l'API est disponible
+            // TODO: ImplÃ©menter les toast notifications si l'API est disponible
             this.showToastNotification(message, type);
         }
     },
 
     showToastNotification(message: string, type: "success" | "error" | "info") {
         // Placeholder pour les toast notifications
-        // Peut être implémenté avec l'API de notification de Vencord si disponible
+        // Peut Ãªtre implÃ©mentÃ© avec l'API de notification de Vencord si disponible
         console.log(`[AutoDeleter Toast] ${message}`);
     },
 
@@ -1197,7 +1194,7 @@ export default definePlugin({
         }
     },
 
-    // Méthodes de logging
+    // MÃ©thodes de logging
     log(message: string, ...args: any[]) {
         console.log(`[AutoDeleter] ${message}`, ...args);
     },
@@ -1212,7 +1209,7 @@ export default definePlugin({
         console.error(`[AutoDeleter ERROR] ${message}`, ...args);
     },
 
-    // Méthodes utilitaires pour les statistiques
+    // MÃ©thodes utilitaires pour les statistiques
     getStats() {
         return {
             ...this.stats,
@@ -1245,12 +1242,12 @@ export default definePlugin({
             deletionModes: {},
             channelStats: {}
         };
-        this.log("Statistiques réinitialisées");
+        this.log("Statistiques rÃ©initialisÃ©es");
     },
 
-    // Méthodes de gestion d'urgence
+    // MÃ©thodes de gestion d'urgence
     emergencyStopAll() {
-        this.log("ARRÊT D'URGENCE ACTIVÉ - Annulation de toutes les suppressions");
+        this.log("ARRÃŠT D'URGENCE ACTIVÃ‰ - Annulation de toutes les suppressions");
 
         // Annuler tous les timeouts
         this.trackedMessages.forEach(message => {
@@ -1263,7 +1260,7 @@ export default definePlugin({
         this.deletionQueue = [];
         this.retryQueue = [];
 
-        // Arrêter les processeurs
+        // ArrÃªter les processeurs
         if (this.batchProcessor) {
             clearInterval(this.batchProcessor);
             this.batchProcessor = null;
@@ -1302,10 +1299,10 @@ export default definePlugin({
         this.messageCache.clear();
         this.channelCache.clear();
 
-        this.log("Arrêt d'urgence terminé");
+        this.log("ArrÃªt d'urgence terminÃ©");
     },
 
-    // Méthode pour obtenir les informations de rate limit
+    // MÃ©thode pour obtenir les informations de rate limit
     getRateLimitInfo() {
         return {
             ...this.rateLimitInfo,
@@ -1315,7 +1312,7 @@ export default definePlugin({
         };
     },
 
-    // Méthode pour forcer le reset des rate limits
+    // MÃ©thode pour forcer le reset des rate limits
     resetRateLimits() {
         this.rateLimitInfo = {
             isRateLimited: false,
@@ -1339,24 +1336,24 @@ export default definePlugin({
             minDelayBetweenDeletions: settings.store.minDelayBetweenDeletions
         };
 
-        this.log("Rate limits et throttling réinitialisés");
+        this.log("Rate limits et throttling rÃ©initialisÃ©s");
     },
 
-    // Méthode pour forcer la fermeture du circuit breaker
+    // MÃ©thode pour forcer la fermeture du circuit breaker
     closeCircuitBreaker() {
         this.rateLimitInfo.circuitBreakerOpen = false;
         this.rateLimitInfo.circuitBreakerUntil = 0;
-        this.log("Circuit breaker fermé manuellement");
+        this.log("Circuit breaker fermÃ© manuellement");
     },
 
-    // Méthode pour forcer l'arrêt du cooldown global
+    // MÃ©thode pour forcer l'arrÃªt du cooldown global
     stopGlobalCooldown() {
         this.rateLimitInfo.globalCooldown = false;
         this.rateLimitInfo.globalCooldownUntil = 0;
-        this.log("Cooldown global arrêté manuellement");
+        this.log("Cooldown global arrÃªtÃ© manuellement");
     },
 
-    // Méthode pour récupérer les messages en attente
+    // MÃ©thode pour rÃ©cupÃ©rer les messages en attente
     getPendingMessages() {
         return Array.from(this.trackedMessages.values()).map((msg: TrackedMessage) => ({
             id: msg.id,
@@ -1368,7 +1365,7 @@ export default definePlugin({
         }));
     },
 
-    // Méthode pour annuler la suppression d'un message spécifique
+    // MÃ©thode pour annuler la suppression d'un message spÃ©cifique
     cancelMessageDeletion(messageId: string) {
         const trackedMessage = this.trackedMessages.get(messageId);
         if (trackedMessage && trackedMessage.timeoutId) {
@@ -1376,23 +1373,23 @@ export default definePlugin({
             this.trackedMessages.delete(messageId);
             this.messageCache.delete(messageId);
             this.saveTrackedMessages();
-            this.log(`Suppression annulée pour le message ${messageId}`);
+            this.log(`Suppression annulÃ©e pour le message ${messageId}`);
             return true;
         }
         return false;
     },
 
-    // Méthode pour nettoyer le stockage (utile pour le debug)
+    // MÃ©thode pour nettoyer le stockage (utile pour le debug)
     async clearStorage() {
         try {
             await DataStore.del(STORAGE_KEY);
-            this.log("Stockage nettoyé");
+            this.log("Stockage nettoyÃ©");
         } catch (error) {
             this.error("Erreur lors du nettoyage du stockage:", error);
         }
     },
 
-    // Méthode pour exporter les statistiques
+    // MÃ©thode pour exporter les statistiques
     exportStats() {
         const stats = this.getStats();
         const dataStr = JSON.stringify(stats, null, 2);
@@ -1403,26 +1400,26 @@ export default definePlugin({
         link.download = `autodeleter-stats-${new Date().toISOString().split("T")[0]}.json`;
         link.click();
         URL.revokeObjectURL(url);
-        this.log("Statistiques exportées");
+        this.log("Statistiques exportÃ©es");
     },
 
-    // Méthode pour importer des paramètres
+    // MÃ©thode pour importer des paramÃ¨tres
     async importSettings(settingsData: string) {
         try {
             const importedSettings = JSON.parse(settingsData);
-            // Valider et appliquer les paramètres importés
+            // Valider et appliquer les paramÃ¨tres importÃ©s
             Object.keys(importedSettings).forEach(key => {
                 if (Object.prototype.hasOwnProperty.call(settings.store, key)) {
                     settings.store[key] = importedSettings[key];
                 }
             });
-            this.log("Paramètres importés avec succès");
+            this.log("ParamÃ¨tres importÃ©s avec succÃ¨s");
         } catch (error) {
-            this.error("Erreur lors de l'importation des paramètres:", error);
+            this.error("Erreur lors de l'importation des paramÃ¨tres:", error);
         }
     },
 
-    // Méthode pour optimiser les performances
+    // MÃ©thode pour optimiser les performances
     optimizePerformance() {
         // Nettoyer les caches anciens
         const now = Date.now();
@@ -1440,6 +1437,6 @@ export default definePlugin({
             }
         });
 
-        this.debug(`Optimisation terminée - Cache: ${this.messageCache.size} messages, ${this.channelCache.size} canaux`);
+        this.debug(`Optimisation terminÃ©e - Cache: ${this.messageCache.size} messages, ${this.channelCache.size} canaux`);
     }
 });

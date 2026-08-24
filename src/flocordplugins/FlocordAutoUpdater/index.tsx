@@ -1,9 +1,9 @@
-import definePlugin, { type PluginNative } from "@utils/types";
+﻿import definePlugin, { type PluginNative } from "@utils/types";
 import { relaunch } from "@utils/native";
 import { ConfirmModal, Modal, closeModal, openModal } from "@webpack/common";
 import { React } from "@webpack/common";
 
-const CURRENT_VERSION = "1.0.23";
+const CURRENT_VERSION = "1.0.24";
 
 const Native = VencordNative.pluginHelpers.FlocordAutoUpdater as PluginNative<typeof import("./native")>;
 
@@ -41,13 +41,13 @@ function UpdateModal({ modalProps, version, url, resourcesPath }: UpdateModalPro
     return (
         <Modal
             {...modalProps}
-            title={done ? "✅ Flocord mis à jour !" : "🔄 Mise à jour Flocord disponible"}
-            notice={error ? { message: `Erreur lors du téléchargement : ${error}`, type: "critical" } : undefined}
+            title={done ? "âœ… Flocord mis Ã  jour !" : "ðŸ”„ Mise Ã  jour Flocord disponible"}
+            notice={error ? { message: `Erreur lors du tÃ©lÃ©chargement : ${error}`, type: "critical" } : undefined}
             actions={done
-                ? [{ text: "Redémarrer Discord", variant: "primary", onClick: relaunch }]
+                ? [{ text: "RedÃ©marrer Discord", variant: "primary", onClick: relaunch }]
                 : [
                     {
-                        text: installing ? "Installation…" : `Mettre à jour vers v${version}`,
+                        text: installing ? "Installationâ€¦" : `Mettre Ã  jour vers v${version}`,
                         variant: "primary",
                         onClick: handleInstall,
                         loading: installing,
@@ -64,12 +64,12 @@ function UpdateModal({ modalProps, version, url, resourcesPath }: UpdateModalPro
         >
             {done
                 ? <p style={{ margin: "8px 0", color: "var(--text-normal)" }}>
-                    Flocord <strong>v{version}</strong> a été installé avec succès.<br />
-                    Redémarre Discord pour appliquer la mise à jour.
+                    Flocord <strong>v{version}</strong> a Ã©tÃ© installÃ© avec succÃ¨s.<br />
+                    RedÃ©marre Discord pour appliquer la mise Ã  jour.
                   </p>
                 : <p style={{ margin: "8px 0", color: "var(--text-normal)" }}>
                     La version <strong>v{version}</strong> est disponible (ta version : v{CURRENT_VERSION}).<br />
-                    Veux-tu mettre à jour maintenant ?
+                    Veux-tu mettre Ã  jour maintenant ?
                   </p>
             }
         </Modal>
@@ -94,7 +94,7 @@ async function checkAndUpdate() {
 
 export default definePlugin({
     name: "FlocordAutoUpdater",
-    description: "Met à jour Flocord automatiquement au démarrage de Discord. Plus besoin de lancer FlocordCLI pour les mises à jour.",
+    description: "Met Ã  jour Flocord automatiquement au dÃ©marrage de Discord. Plus besoin de lancer FlocordCLI pour les mises Ã  jour.",
     authors: [{ name: "Flocord", id: 0n }],
     required: true,
 

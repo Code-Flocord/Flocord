@@ -1,4 +1,4 @@
-import { definePluginSettings } from "@api/Settings";
+﻿import { definePluginSettings } from "@api/Settings";
 import { showNotification } from "@api/Notifications";
 import definePlugin, { OptionType } from "@utils/types";
 import { findByPropsLazy } from "@webpack";
@@ -31,7 +31,7 @@ const VoiceSettingsStore = findByPropsLazy("getEchoCancellation");
 
 export default definePlugin({
     name: "RipCordStereoFixed",
-    authors: [{ name: "Hahac", id: 1140323729432399882n }],
+    authors: [{ name: "Flocord", id: 0n }],
     description: "Enhanced stereo sound with configurable settings",
     settings,
 

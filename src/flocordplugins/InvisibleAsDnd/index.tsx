@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Vencord, a Discord client mod
  * Copyright (c) 2026 Vendicated and contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -54,7 +54,7 @@ function isInvisible(): boolean {
 export default definePlugin({
     name: "InvisibleAsDnd",
     description: "Applique le comportement du mode Ne pas deranger aux notifications quand votre statut est invisible.",
-    authors: [{ name: "Ba$h", id: 1462173272962764850n }],
+    authors: [{ name: "Flocord", id: 0n }],
     isModified: true,
     start() {
         if (originalGetUserAgnosticState == null) {

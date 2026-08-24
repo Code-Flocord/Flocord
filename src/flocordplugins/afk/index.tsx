@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Vencord, a Discord client mod
  * Copyright (c) 2026 Vendicated and contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -327,10 +327,7 @@ async function muteConversation(channelId: string): Promise<void> {
 export default definePlugin({
     name: "AFK",
     description: "Mode AFK toggle avec reponse automatique en DM et en serveur",
-    authors: [{
-        name: "Bash",
-        id: 1327483363518582784n
-    }],
+    authors: [{ name: "Flocord", id: 0n }],
     patches: [
         {
             find: ".DISPLAY_NAME_STYLES_COACHMARK),",

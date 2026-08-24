@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Vencord, a Discord client mod
  * Copyright (c) 2025 Vendicated and contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -22,19 +22,19 @@ const settings = definePluginSettings({
     },
     verboseLogs: {
         type: OptionType.BOOLEAN,
-        description: "Afficher des logs détaillés dans la console",
+        description: "Afficher des logs dÃ©taillÃ©s dans la console",
         default: true
     },
     delay: {
         type: OptionType.NUMBER,
-        description: "Délai avant de quitter le groupe (en millisecondes)",
+        description: "DÃ©lai avant de quitter le groupe (en millisecondes)",
         default: 1000,
         min: 100,
         max: 10000
     },
     whitelist: {
         type: OptionType.STRING,
-        description: "IDs des utilisateurs autorisés à vous ajouter (séparés par des virgules)",
+        description: "IDs des utilisateurs autorisÃ©s Ã  vous ajouter (sÃ©parÃ©s par des virgules)",
         default: ""
     },
     autoReply: {
@@ -44,12 +44,12 @@ const settings = definePluginSettings({
     },
     replyMessage: {
         type: OptionType.STRING,
-        description: "Message à envoyer avant de quitter",
-        default: "Je ne souhaite pas être ajouté à des groupes. Merci de me contacter en privé."
+        description: "Message Ã  envoyer avant de quitter",
+        default: "Je ne souhaite pas Ãªtre ajoutÃ© Ã  des groupes. Merci de me contacter en privÃ©."
     }
 });
 
-// Fonction de log avec préfixe
+// Fonction de log avec prÃ©fixe
 function log(message: string, level: "info" | "warn" | "error" = "info") {
     const timestamp = new Date().toLocaleTimeString();
     const prefix = `[AntiGroup ${timestamp}]`;
@@ -66,7 +66,7 @@ function log(message: string, level: "info" | "warn" | "error" = "info") {
     }
 }
 
-// Fonction de log verbose (seulement si activé)
+// Fonction de log verbose (seulement si activÃ©)
 function verboseLog(message: string) {
     if (settings.store.verboseLogs) {
         log(message);
@@ -80,17 +80,17 @@ async function leaveGroupDM(channelId: string) {
         const channelName = channel?.name || "Groupe sans nom";
         const recipients = channel?.recipients || [];
 
-        log(`🚀 Début de la procédure de sortie du groupe "${channelName}" (ID: ${channelId})`);
-        verboseLog(`📊 Informations du groupe:
+        log(`ðŸš€ DÃ©but de la procÃ©dure de sortie du groupe "${channelName}" (ID: ${channelId})`);
+        verboseLog(`ðŸ“Š Informations du groupe:
 - Nom: ${channelName}
 - ID: ${channelId}
 - Type: ${channel?.type}
 - Owner: ${channel?.ownerId}
 - Nombre de membres: ${recipients.length + 1}`);
 
-        // Envoyer un message automatique si activé
+        // Envoyer un message automatique si activÃ©
         if (settings.store.autoReply && settings.store.replyMessage.trim()) {
-            log(`💬 Envoi du message automatique: "${settings.store.replyMessage}"`);
+            log(`ðŸ’¬ Envoi du message automatique: "${settings.store.replyMessage}"`);
 
             try {
                 await RestAPI.post({
@@ -100,52 +100,52 @@ async function leaveGroupDM(channelId: string) {
                     }
                 });
 
-                log(`✅ Message automatique envoyé avec succès`);
-                verboseLog(`⏱️ Attente de 500ms pour que le message soit délivré...`);
+                log(`âœ… Message automatique envoyÃ© avec succÃ¨s`);
+                verboseLog(`â±ï¸ Attente de 500ms pour que le message soit dÃ©livrÃ©...`);
 
-                // Attendre un peu avant de quitter pour que le message soit envoyé
+                // Attendre un peu avant de quitter pour que le message soit envoyÃ©
                 await new Promise(resolve => setTimeout(resolve, 500));
             } catch (msgError) {
-                log(`❌ Erreur lors de l'envoi du message automatique: ${msgError}`, "error");
+                log(`âŒ Erreur lors de l'envoi du message automatique: ${msgError}`, "error");
             }
         } else {
-            verboseLog(`🔇 Message automatique désactivé ou vide`);
+            verboseLog(`ðŸ”‡ Message automatique dÃ©sactivÃ© ou vide`);
         }
 
         // Quitter le groupe
-        log(`🚪 Tentative de sortie du groupe...`);
+        log(`ðŸšª Tentative de sortie du groupe...`);
         await RestAPI.del({
             url: Constants.Endpoints.CHANNEL(channelId)
         });
 
-        log(`✅ Groupe quitté avec succès: "${channelName}"`);
+        log(`âœ… Groupe quittÃ© avec succÃ¨s: "${channelName}"`);
 
-        // Notification de succès
+        // Notification de succÃ¨s
         if (settings.store.showNotifications) {
             showNotification({
-                title: "🛡️ AntiGroup - Groupe quitté",
-                body: `Vous avez automatiquement quitté le groupe "${channelName}"`,
+                title: "ðŸ›¡ï¸ AntiGroup - Groupe quittÃ©",
+                body: `Vous avez automatiquement quittÃ© le groupe "${channelName}"`,
                 icon: undefined
             });
-            verboseLog(`🔔 Notification de succès affichée`);
+            verboseLog(`ðŸ”” Notification de succÃ¨s affichÃ©e`);
         }
 
         // Log final avec statistiques
-        log(`📈 Statistiques de la sortie:
+        log(`ðŸ“ˆ Statistiques de la sortie:
 - Groupe: "${channelName}" (${channelId})
-- Message auto envoyé: ${settings.store.autoReply ? "Oui" : "Non"}
-- Délai appliqué: ${settings.store.delay}ms
-- Notification affichée: ${settings.store.showNotifications ? "Oui" : "Non"}`);
+- Message auto envoyÃ©: ${settings.store.autoReply ? "Oui" : "Non"}
+- DÃ©lai appliquÃ©: ${settings.store.delay}ms
+- Notification affichÃ©e: ${settings.store.showNotifications ? "Oui" : "Non"}`);
 
     } catch (error) {
         const channel = ChannelStore.getChannel(channelId);
         const channelName = channel?.name || "Groupe inconnu";
 
-        log(`❌ ERREUR lors de la sortie du groupe "${channelName}" (${channelId}): ${error}`, "error");
+        log(`âŒ ERREUR lors de la sortie du groupe "${channelName}" (${channelId}): ${error}`, "error");
 
-        // Log détaillé de l'erreur
+        // Log dÃ©taillÃ© de l'erreur
         if (settings.store.verboseLogs) {
-            console.error("[AntiGroup] Détails de l'erreur:", {
+            console.error("[AntiGroup] DÃ©tails de l'erreur:", {
                 channelId,
                 channelName,
                 error,
@@ -156,16 +156,16 @@ async function leaveGroupDM(channelId: string) {
         // Notification d'erreur
         if (settings.store.showNotifications) {
             showNotification({
-                title: "❌ AntiGroup - Erreur",
+                title: "âŒ AntiGroup - Erreur",
                 body: `Impossible de quitter automatiquement le groupe "${channelName}"`,
                 icon: undefined
             });
-            verboseLog(`🔔 Notification d'erreur affichée`);
+            verboseLog(`ðŸ”” Notification d'erreur affichÃ©e`);
         }
     }
 }
 
-// Fonction pour vérifier si un utilisateur est dans la whitelist
+// Fonction pour vÃ©rifier si un utilisateur est dans la whitelist
 function isUserWhitelisted(userId: string): boolean {
     const whitelist = settings.store.whitelist
         .split(",")
@@ -173,42 +173,39 @@ function isUserWhitelisted(userId: string): boolean {
         .filter(id => id.length > 0);
 
     const isWhitelisted = whitelist.includes(userId);
-    verboseLog(`🔍 Vérification whitelist pour utilisateur ${userId}: ${isWhitelisted ? "AUTORISÉ" : "NON AUTORISÉ"}`);
+    verboseLog(`ðŸ” VÃ©rification whitelist pour utilisateur ${userId}: ${isWhitelisted ? "AUTORISÃ‰" : "NON AUTORISÃ‰"}`);
 
     return isWhitelisted;
 }
 
-// Fonction pour vérifier si l'utilisateur actuel a été ajouté récemment au groupe
+// Fonction pour vÃ©rifier si l'utilisateur actuel a Ã©tÃ© ajoutÃ© rÃ©cemment au groupe
 function wasRecentlyAdded(channel: any, currentUserId: string): boolean {
-    // Vérifier si c'est un groupe DM (type 3)
+    // VÃ©rifier si c'est un groupe DM (type 3)
     if (channel.type !== 3) {
-        verboseLog(`❌ Canal ${channel.id} n'est pas un groupe DM (type: ${channel.type})`);
+        verboseLog(`âŒ Canal ${channel.id} n'est pas un groupe DM (type: ${channel.type})`);
         return false;
     }
 
-    // Si le canal vient d'être créé et que l'utilisateur n'en est pas l'owner
+    // Si le canal vient d'Ãªtre crÃ©Ã© et que l'utilisateur n'en est pas l'owner
     const wasAdded = channel.ownerId !== currentUserId;
-    verboseLog(`🔍 Vérification ajout récent: ${wasAdded ? "AJOUTÉ PAR QUELQU'UN D'AUTRE" : "CRÉÉ PAR VOUS"} (Owner: ${channel.ownerId})`);
+    verboseLog(`ðŸ” VÃ©rification ajout rÃ©cent: ${wasAdded ? "AJOUTÃ‰ PAR QUELQU'UN D'AUTRE" : "CRÃ‰Ã‰ PAR VOUS"} (Owner: ${channel.ownerId})`);
 
     return wasAdded;
 }
 
 export default definePlugin({
     name: "AntiGroup",
-    description: "Quitte automatiquement les groupes DM dès qu'on y est ajouté",
-    authors: [{
-        name: "Bash",
-        id: 1327483363518582784n
-    }],
+    description: "Quitte automatiquement les groupes DM dÃ¨s qu'on y est ajoutÃ©",
+    authors: [{ name: "Flocord", id: 0n }],
     settings,
 
     flux: {
-        // Événement déclenché quand un nouveau canal est créé (incluant les groupes DM)
+        // Ã‰vÃ©nement dÃ©clenchÃ© quand un nouveau canal est crÃ©Ã© (incluant les groupes DM)
         CHANNEL_CREATE(event: { channel: any; }) {
-            verboseLog(`📺 Événement CHANNEL_CREATE détecté pour canal ${event.channel?.id}`);
+            verboseLog(`ðŸ“º Ã‰vÃ©nement CHANNEL_CREATE dÃ©tectÃ© pour canal ${event.channel?.id}`);
 
             if (!settings.store.enabled) {
-                verboseLog(`🔒 Plugin désactivé, ignoré`);
+                verboseLog(`ðŸ”’ Plugin dÃ©sactivÃ©, ignorÃ©`);
                 return;
             }
 
@@ -216,91 +213,91 @@ export default definePlugin({
             const currentUserId = UserStore.getCurrentUser()?.id;
 
             if (!channel || !currentUserId) {
-                verboseLog(`❌ Données manquantes: channel=${!!channel}, currentUserId=${!!currentUserId}`);
+                verboseLog(`âŒ DonnÃ©es manquantes: channel=${!!channel}, currentUserId=${!!currentUserId}`);
                 return;
             }
 
-            verboseLog(`📋 Analyse du canal:
+            verboseLog(`ðŸ“‹ Analyse du canal:
 - ID: ${channel.id}
 - Type: ${channel.type}
 - Nom: ${channel.name || "Sans nom"}
 - Owner: ${channel.ownerId}
 - Utilisateur actuel: ${currentUserId}`);
 
-            // Vérifier si c'est un groupe DM (type 3)
+            // VÃ©rifier si c'est un groupe DM (type 3)
             if (channel.type !== 3) {
-                verboseLog(`⏭️ Ignoré: pas un groupe DM (type ${channel.type})`);
+                verboseLog(`â­ï¸ IgnorÃ©: pas un groupe DM (type ${channel.type})`);
                 return;
             }
 
-            // Vérifier si l'utilisateur a été récemment ajouté
+            // VÃ©rifier si l'utilisateur a Ã©tÃ© rÃ©cemment ajoutÃ©
             if (!wasRecentlyAdded(channel, currentUserId)) {
-                verboseLog(`⏭️ Ignoré: vous êtes le créateur du groupe`);
+                verboseLog(`â­ï¸ IgnorÃ©: vous Ãªtes le crÃ©ateur du groupe`);
                 return;
             }
 
-            log(`🎯 NOUVEAU GROUPE DM DÉTECTÉ: "${channel.name || 'Sans nom'}" (${channel.id})`);
+            log(`ðŸŽ¯ NOUVEAU GROUPE DM DÃ‰TECTÃ‰: "${channel.name || 'Sans nom'}" (${channel.id})`);
 
-            // Vérifier si l'owner du groupe est dans la whitelist
+            // VÃ©rifier si l'owner du groupe est dans la whitelist
             if (channel.ownerId && isUserWhitelisted(channel.ownerId)) {
-                log(`✅ Owner ${channel.ownerId} est dans la whitelist, groupe autorisé`);
+                log(`âœ… Owner ${channel.ownerId} est dans la whitelist, groupe autorisÃ©`);
                 return;
             }
 
-            // Vérifier si d'autres membres du groupe sont dans la whitelist
+            // VÃ©rifier si d'autres membres du groupe sont dans la whitelist
             const whitelistedMember = channel.recipients?.find((recipient: any) =>
                 isUserWhitelisted(recipient.id)
             );
 
             if (whitelistedMember) {
-                log(`✅ Membre ${whitelistedMember.id} est dans la whitelist, groupe autorisé`);
+                log(`âœ… Membre ${whitelistedMember.id} est dans la whitelist, groupe autorisÃ©`);
                 return;
             }
 
-            log(`⚠️ AUCUN MEMBRE AUTORISÉ TROUVÉ - Programmation de la sortie automatique dans ${settings.store.delay}ms`);
+            log(`âš ï¸ AUCUN MEMBRE AUTORISÃ‰ TROUVÃ‰ - Programmation de la sortie automatique dans ${settings.store.delay}ms`);
 
-            // Notification immédiate de détection
+            // Notification immÃ©diate de dÃ©tection
             if (settings.store.showNotifications) {
                 showNotification({
-                    title: "🚨 AntiGroup - Groupe détecté",
-                    body: `Ajouté au groupe "${channel.name || 'Sans nom'}" - Sortie automatique dans ${settings.store.delay / 1000}s`,
+                    title: "ðŸš¨ AntiGroup - Groupe dÃ©tectÃ©",
+                    body: `AjoutÃ© au groupe "${channel.name || 'Sans nom'}" - Sortie automatique dans ${settings.store.delay / 1000}s`,
                     icon: undefined
                 });
             }
 
-            // Attendre le délai configuré avant de quitter
+            // Attendre le dÃ©lai configurÃ© avant de quitter
             setTimeout(() => {
-                verboseLog(`⏰ Délai écoulé, exécution de la sortie automatique`);
+                verboseLog(`â° DÃ©lai Ã©coulÃ©, exÃ©cution de la sortie automatique`);
                 leaveGroupDM(channel.id);
             }, settings.store.delay);
         }
     },
 
     start() {
-        log(`🚀 Plugin AntiGroup démarré`);
-        log(`⚙️ Configuration actuelle:
+        log(`ðŸš€ Plugin AntiGroup dÃ©marrÃ©`);
+        log(`âš™ï¸ Configuration actuelle:
 - Notifications: ${settings.store.showNotifications ? "ON" : "OFF"}
 - Logs verbeux: ${settings.store.verboseLogs ? "ON" : "OFF"}
 - Message auto: ${settings.store.autoReply ? "ON" : "OFF"}
-- Délai: ${settings.store.delay}ms
+- DÃ©lai: ${settings.store.delay}ms
 - Whitelist: ${settings.store.whitelist || "Vide"}`);
 
         if (settings.store.showNotifications) {
             showNotification({
-                title: "🛡️ AntiGroup activé",
-                body: "Protection contre les groupes DM non désirés activée",
+                title: "ðŸ›¡ï¸ AntiGroup activÃ©",
+                body: "Protection contre les groupes DM non dÃ©sirÃ©s activÃ©e",
                 icon: undefined
             });
         }
     },
 
     stop() {
-        log(`🛑 Plugin AntiGroup arrêté`);
+        log(`ðŸ›‘ Plugin AntiGroup arrÃªtÃ©`);
 
         if (settings.store.showNotifications) {
             showNotification({
-                title: "🛡️ AntiGroup désactivé",
-                body: "Protection contre les groupes DM désactivée",
+                title: "ðŸ›¡ï¸ AntiGroup dÃ©sactivÃ©",
+                body: "Protection contre les groupes DM dÃ©sactivÃ©e",
                 icon: undefined
             });
         }

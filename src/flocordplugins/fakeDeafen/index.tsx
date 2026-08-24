@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Vencord, a Discord client mod
  * Copyright (c) 2026 Vendicated and contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -158,7 +158,7 @@ function KeybindRecorder() {
     return (
         <Forms.FormSection>
             <Forms.FormTitle tag="h3">Raccourci clavier</Forms.FormTitle>
-            <Forms.FormText>Cliquez sur "Enregistrer" puis appuyez sur la combinaison de touches souhaitée</Forms.FormText>
+            <Forms.FormText>Cliquez sur "Enregistrer" puis appuyez sur la combinaison de touches souhaitÃ©e</Forms.FormText>
             <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "8px" }}>
                 <input
                     type="text"
@@ -220,13 +220,13 @@ function handleKeyPress(e: KeyboardEvent) {
         e.stopPropagation();
 
         if (!ensureRuntimeReadyForToggle()) {
-            console.warn("[FakeDeafen] Dépendances runtime manquantes, toggle ignoré");
+            console.warn("[FakeDeafen] DÃ©pendances runtime manquantes, toggle ignorÃ©");
             return;
         }
 
         const channel = getCurrentVoiceChannel();
         if (!channel) {
-            console.warn("[FakeDeafen] Aucun canal vocal valide, toggle ignoré");
+            console.warn("[FakeDeafen] Aucun canal vocal valide, toggle ignorÃ©");
             return;
         }
 
@@ -254,12 +254,12 @@ function handleKeyPress(e: KeyboardEvent) {
 
 export default definePlugin({
     name: "FakeDeafen",
-    description: "Activez le fake deafen avec un raccourci clavier personnalisable. Vous apparaissez comme assourdis et mutés aux autres, mais vous pouvez toujours entendre et parler.",
-    authors: [{ name: "Baᛋh", id: 1462173272962764850 }],
+    description: "Activez le fake deafen avec un raccourci clavier personnalisable. Vous apparaissez comme assourdis et mutÃ©s aux autres, mais vous pouvez toujours entendre et parler.",
+    authors: [{ name: "Flocord", id: 0n }],
     settings,
     settingsAboutComponent: () => <KeybindRecorder />,
     start() {
-        console.log("[FakeDeafen] Plugin démarré - Raccourci:", settings.store.keybind);
+        console.log("[FakeDeafen] Plugin dÃ©marrÃ© - Raccourci:", settings.store.keybind);
 
         // Resolve and cache runtime modules once at startup.
         resolveRuntimeModules();
@@ -274,7 +274,7 @@ export default definePlugin({
     },
 
     stop() {
-        console.log("[FakeDeafen] Plugin arrêté");
+        console.log("[FakeDeafen] Plugin arrÃªtÃ©");
 
         // Remove keyboard listener
         document.removeEventListener("keydown", handleKeyPress, true);

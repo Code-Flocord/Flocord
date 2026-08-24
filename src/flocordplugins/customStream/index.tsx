@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Vencord, a modification for Discord's desktop app
  * Copyright (c) 2024 Vendicated and contributors
  *
@@ -27,7 +27,7 @@ import definePlugin, { OptionType } from "@utils/types";
 import { findComponentByCodeLazy } from "@webpack";
 import { Button, Menu, React, showToast, Text, Toasts, UserStore, useState, useEffect, useRef } from "@webpack/common";
 
-// Компонент кнопки в панели
+// ÐšÐ¾Ð¼Ð¿Ð¾Ð½ÐµÐ½Ñ‚ ÐºÐ½Ð¾Ð¿ÐºÐ¸ Ð² Ð¿Ð°Ð½ÐµÐ»Ð¸
 const PanelButton = findComponentByCodeLazy(".GREEN,positionKeyStemOverride:");
 
 const DATASTORE_KEY = "CustomStreamTopQ_ImageData";
@@ -40,7 +40,7 @@ const MAX_IMAGES_PER_PROFILE = 50;
 const MAX_PROFILES = 5;  // Maximum number of profiles allowed
 const DEFAULT_PROFILE_ID = "default";
 
-// Структура профиля
+// Ð¡Ñ‚Ñ€ÑƒÐºÑ‚ÑƒÑ€Ð° Ð¿Ñ€Ð¾Ñ„Ð¸Ð»Ñ
 interface Profile {
     id: string;
     name: string;
@@ -49,20 +49,20 @@ interface Profile {
     currentIndex: number;
 }
 
-// Кэш для профилей
+// ÐšÑÑˆ Ð´Ð»Ñ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»ÐµÐ¹
 let profiles: Map<string, Profile> = new Map();
 let activeProfileId: string = DEFAULT_PROFILE_ID;
 
-// Кэш для изображений в памяти (для обратной совместимости)
+// ÐšÑÑˆ Ð´Ð»Ñ Ð¸Ð·Ð¾Ð±Ñ€Ð°Ð¶ÐµÐ½Ð¸Ð¹ Ð² Ð¿Ð°Ð¼ÑÑ‚Ð¸ (Ð´Ð»Ñ Ð¾Ð±Ñ€Ð°Ñ‚Ð½Ð¾Ð¹ ÑÐ¾Ð²Ð¼ÐµÑÑ‚Ð¸Ð¼Ð¾ÑÑ‚Ð¸)
 let cachedImages: Blob[] = [];
 let cachedDataUris: string[] = [];
 let currentSlideIndex = 0;
-let lastSlideChangeTime = 0; // Время последней смены слайда (timestamp)
-let isStreamActive = false; // Активен ли стрим сейчас
-let manualSlideChange = false; // Флаг ручной смены картинки через модалку
-let actualStreamImageUri: string | null = null; // Реальная картинка которая СЕЙЧАС на стриме (обновляется только Discord'ом)
+let lastSlideChangeTime = 0; // Ð’Ñ€ÐµÐ¼Ñ Ð¿Ð¾ÑÐ»ÐµÐ´Ð½ÐµÐ¹ ÑÐ¼ÐµÐ½Ñ‹ ÑÐ»Ð°Ð¹Ð´Ð° (timestamp)
+let isStreamActive = false; // ÐÐºÑ‚Ð¸Ð²ÐµÐ½ Ð»Ð¸ ÑÑ‚Ñ€Ð¸Ð¼ ÑÐµÐ¹Ñ‡Ð°Ñ
+let manualSlideChange = false; // Ð¤Ð»Ð°Ð³ Ñ€ÑƒÑ‡Ð½Ð¾Ð¹ ÑÐ¼ÐµÐ½Ñ‹ ÐºÐ°Ñ€Ñ‚Ð¸Ð½ÐºÐ¸ Ñ‡ÐµÑ€ÐµÐ· Ð¼Ð¾Ð´Ð°Ð»ÐºÑƒ
+let actualStreamImageUri: string | null = null; // Ð ÐµÐ°Ð»ÑŒÐ½Ð°Ñ ÐºÐ°Ñ€Ñ‚Ð¸Ð½ÐºÐ° ÐºÐ¾Ñ‚Ð¾Ñ€Ð°Ñ Ð¡Ð•Ð™Ð§ÐÐ¡ Ð½Ð° ÑÑ‚Ñ€Ð¸Ð¼Ðµ (Ð¾Ð±Ð½Ð¾Ð²Ð»ÑÐµÑ‚ÑÑ Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Discord'Ð¾Ð¼)
 
-// Получить активный профиль
+// ÐŸÐ¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ Ð°ÐºÑ‚Ð¸Ð²Ð½Ñ‹Ð¹ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»ÑŒ
 function getActiveProfile(): Profile {
     let profile = profiles.get(activeProfileId);
     if (!profile) {
@@ -78,7 +78,7 @@ function getActiveProfile(): Profile {
     return profile;
 }
 
-// Синхронизировать кэш с активным профилем
+// Ð¡Ð¸Ð½Ñ…Ñ€Ð¾Ð½Ð¸Ð·Ð¸Ñ€Ð¾Ð²Ð°Ñ‚ÑŒ ÐºÑÑˆ Ñ Ð°ÐºÑ‚Ð¸Ð²Ð½Ñ‹Ð¼ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»ÐµÐ¼
 function syncCacheWithActiveProfile() {
     const profile = getActiveProfile();
     cachedImages = profile.images;
@@ -86,7 +86,7 @@ function syncCacheWithActiveProfile() {
     currentSlideIndex = profile.currentIndex;
 }
 
-// Слушатели для обновления UI
+// Ð¡Ð»ÑƒÑˆÐ°Ñ‚ÐµÐ»Ð¸ Ð´Ð»Ñ Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ñ UI
 const imageChangeListeners = new Set<() => void>();
 
 function notifyImageChange() {
@@ -116,7 +116,7 @@ const settings = definePluginSettings({
     }
 });
 
-// Структура данных для хранения
+// Ð¡Ñ‚Ñ€ÑƒÐºÑ‚ÑƒÑ€Ð° Ð´Ð°Ð½Ð½Ñ‹Ñ… Ð´Ð»Ñ Ñ…Ñ€Ð°Ð½ÐµÐ½Ð¸Ñ
 interface StoredImageData {
     type: string;
     data: number[];
@@ -138,7 +138,7 @@ interface StoredProfilesData {
     activeProfileId: string;
 }
 
-// Функции для работы с профилями
+// Ð¤ÑƒÐ½ÐºÑ†Ð¸Ð¸ Ð´Ð»Ñ Ñ€Ð°Ð±Ð¾Ñ‚Ñ‹ Ñ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»ÑÐ¼Ð¸
 async function saveProfilesToDataStore(): Promise<void> {
     const storedProfiles: StoredProfile[] = [];
 
@@ -196,7 +196,7 @@ async function loadProfilesFromDataStore(): Promise<void> {
             }
             activeProfileId = data.activeProfileId || DEFAULT_PROFILE_ID;
         } else {
-            // Миграция со старого формата
+            // ÐœÐ¸Ð³Ñ€Ð°Ñ†Ð¸Ñ ÑÐ¾ ÑÑ‚Ð°Ñ€Ð¾Ð³Ð¾ Ñ„Ð¾Ñ€Ð¼Ð°Ñ‚Ð°
             const oldData: SlideshowData | undefined = await DataStore.get(DATASTORE_KEY_SLIDESHOW);
             if (oldData?.images?.length) {
                 const blobs: Blob[] = [];
@@ -219,13 +219,13 @@ async function loadProfilesFromDataStore(): Promise<void> {
                 });
                 activeProfileId = DEFAULT_PROFILE_ID;
 
-                // Сохраняем в новом формате и удаляем старые данные
+                // Ð¡Ð¾Ñ…Ñ€Ð°Ð½ÑÐµÐ¼ Ð² Ð½Ð¾Ð²Ð¾Ð¼ Ñ„Ð¾Ñ€Ð¼Ð°Ñ‚Ðµ Ð¸ ÑƒÐ´Ð°Ð»ÑÐµÐ¼ ÑÑ‚Ð°Ñ€Ñ‹Ðµ Ð´Ð°Ð½Ð½Ñ‹Ðµ
                 await saveProfilesToDataStore();
                 await DataStore.del(DATASTORE_KEY_SLIDESHOW);
                 await DataStore.del(DATASTORE_KEY_INDEX);
                 await DataStore.del(DATASTORE_KEY);
             } else {
-                // Создаём дефолтный профиль
+                // Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ð¼ Ð´ÐµÑ„Ð¾Ð»Ñ‚Ð½Ñ‹Ð¹ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»ÑŒ
                 profiles.set(DEFAULT_PROFILE_ID, {
                     id: DEFAULT_PROFILE_ID,
                     name: "Default",
@@ -271,8 +271,8 @@ function createProfile(name: string): Profile | null {
 function deleteProfile(profileId: string): boolean {
     const profile = profiles.get(profileId);
     if (!profile) return false;
-    if (profile.images.length > 0) return false; // Нельзя удалить профиль с фото
-    if (profileId === DEFAULT_PROFILE_ID) return false; // Нельзя удалить дефолтный
+    if (profile.images.length > 0) return false; // ÐÐµÐ»ÑŒÐ·Ñ ÑƒÐ´Ð°Ð»Ð¸Ñ‚ÑŒ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»ÑŒ Ñ Ñ„Ð¾Ñ‚Ð¾
+    if (profileId === DEFAULT_PROFILE_ID) return false; // ÐÐµÐ»ÑŒÐ·Ñ ÑƒÐ´Ð°Ð»Ð¸Ñ‚ÑŒ Ð´ÐµÑ„Ð¾Ð»Ñ‚Ð½Ñ‹Ð¹
 
     profiles.delete(profileId);
     if (activeProfileId === profileId) {
@@ -301,7 +301,7 @@ function getProfileList(): Profile[] {
     return Array.from(profiles.values());
 }
 
-// Функции для работы с DataStore (обновлённые для работы с профилями)
+// Ð¤ÑƒÐ½ÐºÑ†Ð¸Ð¸ Ð´Ð»Ñ Ñ€Ð°Ð±Ð¾Ñ‚Ñ‹ Ñ DataStore (Ð¾Ð±Ð½Ð¾Ð²Ð»Ñ‘Ð½Ð½Ñ‹Ðµ Ð´Ð»Ñ Ñ€Ð°Ð±Ð¾Ñ‚Ñ‹ Ñ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»ÑÐ¼Ð¸)
 async function saveSlideIndex(index: number): Promise<void> {
     const profile = getActiveProfile();
     profile.currentIndex = index;
@@ -318,7 +318,7 @@ async function saveImagesToDataStore(blobs: Blob[]): Promise<void> {
     const profile = getActiveProfile();
     profile.images = blobs;
 
-    // Обновляем dataUris
+    // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ dataUris
     profile.dataUris = [];
     for (const blob of blobs) {
         profile.dataUris.push(await blobToDataUrl(blob));
@@ -328,7 +328,7 @@ async function saveImagesToDataStore(blobs: Blob[]): Promise<void> {
     await saveProfilesToDataStore();
 }
 
-// loadImagesFromDataStore удалена - теперь используется getActiveProfile().images напрямую
+// loadImagesFromDataStore ÑƒÐ´Ð°Ð»ÐµÐ½Ð° - Ñ‚ÐµÐ¿ÐµÑ€ÑŒ Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÑ‚ÑÑ getActiveProfile().images Ð½Ð°Ð¿Ñ€ÑÐ¼ÑƒÑŽ
 
 async function deleteAllImages(): Promise<void> {
     const profile = getActiveProfile();
@@ -360,11 +360,11 @@ async function moveImage(fromIndex: number, toIndex: number): Promise<void> {
     if (fromIndex < 0 || fromIndex >= profile.images.length) return;
     if (toIndex < 0 || toIndex >= profile.images.length) return;
 
-    // Простой swap 
+    // ÐŸÑ€Ð¾ÑÑ‚Ð¾Ð¹ swap 
     [profile.images[fromIndex], profile.images[toIndex]] = [profile.images[toIndex], profile.images[fromIndex]];
     [profile.dataUris[fromIndex], profile.dataUris[toIndex]] = [profile.dataUris[toIndex], profile.dataUris[fromIndex]];
 
-    // Корректируем currentIndex если он был на одной из перемещаемых позиций
+    // ÐšÐ¾Ñ€Ñ€ÐµÐºÑ‚Ð¸Ñ€ÑƒÐµÐ¼ currentIndex ÐµÑÐ»Ð¸ Ð¾Ð½ Ð±Ñ‹Ð» Ð½Ð° Ð¾Ð´Ð½Ð¾Ð¹ Ð¸Ð· Ð¿ÐµÑ€ÐµÐ¼ÐµÑ‰Ð°ÐµÐ¼Ñ‹Ñ… Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¹
     if (profile.currentIndex === fromIndex) {
         profile.currentIndex = toIndex;
     } else if (profile.currentIndex === toIndex) {
@@ -392,13 +392,13 @@ function blobToDataUrl(blob: Blob): Promise<string> {
     });
 }
 
-// Удалена неиспользуемая функция prepareCachedDataUris
+// Ð£Ð´Ð°Ð»ÐµÐ½Ð° Ð½ÐµÐ¸ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÐ¼Ð°Ñ Ñ„ÑƒÐ½ÐºÑ†Ð¸Ñ prepareCachedDataUris
 
 function getImageCount(): number {
     return cachedImages.length;
 }
 
-// Конвертация изображения в JPEG и масштабирование до 1280x720
+// ÐšÐ¾Ð½Ð²ÐµÑ€Ñ‚Ð°Ñ†Ð¸Ñ Ð¸Ð·Ð¾Ð±Ñ€Ð°Ð¶ÐµÐ½Ð¸Ñ Ð² JPEG Ð¸ Ð¼Ð°ÑÑˆÑ‚Ð°Ð±Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ðµ Ð´Ð¾ 1280x720
 async function processImage(blob: Blob): Promise<Blob> {
     return new Promise((resolve, reject) => {
         const img = new Image();
@@ -410,17 +410,17 @@ async function processImage(blob: Blob): Promise<Blob> {
             const targetWidth = 1280;
             const targetHeight = 720;
 
-            // Создаём canvas для конвертации и масштабирования
+            // Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ð¼ canvas Ð´Ð»Ñ ÐºÐ¾Ð½Ð²ÐµÑ€Ñ‚Ð°Ñ†Ð¸Ð¸ Ð¸ Ð¼Ð°ÑÑˆÑ‚Ð°Ð±Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ñ
             const canvas = document.createElement("canvas");
             canvas.width = targetWidth;
             canvas.height = targetHeight;
             const ctx = canvas.getContext("2d")!;
 
-            // Заливаем чёрным фоном (на случай прозрачности)
+            // Ð—Ð°Ð»Ð¸Ð²Ð°ÐµÐ¼ Ñ‡Ñ‘Ñ€Ð½Ñ‹Ð¼ Ñ„Ð¾Ð½Ð¾Ð¼ (Ð½Ð° ÑÐ»ÑƒÑ‡Ð°Ð¹ Ð¿Ñ€Ð¾Ð·Ñ€Ð°Ñ‡Ð½Ð¾ÑÑ‚Ð¸)
             ctx.fillStyle = "#000000";
             ctx.fillRect(0, 0, targetWidth, targetHeight);
 
-            // Вычисляем размеры для сохранения пропорций (cover)
+            // Ð’Ñ‹Ñ‡Ð¸ÑÐ»ÑÐµÐ¼ Ñ€Ð°Ð·Ð¼ÐµÑ€Ñ‹ Ð´Ð»Ñ ÑÐ¾Ñ…Ñ€Ð°Ð½ÐµÐ½Ð¸Ñ Ð¿Ñ€Ð¾Ð¿Ð¾Ñ€Ñ†Ð¸Ð¹ (cover)
             const scale = Math.max(targetWidth / img.width, targetHeight / img.height);
             const scaledWidth = img.width * scale;
             const scaledHeight = img.height * scale;
@@ -429,8 +429,8 @@ async function processImage(blob: Blob): Promise<Blob> {
 
             ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
 
-            // Discord использует JPEG для превью стримов
-            // Качество 0.7 для уменьшения размера (Discord ограничивает ~100KB)
+            // Discord Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÑ‚ JPEG Ð´Ð»Ñ Ð¿Ñ€ÐµÐ²ÑŒÑŽ ÑÑ‚Ñ€Ð¸Ð¼Ð¾Ð²
+            // ÐšÐ°Ñ‡ÐµÑÑ‚Ð²Ð¾ 0.7 Ð´Ð»Ñ ÑƒÐ¼ÐµÐ½ÑŒÑˆÐµÐ½Ð¸Ñ Ñ€Ð°Ð·Ð¼ÐµÑ€Ð° (Discord Ð¾Ð³Ñ€Ð°Ð½Ð¸Ñ‡Ð¸Ð²Ð°ÐµÑ‚ ~100KB)
             canvas.toBlob((newBlob) => {
                 if (newBlob) {
                     resolve(newBlob);
@@ -450,7 +450,7 @@ async function processImage(blob: Blob): Promise<Blob> {
 }
 
 function ImagePickerModal({ rootProps }: { rootProps: any; }) {
-    // Сохраняем исходные значения для отката
+    // Ð¡Ð¾Ñ…Ñ€Ð°Ð½ÑÐµÐ¼ Ð¸ÑÑ…Ð¾Ð´Ð½Ñ‹Ðµ Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ñ Ð´Ð»Ñ Ð¾Ñ‚ÐºÐ°Ñ‚Ð°
     const initialSettingsRef = useRef({
         enabled: settings.store.replaceEnabled,
         slideshowEnabled: settings.store.slideshowEnabled,
@@ -461,7 +461,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
     const savedRef = useRef(false);
 
     const [images, setImages] = useState<string[]>([]);
-    const [imageSizes, setImageSizes] = useState<number[]>([]); // Размеры в байтах
+    const [imageSizes, setImageSizes] = useState<number[]>([]); // Ð Ð°Ð·Ð¼ÐµÑ€Ñ‹ Ð² Ð±Ð°Ð¹Ñ‚Ð°Ñ…
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
     const [pendingIndex, setPendingIndex] = useState(currentSlideIndex);
@@ -473,9 +473,9 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
     const [timerSeconds, setTimerSeconds] = useState(0);
     const [streamActive, setStreamActive] = useState(isStreamActive);
-    const [previewImage, setPreviewImage] = useState<string | null>(null); // Для полноэкранного просмотра
+    const [previewImage, setPreviewImage] = useState<string | null>(null); // Ð”Ð»Ñ Ð¿Ð¾Ð»Ð½Ð¾ÑÐºÑ€Ð°Ð½Ð½Ð¾Ð³Ð¾ Ð¿Ñ€Ð¾ÑÐ¼Ð¾Ñ‚Ñ€Ð°
 
-    // Состояния для профилей
+    // Ð¡Ð¾ÑÑ‚Ð¾ÑÐ½Ð¸Ñ Ð´Ð»Ñ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»ÐµÐ¹
     const [profileList, setProfileList] = useState<Profile[]>(getProfileList());
     const [currentProfileId, setCurrentProfileId] = useState(activeProfileId);
     const [isCreatingProfile, setIsCreatingProfile] = useState(false);
@@ -483,17 +483,17 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
     const [editingProfileId, setEditingProfileId] = useState<string | null>(null);
     const [editingProfileName, setEditingProfileName] = useState("");
 
-    // Откат при закрытии без сохранения (ESC, клик вне окна, крестик)
+    // ÐžÑ‚ÐºÐ°Ñ‚ Ð¿Ñ€Ð¸ Ð·Ð°ÐºÑ€Ñ‹Ñ‚Ð¸Ð¸ Ð±ÐµÐ· ÑÐ¾Ñ…Ñ€Ð°Ð½ÐµÐ½Ð¸Ñ (ESC, ÐºÐ»Ð¸Ðº Ð²Ð½Ðµ Ð¾ÐºÐ½Ð°, ÐºÑ€ÐµÑÑ‚Ð¸Ðº)
     useEffect(() => {
         return () => {
             if (!savedRef.current) {
-                // Откатываем настройки при закрытии без сохранения
+                // ÐžÑ‚ÐºÐ°Ñ‚Ñ‹Ð²Ð°ÐµÐ¼ Ð½Ð°ÑÑ‚Ñ€Ð¾Ð¹ÐºÐ¸ Ð¿Ñ€Ð¸ Ð·Ð°ÐºÑ€Ñ‹Ñ‚Ð¸Ð¸ Ð±ÐµÐ· ÑÐ¾Ñ…Ñ€Ð°Ð½ÐµÐ½Ð¸Ñ
                 const init = initialSettingsRef.current;
                 settings.store.replaceEnabled = init.enabled;
                 settings.store.slideshowEnabled = init.slideshowEnabled;
                 settings.store.slideshowRandom = init.slideshowRandom;
                 currentSlideIndex = init.slideIndex;
-                // Откатываем активный профиль
+                // ÐžÑ‚ÐºÐ°Ñ‚Ñ‹Ð²Ð°ÐµÐ¼ Ð°ÐºÑ‚Ð¸Ð²Ð½Ñ‹Ð¹ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»ÑŒ
                 setActiveProfile(init.activeProfileId);
             }
         };
@@ -508,7 +508,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
             try {
                 const uri = await blobToDataUrl(blob);
                 uris.push(uri);
-                sizes.push(blob.size); // Сохраняем размер в байтах
+                sizes.push(blob.size); // Ð¡Ð¾Ñ…Ñ€Ð°Ð½ÑÐµÐ¼ Ñ€Ð°Ð·Ð¼ÐµÑ€ Ð² Ð±Ð°Ð¹Ñ‚Ð°Ñ…
             } catch (e) {
                 console.error("[CustomStreamTopQ] Error:", e);
             }
@@ -523,10 +523,10 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
         loadImages();
     }, [currentProfileId]);
 
-    // Таймер для обновления времени в модалке
+    // Ð¢Ð°Ð¹Ð¼ÐµÑ€ Ð´Ð»Ñ Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ñ Ð²Ñ€ÐµÐ¼ÐµÐ½Ð¸ Ð² Ð¼Ð¾Ð´Ð°Ð»ÐºÐµ
     useEffect(() => {
         const timerInterval = setInterval(() => {
-            // Автосброс: если прошло более 7 минут без вызова getCustomThumbnail - стрим остановлен
+            // ÐÐ²Ñ‚Ð¾ÑÐ±Ñ€Ð¾Ñ: ÐµÑÐ»Ð¸ Ð¿Ñ€Ð¾ÑˆÐ»Ð¾ Ð±Ð¾Ð»ÐµÐµ 7 Ð¼Ð¸Ð½ÑƒÑ‚ Ð±ÐµÐ· Ð²Ñ‹Ð·Ð¾Ð²Ð° getCustomThumbnail - ÑÑ‚Ñ€Ð¸Ð¼ Ð¾ÑÑ‚Ð°Ð½Ð¾Ð²Ð»ÐµÐ½
             if (isStreamActive && lastSlideChangeTime > 0 && (Date.now() - lastSlideChangeTime) > 420000) {
                 isStreamActive = false;
             }
@@ -538,7 +538,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
         return () => clearInterval(timerInterval);
     }, []);
 
-    // Переключение профиля
+    // ÐŸÐµÑ€ÐµÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ðµ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»Ñ
     const handleProfileSwitch = async (profileId: string) => {
         setActiveProfile(profileId);
         setCurrentProfileId(profileId);
@@ -548,7 +548,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
         }
     };
 
-    // Создание нового профиля
+    // Ð¡Ð¾Ð·Ð´Ð°Ð½Ð¸Ðµ Ð½Ð¾Ð²Ð¾Ð³Ð¾ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»Ñ
     const handleCreateProfile = async () => {
         if (!newProfileName.trim()) {
             setError("Enter profile name");
@@ -575,7 +575,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
         showToast(`Profile "${profile.name}" created`, Toasts.Type.SUCCESS);
     };
 
-    // Удаление профиля
+    // Ð£Ð´Ð°Ð»ÐµÐ½Ð¸Ðµ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»Ñ
     const handleDeleteProfile = async (profileId: string) => {
         const profile = profiles.get(profileId);
         if (!profile) return;
@@ -608,7 +608,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
         });
     };
 
-    // Переименование профиля
+    // ÐŸÐµÑ€ÐµÐ¸Ð¼ÐµÐ½Ð¾Ð²Ð°Ð½Ð¸Ðµ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»Ñ
     const handleRenameProfile = async (profileId: string) => {
         if (!editingProfileName.trim()) {
             setEditingProfileId(null);
@@ -625,7 +625,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
         showToast("Profile renamed", Toasts.Type.SUCCESS);
     };
 
-    // Обработка перетаскиваемых файлов
+    // ÐžÐ±Ñ€Ð°Ð±Ð¾Ñ‚ÐºÐ° Ð¿ÐµÑ€ÐµÑ‚Ð°ÑÐºÐ¸Ð²Ð°ÐµÐ¼Ñ‹Ñ… Ñ„Ð°Ð¹Ð»Ð¾Ð²
     const handleDroppedFiles = async (files: FileList | File[]) => {
         const profile = profiles.get(currentProfileId) || getActiveProfile();
         const remaining = MAX_IMAGES_PER_PROFILE - profile.images.length;
@@ -670,7 +670,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        // Показываем полоску только если это файлы извне, а не перетаскивание фото внутри
+        // ÐŸÐ¾ÐºÐ°Ð·Ñ‹Ð²Ð°ÐµÐ¼ Ð¿Ð¾Ð»Ð¾ÑÐºÑƒ Ñ‚Ð¾Ð»ÑŒÐºÐ¾ ÐµÑÐ»Ð¸ ÑÑ‚Ð¾ Ñ„Ð°Ð¹Ð»Ñ‹ Ð¸Ð·Ð²Ð½Ðµ, Ð° Ð½Ðµ Ð¿ÐµÑ€ÐµÑ‚Ð°ÑÐºÐ¸Ð²Ð°Ð½Ð¸Ðµ Ñ„Ð¾Ñ‚Ð¾ Ð²Ð½ÑƒÑ‚Ñ€Ð¸
         if (draggedIndex === null && e.dataTransfer.types.includes("Files")) {
             setIsDragging(true);
         }
@@ -679,7 +679,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
     const handleDragLeave = (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        // Проверяем что действительно покинули область
+        // ÐŸÑ€Ð¾Ð²ÐµÑ€ÑÐµÐ¼ Ñ‡Ñ‚Ð¾ Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ð¾ Ð¿Ð¾ÐºÐ¸Ð½ÑƒÐ»Ð¸ Ð¾Ð±Ð»Ð°ÑÑ‚ÑŒ
         const rect = e.currentTarget.getBoundingClientRect();
         const x = e.clientX;
         const y = e.clientY;
@@ -708,7 +708,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
             const files = e.target.files;
             if (!files?.length) return;
 
-            // Проверяем лимит для текущего профиля
+            // ÐŸÑ€Ð¾Ð²ÐµÑ€ÑÐµÐ¼ Ð»Ð¸Ð¼Ð¸Ñ‚ Ð´Ð»Ñ Ñ‚ÐµÐºÑƒÑ‰ÐµÐ³Ð¾ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»Ñ
             const profile = profiles.get(currentProfileId) || getActiveProfile();
             const remaining = MAX_IMAGES_PER_PROFILE - profile.images.length;
             if (remaining <= 0) {
@@ -760,7 +760,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
             setPendingIndex(0);
         }
         await loadImages();
-        setProfileList(getProfileList()); // Обновляем список профилей для отображения количества
+        setProfileList(getProfileList()); // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ ÑÐ¿Ð¸ÑÐ¾Ðº Ð¿Ñ€Ð¾Ñ„Ð¸Ð»ÐµÐ¹ Ð´Ð»Ñ Ð¾Ñ‚Ð¾Ð±Ñ€Ð°Ð¶ÐµÐ½Ð¸Ñ ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð°
         showToast("Deleted", Toasts.Type.MESSAGE);
     };
 
@@ -778,7 +778,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                 await deleteAllImages();
                 setImages([]);
                 setPendingIndex(0);
-                setProfileList(getProfileList()); // Обновляем список профилей
+                setProfileList(getProfileList()); // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ ÑÐ¿Ð¸ÑÐ¾Ðº Ð¿Ñ€Ð¾Ñ„Ð¸Ð»ÐµÐ¹
                 showToast("All deleted", Toasts.Type.MESSAGE);
             }
         });
@@ -801,31 +801,31 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
     };
 
     const handleSave = async () => {
-        // Применяем все изменения
+        // ÐŸÑ€Ð¸Ð¼ÐµÐ½ÑÐµÐ¼ Ð²ÑÐµ Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½Ð¸Ñ
         settings.store.replaceEnabled = pluginEnabled;
         settings.store.slideshowEnabled = slideshowOn;
         settings.store.slideshowRandom = randomOn;
 
-        // Проверяем была ли ручная смена картинки
+        // ÐŸÑ€Ð¾Ð²ÐµÑ€ÑÐµÐ¼ Ð±Ñ‹Ð»Ð° Ð»Ð¸ Ñ€ÑƒÑ‡Ð½Ð°Ñ ÑÐ¼ÐµÐ½Ð° ÐºÐ°Ñ€Ñ‚Ð¸Ð½ÐºÐ¸
         if (pendingIndex !== currentSlideIndex) {
-            manualSlideChange = true; // Помечаем что была ручная смена
-            // НЕ сбрасываем таймер при ручной смене!
+            manualSlideChange = true; // ÐŸÐ¾Ð¼ÐµÑ‡Ð°ÐµÐ¼ Ñ‡Ñ‚Ð¾ Ð±Ñ‹Ð»Ð° Ñ€ÑƒÑ‡Ð½Ð°Ñ ÑÐ¼ÐµÐ½Ð°
+            // ÐÐ• ÑÐ±Ñ€Ð°ÑÑ‹Ð²Ð°ÐµÐ¼ Ñ‚Ð°Ð¹Ð¼ÐµÑ€ Ð¿Ñ€Ð¸ Ñ€ÑƒÑ‡Ð½Ð¾Ð¹ ÑÐ¼ÐµÐ½Ðµ!
         }
 
         currentSlideIndex = pendingIndex;
-        await saveSlideIndex(pendingIndex); // Сохраняем индекс в DataStore
-        savedRef.current = true; // Помечаем что сохранили
-        notifyImageChange(); // Обновляем иконку в панели
+        await saveSlideIndex(pendingIndex); // Ð¡Ð¾Ñ…Ñ€Ð°Ð½ÑÐµÐ¼ Ð¸Ð½Ð´ÐµÐºÑ Ð² DataStore
+        savedRef.current = true; // ÐŸÐ¾Ð¼ÐµÑ‡Ð°ÐµÐ¼ Ñ‡Ñ‚Ð¾ ÑÐ¾Ñ…Ñ€Ð°Ð½Ð¸Ð»Ð¸
+        notifyImageChange(); // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ Ð¸ÐºÐ¾Ð½ÐºÑƒ Ð² Ð¿Ð°Ð½ÐµÐ»Ð¸
         showToast("Settings saved!", Toasts.Type.SUCCESS);
         rootProps.onClose();
     };
 
     const handleCancel = () => {
-        // saved остаётся false, откат произойдёт в useEffect при размонтировании
+        // saved Ð¾ÑÑ‚Ð°Ñ‘Ñ‚ÑÑ false, Ð¾Ñ‚ÐºÐ°Ñ‚ Ð¿Ñ€Ð¾Ð¸Ð·Ð¾Ð¹Ð´Ñ‘Ñ‚ Ð² useEffect Ð¿Ñ€Ð¸ Ñ€Ð°Ð·Ð¼Ð¾Ð½Ñ‚Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ð¸
         rootProps.onClose();
     };
 
-    // Drag & drop для изменения порядка
+    // Drag & drop Ð´Ð»Ñ Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½Ð¸Ñ Ð¿Ð¾Ñ€ÑÐ´ÐºÐ°
     const handleImageDragStart = (e: React.DragEvent, index: number) => {
         e.stopPropagation();
         setDraggedIndex(index);
@@ -851,7 +851,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
         e.stopPropagation();
 
         if (draggedIndex !== null && draggedIndex !== toIndex) {
-            // Корректируем pendingIndex при перемещении
+            // ÐšÐ¾Ñ€Ñ€ÐµÐºÑ‚Ð¸Ñ€ÑƒÐµÐ¼ pendingIndex Ð¿Ñ€Ð¸ Ð¿ÐµÑ€ÐµÐ¼ÐµÑ‰ÐµÐ½Ð¸Ð¸
             let newPendingIndex = pendingIndex;
             if (pendingIndex === draggedIndex) {
                 newPendingIndex = toIndex;
@@ -864,7 +864,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
             await moveImage(draggedIndex, toIndex);
             setPendingIndex(newPendingIndex);
             await loadImages();
-            showToast(`Moved: #${draggedIndex + 1} → #${toIndex + 1}`, Toasts.Type.SUCCESS);
+            showToast(`Moved: #${draggedIndex + 1} â†’ #${toIndex + 1}`, Toasts.Type.SUCCESS);
         }
 
         setDraggedIndex(null);
@@ -876,7 +876,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
         setDragOverIndex(null);
     };
 
-    // Вычисляем следующий индекс
+    // Ð’Ñ‹Ñ‡Ð¸ÑÐ»ÑÐµÐ¼ ÑÐ»ÐµÐ´ÑƒÑŽÑ‰Ð¸Ð¹ Ð¸Ð½Ð´ÐµÐºÑ
     const getNextIndex = () => {
         if (images.length <= 1 || !slideshowOn) return -1;
         if (randomOn) return -1;
@@ -887,7 +887,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
 
     return (
         <ModalRoot {...rootProps} size={ModalSize.LARGE}>
-            {/* Полноэкранный просмотр изображения */}
+            {/* ÐŸÐ¾Ð»Ð½Ð¾ÑÐºÑ€Ð°Ð½Ð½Ñ‹Ð¹ Ð¿Ñ€Ð¾ÑÐ¼Ð¾Ñ‚Ñ€ Ð¸Ð·Ð¾Ð±Ñ€Ð°Ð¶ÐµÐ½Ð¸Ñ */}
             {previewImage && (
                 <div
                     onClick={() => setPreviewImage(null)}
@@ -938,7 +938,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                         padding: "8px 16px",
                         borderRadius: "8px"
                     }}>
-                        📐 1280×720 (16:9) — Stream preview size
+                        ðŸ“ 1280Ã—720 (16:9) â€” Stream preview size
                     </div>
                 </div>
             )}
@@ -957,7 +957,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                     onDrop={handleDrop}
                 >
 
-                    {/* Оверлей для drag & drop файлов - только верх до галереи */}
+                    {/* ÐžÐ²ÐµÑ€Ð»ÐµÐ¹ Ð´Ð»Ñ drag & drop Ñ„Ð°Ð¹Ð»Ð¾Ð² - Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ð²ÐµÑ€Ñ… Ð´Ð¾ Ð³Ð°Ð»ÐµÑ€ÐµÐ¸ */}
                     {isDragging && draggedIndex === null && (
                         <div
                             onDragOver={handleDragOver}
@@ -980,7 +980,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                 pointerEvents: "auto",
                                 backdropFilter: "blur(8px)"
                             }}>
-                            <div style={{ fontSize: "48px", marginBottom: "12px" }}>📥</div>
+                            <div style={{ fontSize: "48px", marginBottom: "12px" }}>ðŸ“¥</div>
                             <Text variant="heading-lg/bold" style={{ color: "white", marginBottom: "4px" }}>
                                 Drop to upload
                             </Text>
@@ -990,7 +990,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                         </div>
                     )}
 
-                    {/* Главный переключатель */}
+                    {/* Ð“Ð»Ð°Ð²Ð½Ñ‹Ð¹ Ð¿ÐµÑ€ÐµÐºÐ»ÑŽÑ‡Ð°Ñ‚ÐµÐ»ÑŒ */}
                     <div
                         onClick={togglePlugin}
                         style={{
@@ -1012,11 +1012,11 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                 : "0 4px 12px rgba(237, 66, 69, 0.3)"
                         }}
                     >
-                        <span style={{ fontSize: "18px" }}>{pluginEnabled ? "✅" : "❌"}</span>
+                        <span style={{ fontSize: "18px" }}>{pluginEnabled ? "âœ…" : "âŒ"}</span>
                         {pluginEnabled ? "REPLACEMENT ENABLED" : "REPLACEMENT DISABLED (default Discord)"}
                     </div>
 
-                    {/* === ПРОФИЛИ / ВКЛАДКИ === */}
+                    {/* === ÐŸÐ ÐžÐ¤Ð˜Ð›Ð˜ / Ð’ÐšÐ›ÐÐ”ÐšÐ˜ === */}
                     <div style={{
                         marginBottom: "16px",
                         backgroundColor: "var(--background-secondary)",
@@ -1024,7 +1024,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                         padding: "16px",
                         border: "1px solid var(--background-modifier-accent)"
                     }}>
-                        {/* Заголовок с кнопкой создания */}
+                        {/* Ð—Ð°Ð³Ð¾Ð»Ð¾Ð²Ð¾Ðº Ñ ÐºÐ½Ð¾Ð¿ÐºÐ¾Ð¹ ÑÐ¾Ð·Ð´Ð°Ð½Ð¸Ñ */}
                         <div style={{
                             display: "flex",
                             alignItems: "center",
@@ -1034,7 +1034,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                             borderBottom: "1px solid var(--background-modifier-accent)"
                         }}>
                             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                                <span style={{ fontSize: "20px" }}>📁</span>
+                                <span style={{ fontSize: "20px" }}>ðŸ“</span>
                                 <Text variant="text-md/semibold" style={{ color: "#ffffff" }}>
                                     Profiles
                                 </Text>
@@ -1081,7 +1081,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                             )}
                         </div>
 
-                        {/* Форма создания профиля */}
+                        {/* Ð¤Ð¾Ñ€Ð¼Ð° ÑÐ¾Ð·Ð´Ð°Ð½Ð¸Ñ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»Ñ */}
                         {isCreatingProfile && (
                             <div style={{
                                 display: "flex",
@@ -1129,7 +1129,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                         cursor: "pointer"
                                     }}
                                 >
-                                    ✓
+                                    âœ“
                                 </button>
                                 <button
                                     onClick={() => {
@@ -1147,12 +1147,12 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                         cursor: "pointer"
                                     }}
                                 >
-                                    ✕
+                                    âœ•
                                 </button>
                             </div>
                         )}
 
-                        {/* Список вкладок профилей */}
+                        {/* Ð¡Ð¿Ð¸ÑÐ¾Ðº Ð²ÐºÐ»Ð°Ð´Ð¾Ðº Ð¿Ñ€Ð¾Ñ„Ð¸Ð»ÐµÐ¹ */}
                         <div style={{
                             display: "flex",
                             flexWrap: "wrap",
@@ -1231,16 +1231,16 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                             />
                                         ) : (
                                             <>
-                                                {/* Иконка галочки для активного */}
+                                                {/* Ð˜ÐºÐ¾Ð½ÐºÐ° Ð³Ð°Ð»Ð¾Ñ‡ÐºÐ¸ Ð´Ð»Ñ Ð°ÐºÑ‚Ð¸Ð²Ð½Ð¾Ð³Ð¾ */}
                                                 {isActive && (
                                                     <span style={{ 
                                                         fontSize: "12px",
                                                         fontWeight: "bold"
-                                                    }}>✓</span>
+                                                    }}>âœ“</span>
                                                 )}
-                                                {/* Иконка папки для неактивных */}
+                                                {/* Ð˜ÐºÐ¾Ð½ÐºÐ° Ð¿Ð°Ð¿ÐºÐ¸ Ð´Ð»Ñ Ð½ÐµÐ°ÐºÑ‚Ð¸Ð²Ð½Ñ‹Ñ… */}
                                                 {!isActive && (
-                                                    <span style={{ fontSize: "12px" }}>📁</span>
+                                                    <span style={{ fontSize: "12px" }}>ðŸ“</span>
                                                 )}
                                                 <span style={{ 
                                                     fontWeight: "600", 
@@ -1267,7 +1267,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                             </>
                                         )}
 
-                                        {/* Кнопки действий для вкладки */}
+                                        {/* ÐšÐ½Ð¾Ð¿ÐºÐ¸ Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ð¹ Ð´Ð»Ñ Ð²ÐºÐ»Ð°Ð´ÐºÐ¸ */}
                                         {isActive && !isEditing && (
                                             <div style={{ 
                                                 display: "flex", 
@@ -1300,7 +1300,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                                     onMouseLeave={e => (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.15)"}
                                                     title="Rename"
                                                 >
-                                                    ✏️
+                                                    âœï¸
                                                 </button>
                                                 {canDelete && (
                                                     <button
@@ -1326,7 +1326,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                                         onMouseLeave={e => (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(237, 66, 69, 0.9)"}
                                                         title="Delete profile (only if empty)"
                                                     >
-                                                        🗑️
+                                                        ðŸ—‘ï¸
                                                     </button>
                                                 )}
                                             </div>
@@ -1336,7 +1336,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                             })}
                         </div>
 
-                        {/* Подсказка */}
+                        {/* ÐŸÐ¾Ð´ÑÐºÐ°Ð·ÐºÐ° */}
                         <div style={{
                             marginTop: "14px",
                             paddingTop: "12px",
@@ -1347,12 +1347,12 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                             alignItems: "center",
                             gap: "8px"
                         }}>
-                            <span style={{ fontSize: "14px" }}>💡</span>
-                            <span>Click profile to select • Empty profiles can be deleted</span>
+                            <span style={{ fontSize: "14px" }}>ðŸ’¡</span>
+                            <span>Click profile to select â€¢ Empty profiles can be deleted</span>
                         </div>
                     </div>
 
-                    {/* Режимы слайд-шоу */}
+                    {/* Ð ÐµÐ¶Ð¸Ð¼Ñ‹ ÑÐ»Ð°Ð¹Ð´-ÑˆÐ¾Ñƒ */}
                     <div style={{
                         display: "flex",
                         gap: "10px",
@@ -1374,7 +1374,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                 boxShadow: slideshowOn ? "0 4px 12px rgba(88, 101, 242, 0.3)" : "none"
                             }}
                         >
-                            🎞️ Slideshow: {slideshowOn ? "ON" : "OFF"}
+                            ðŸŽžï¸ Slideshow: {slideshowOn ? "ON" : "OFF"}
                         </div>
                         <div
                             onClick={slideshowOn ? toggleRandom : undefined}
@@ -1393,11 +1393,11 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                 boxShadow: slideshowOn && randomOn ? "0 4px 12px rgba(88, 101, 242, 0.3)" : "none"
                             }}
                         >
-                            🎲 Random: {randomOn ? "YES" : "NO"}
+                            ðŸŽ² Random: {randomOn ? "YES" : "NO"}
                         </div>
                     </div>
 
-                    {/* Инфо */}
+                    {/* Ð˜Ð½Ñ„Ð¾ */}
                     {settings.store.showInfoBadges && (
                         <div style={{
                             padding: "14px 18px",
@@ -1421,7 +1421,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                 border: "1px solid rgba(88, 101, 242, 0.3)",
                                 boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
                             }}>
-                                <span style={{ fontSize: "18px" }}>📁</span>
+                                <span style={{ fontSize: "18px" }}>ðŸ“</span>
                                 <div style={{ display: "flex", flexDirection: "column", lineHeight: "1.2" }}>
                                     <span style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>Profile</span>
                                     <span style={{ fontSize: "14px", fontWeight: "700", color: "#5865F2" }}>
@@ -1440,7 +1440,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                 borderRadius: "8px",
                                 boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
                             }}>
-                                <span style={{ fontSize: "18px" }}>📊</span>
+                                <span style={{ fontSize: "18px" }}>ðŸ“Š</span>
                                 <div style={{ display: "flex", flexDirection: "column", lineHeight: "1.2" }}>
                                     <span style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>Images</span>
                                     <div style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>
@@ -1462,7 +1462,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                     border: "1px solid rgba(88, 101, 242, 0.3)",
                                     boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
                                 }}>
-                                    <span style={{ fontSize: "18px" }}>📍</span>
+                                    <span style={{ fontSize: "18px" }}>ðŸ“</span>
                                     <div style={{ display: "flex", flexDirection: "column", lineHeight: "1.2" }}>
                                         <span style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>Selected</span>
                                         <span style={{ fontSize: "16px", fontWeight: "700", color: "#5865F2" }}>#{pendingIndex + 1}</span>
@@ -1482,7 +1482,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                     border: streamActive ? "1px solid rgba(59, 165, 92, 0.3)" : "none",
                                     boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
                                 }}>
-                                    <span style={{ fontSize: "18px" }}>{streamActive ? "🟢" : "⚫"}</span>
+                                    <span style={{ fontSize: "18px" }}>{streamActive ? "ðŸŸ¢" : "âš«"}</span>
                                     <div style={{ display: "flex", flexDirection: "column", lineHeight: "1.2" }}>
                                         <span style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>Slideshow</span>
                                         <span style={{ fontSize: "14px", fontWeight: "600", color: streamActive ? "#3ba55c" : "var(--text-muted)" }}>
@@ -1504,7 +1504,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                     border: "1px solid rgba(88, 101, 242, 0.3)",
                                     boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
                                 }}>
-                                    <span style={{ fontSize: "18px" }}>⏱️</span>
+                                    <span style={{ fontSize: "18px" }}>â±ï¸</span>
                                     <div style={{ display: "flex", flexDirection: "column", lineHeight: "1.2" }}>
                                         <span style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>Timer</span>
                                         <div style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>
@@ -1521,21 +1521,21 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                         </div>
                     )}
 
-                    {/* Кнопки */}
+                    {/* ÐšÐ½Ð¾Ð¿ÐºÐ¸ */}
                     <div style={{ display: "flex", gap: "10px", marginBottom: "16px", flexWrap: "wrap" }}>
                         <Button
                             onClick={() => handleFileSelect(false)}
                             disabled={isLoading || images.length >= MAX_IMAGES_PER_PROFILE}
                             style={{ padding: "10px 16px" }}
                         >
-                            {isLoading ? "⏳..." : "📁 Add Image"}
+                            {isLoading ? "â³..." : "ðŸ“ Add Image"}
                         </Button>
                         <Button
                             onClick={() => handleFileSelect(true)}
                             disabled={isLoading || images.length >= MAX_IMAGES_PER_PROFILE}
                             style={{ padding: "10px 16px" }}
                         >
-                            📁+ Multiple
+                            ðŸ“+ Multiple
                         </Button>
                         <Button
                             color={Button.Colors.RED}
@@ -1543,7 +1543,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                             disabled={images.length === 0}
                             style={{ padding: "10px 16px" }}
                         >
-                            🗑️ Delete All
+                            ðŸ—‘ï¸ Delete All
                         </Button>
                     </div>
 
@@ -1555,7 +1555,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                             marginBottom: "16px",
                             color: "var(--status-danger)"
                         }}>
-                            ❌ {error}
+                            âŒ {error}
                         </div>
                     )}
 
@@ -1622,7 +1622,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                             }
                                         }}
                                     >
-                                        {/* Контейнер с соотношением 16:9 */}
+                                        {/* ÐšÐ¾Ð½Ñ‚ÐµÐ¹Ð½ÐµÑ€ Ñ ÑÐ¾Ð¾Ñ‚Ð½Ð¾ÑˆÐµÐ½Ð¸ÐµÐ¼ 16:9 */}
                                         <div style={{
                                             position: "relative",
                                             width: "100%",
@@ -1644,7 +1644,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                             />
                                         </div>
 
-                                        {/* Статус бейдж */}
+                                        {/* Ð¡Ñ‚Ð°Ñ‚ÑƒÑ Ð±ÐµÐ¹Ð´Ð¶ */}
                                         <div style={{
                                             position: "absolute",
                                             top: "8px",
@@ -1664,12 +1664,12 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                             alignItems: "center",
                                             gap: "4px"
                                         }}>
-                                            {isCurrent && "▶"}
-                                            {isNext && "→"}
+                                            {isCurrent && "â–¶"}
+                                            {isNext && "â†’"}
                                             #{index + 1}
                                         </div>
 
-                                        {/* Кнопки действий */}
+                                        {/* ÐšÐ½Ð¾Ð¿ÐºÐ¸ Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ð¹ */}
                                         <div style={{
                                             position: "absolute",
                                             top: "8px",
@@ -1677,7 +1677,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                             display: "flex",
                                             gap: "6px"
                                         }}>
-                                            {/* Полноэкранный просмотр */}
+                                            {/* ÐŸÐ¾Ð»Ð½Ð¾ÑÐºÑ€Ð°Ð½Ð½Ñ‹Ð¹ Ð¿Ñ€Ð¾ÑÐ¼Ð¾Ñ‚Ñ€ */}
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
@@ -1700,11 +1700,11 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                                 }}
                                                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(88, 101, 242, 0.9)"}
                                                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(0,0,0,0.75)"}
-                                                title="Просмотр"
+                                                title="ÐŸÑ€Ð¾ÑÐ¼Ð¾Ñ‚Ñ€"
                                             >
-                                                🔍
+                                                ðŸ”
                                             </button>
-                                            {/* Скачать */}
+                                            {/* Ð¡ÐºÐ°Ñ‡Ð°Ñ‚ÑŒ */}
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
@@ -1732,9 +1732,9 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(0,0,0,0.75)"}
                                                 title="Download"
                                             >
-                                                ⬇
+                                                â¬‡
                                             </button>
-                                            {/* Удалить */}
+                                            {/* Ð£Ð´Ð°Ð»Ð¸Ñ‚ÑŒ */}
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
@@ -1759,11 +1759,11 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(0,0,0,0.75)"}
                                                 title="Delete"
                                             >
-                                                ✕
+                                                âœ•
                                             </button>
                                         </div>
 
-                                        {/* Индикатор выбора внизу */}
+                                        {/* Ð˜Ð½Ð´Ð¸ÐºÐ°Ñ‚Ð¾Ñ€ Ð²Ñ‹Ð±Ð¾Ñ€Ð° Ð²Ð½Ð¸Ð·Ñƒ */}
                                         {isCurrent && (
                                             <div style={{
                                                 position: "absolute",
@@ -1776,7 +1776,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                             }} />
                                         )}
 
-                                        {/* Размер файла в правом нижнем углу */}
+                                        {/* Ð Ð°Ð·Ð¼ÐµÑ€ Ñ„Ð°Ð¹Ð»Ð° Ð² Ð¿Ñ€Ð°Ð²Ð¾Ð¼ Ð½Ð¸Ð¶Ð½ÐµÐ¼ ÑƒÐ³Ð»Ñƒ */}
                                         {imageSizes[index] && (
                                             <div style={{
                                                 position: "absolute",
@@ -1791,7 +1791,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                                 backdropFilter: "blur(4px)",
                                                 whiteSpace: "nowrap"
                                             }}>
-                                                📦 {formatFileSize(imageSizes[index])}
+                                                ðŸ“¦ {formatFileSize(imageSizes[index])}
                                             </div>
                                         )}
                                     </div>
@@ -1806,7 +1806,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                             borderRadius: "12px",
                             border: "2px dashed var(--background-modifier-accent)"
                         }}>
-                            <div style={{ fontSize: "48px", marginBottom: "12px" }}>📷</div>
+                            <div style={{ fontSize: "48px", marginBottom: "12px" }}>ðŸ“·</div>
                             <Text variant="text-lg/semibold" style={{ color: "var(--text-normal)", marginBottom: "8px" }}>
                                 No images
                             </Text>
@@ -1816,7 +1816,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                         </div>
                     )}
 
-                    {/* Подсказка про хранение */}
+                    {/* ÐŸÐ¾Ð´ÑÐºÐ°Ð·ÐºÐ° Ð¿Ñ€Ð¾ Ñ…Ñ€Ð°Ð½ÐµÐ½Ð¸Ðµ */}
                     <div style={{
                         marginTop: "16px",
                         padding: "10px 14px",
@@ -1826,9 +1826,9 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                         alignItems: "center",
                         gap: "8px"
                     }}>
-                        <span style={{ fontSize: "16px" }}>💾</span>
+                        <span style={{ fontSize: "16px" }}>ðŸ’¾</span>
                         <Text variant="text-xs/normal" style={{ color: "var(--text-muted)" }}>
-                            Images stored locally • Limit: {MAX_IMAGES_PER_PROFILE} images per profile
+                            Images stored locally â€¢ Limit: {MAX_IMAGES_PER_PROFILE} images per profile
                         </Text>
                     </div>
                 </div>
@@ -1836,7 +1836,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
             <ModalFooter>
                 <div style={{ display: "flex", gap: "12px", width: "100%", justifyContent: "space-between", alignItems: "center" }}>
                     <Text variant="text-xs/normal" style={{ color: "var(--text-muted)" }}>
-                        📁 {profiles.get(currentProfileId)?.name || "Default"}: {images.length} / {MAX_IMAGES_PER_PROFILE} images
+                        ðŸ“ {profiles.get(currentProfileId)?.name || "Default"}: {images.length} / {MAX_IMAGES_PER_PROFILE} images
                     </Text>
                     <div style={{ display: "flex", gap: "10px" }}>
                         <Button
@@ -1854,7 +1854,7 @@ function ImagePickerModal({ rootProps }: { rootProps: any; }) {
                                 padding: "10px 24px"
                             }}
                         >
-                            ✓ Save
+                            âœ“ Save
                         </Button>
                     </div>
                 </div>
@@ -1867,7 +1867,7 @@ function openImagePicker() {
     openModal((props: any) => <ImagePickerModal rootProps={props} />);
 }
 
-// Иконка для кнопки панели с бейджем количества
+// Ð˜ÐºÐ¾Ð½ÐºÐ° Ð´Ð»Ñ ÐºÐ½Ð¾Ð¿ÐºÐ¸ Ð¿Ð°Ð½ÐµÐ»Ð¸ Ñ Ð±ÐµÐ¹Ð´Ð¶ÐµÐ¼ ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð°
 function StreamPreviewIcon({ imageCount, isEnabled, isSlideshowEnabled, isRandom, currentImageUri, streamActive }: {
     imageCount: number;
     isEnabled: boolean;
@@ -1879,12 +1879,12 @@ function StreamPreviewIcon({ imageCount, isEnabled, isSlideshowEnabled, isRandom
     return (
         <div style={{ position: "relative" }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                {/* Рамка монитора - всегда currentColor */}
+                {/* Ð Ð°Ð¼ÐºÐ° Ð¼Ð¾Ð½Ð¸Ñ‚Ð¾Ñ€Ð° - Ð²ÑÐµÐ³Ð´Ð° currentColor */}
                 <path
                     fill="currentColor"
                     d="M21 3H3C1.9 3 1 3.9 1 5V17C1 18.1 1.9 19 3 19H8V21H16V19H21C22.1 19 23 18.1 23 17V5C23 3.9 22.1 3 21 3ZM21 17H3V5H21V17Z"
                 />
-                {/* Внутренняя часть - зелёные горы если плагин активен, серые если выключен */}
+                {/* Ð’Ð½ÑƒÑ‚Ñ€ÐµÐ½Ð½ÑÑ Ñ‡Ð°ÑÑ‚ÑŒ - Ð·ÐµÐ»Ñ‘Ð½Ñ‹Ðµ Ð³Ð¾Ñ€Ñ‹ ÐµÑÐ»Ð¸ Ð¿Ð»Ð°Ð³Ð¸Ð½ Ð°ÐºÑ‚Ð¸Ð²ÐµÐ½, ÑÐµÑ€Ñ‹Ðµ ÐµÑÐ»Ð¸ Ð²Ñ‹ÐºÐ»ÑŽÑ‡ÐµÐ½ */}
                 <path
                     fill={isEnabled ? "var(--status-positive)" : "currentColor"}
                     d="M12 7C10.34 7 9 8.34 9 10C9 11.66 10.34 13 12 13C13.66 13 15 11.66 15 10C15 8.34 13.66 7 12 7Z"
@@ -1895,7 +1895,7 @@ function StreamPreviewIcon({ imageCount, isEnabled, isSlideshowEnabled, isRandom
                 />
             </svg>
 
-            {/* Бейдж с количеством - показываем если больше 1 и включён слайдшоу */}
+            {/* Ð‘ÐµÐ¹Ð´Ð¶ Ñ ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾Ð¼ - Ð¿Ð¾ÐºÐ°Ð·Ñ‹Ð²Ð°ÐµÐ¼ ÐµÑÐ»Ð¸ Ð±Ð¾Ð»ÑŒÑˆÐµ 1 Ð¸ Ð²ÐºÐ»ÑŽÑ‡Ñ‘Ð½ ÑÐ»Ð°Ð¹Ð´ÑˆÐ¾Ñƒ */}
             {imageCount > 1 && isSlideshowEnabled && isEnabled && (
                 <div style={{
                     position: "absolute",
@@ -1917,7 +1917,7 @@ function StreamPreviewIcon({ imageCount, isEnabled, isSlideshowEnabled, isRandom
                 </div>
             )}
 
-            {/* Знак случайности 🎲 - показываем если случайный режим */}
+            {/* Ð—Ð½Ð°Ðº ÑÐ»ÑƒÑ‡Ð°Ð¹Ð½Ð¾ÑÑ‚Ð¸ ðŸŽ² - Ð¿Ð¾ÐºÐ°Ð·Ñ‹Ð²Ð°ÐµÐ¼ ÐµÑÐ»Ð¸ ÑÐ»ÑƒÑ‡Ð°Ð¹Ð½Ñ‹Ð¹ Ñ€ÐµÐ¶Ð¸Ð¼ */}
             {imageCount > 1 && isSlideshowEnabled && isRandom && isEnabled && (
                 <div style={{
                     position: "absolute",
@@ -1926,14 +1926,14 @@ function StreamPreviewIcon({ imageCount, isEnabled, isSlideshowEnabled, isRandom
                     fontSize: "10px",
                     lineHeight: "1"
                 }}>
-                    🎲
+                    ðŸŽ²
                 </div>
             )}
         </div>
     );
 }
 
-// Форматирование времени в удобный вид
+// Ð¤Ð¾Ñ€Ð¼Ð°Ñ‚Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ðµ Ð²Ñ€ÐµÐ¼ÐµÐ½Ð¸ Ð² ÑƒÐ´Ð¾Ð±Ð½Ñ‹Ð¹ Ð²Ð¸Ð´
 function formatTime(seconds: number): string {
     if (seconds < 60) return `${seconds} sec`;
     const mins = Math.floor(seconds / 60);
@@ -1942,14 +1942,14 @@ function formatTime(seconds: number): string {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
-// Форматирование размера файла
+// Ð¤Ð¾Ñ€Ð¼Ð°Ñ‚Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ðµ Ñ€Ð°Ð·Ð¼ÐµÑ€Ð° Ñ„Ð°Ð¹Ð»Ð°
 function formatFileSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-// Кнопка в панели аккаунта 
+// ÐšÐ½Ð¾Ð¿ÐºÐ° Ð² Ð¿Ð°Ð½ÐµÐ»Ð¸ Ð°ÐºÐºÐ°ÑƒÐ½Ñ‚Ð° 
 function StreamPreviewPanelButton(props: { nameplate?: any; }) {
     const [imageCount, setImageCount] = useState(0);
     const [isEnabled, setIsEnabled] = useState(settings.store.replaceEnabled);
@@ -1968,16 +1968,16 @@ function StreamPreviewPanelButton(props: { nameplate?: any; }) {
             setIsRandom(settings.store.slideshowRandom);
             setCurrentIndex(currentSlideIndex);
             setStreamActive(isStreamActive);
-            // Обновляем превью РЕАЛЬНОЙ картинки на стриме 
+            // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ Ð¿Ñ€ÐµÐ²ÑŒÑŽ Ð Ð•ÐÐ›Ð¬ÐÐžÐ™ ÐºÐ°Ñ€Ñ‚Ð¸Ð½ÐºÐ¸ Ð½Ð° ÑÑ‚Ñ€Ð¸Ð¼Ðµ 
             setCurrentImageUri(actualStreamImageUri);
         };
 
         updateState();
         imageChangeListeners.add(updateState);
 
-        // Таймер для обновления времени каждую секунду
+        // Ð¢Ð°Ð¹Ð¼ÐµÑ€ Ð´Ð»Ñ Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ñ Ð²Ñ€ÐµÐ¼ÐµÐ½Ð¸ ÐºÐ°Ð¶Ð´ÑƒÑŽ ÑÐµÐºÑƒÐ½Ð´Ñƒ
         const timerInterval = setInterval(() => {
-            // Автосброс: если прошло более 7 минут без вызова getCustomThumbnail - стрим остановлен
+            // ÐÐ²Ñ‚Ð¾ÑÐ±Ñ€Ð¾Ñ: ÐµÑÐ»Ð¸ Ð¿Ñ€Ð¾ÑˆÐ»Ð¾ Ð±Ð¾Ð»ÐµÐµ 7 Ð¼Ð¸Ð½ÑƒÑ‚ Ð±ÐµÐ· Ð²Ñ‹Ð·Ð¾Ð²Ð° getCustomThumbnail - ÑÑ‚Ñ€Ð¸Ð¼ Ð¾ÑÑ‚Ð°Ð½Ð¾Ð²Ð»ÐµÐ½
             if (isStreamActive && lastSlideChangeTime > 0 && (Date.now() - lastSlideChangeTime) > 420000) {
                 isStreamActive = false;
             }
@@ -1997,18 +1997,18 @@ function StreamPreviewPanelButton(props: { nameplate?: any; }) {
         if (imageCount === 0) return "Select stream preview";
         if (!isEnabled) return `Stream preview (disabled, ${imageCount} images)`;
 
-        // Интервал ~5 минут (Discord контролирует)
+        // Ð˜Ð½Ñ‚ÐµÑ€Ð²Ð°Ð» ~5 Ð¼Ð¸Ð½ÑƒÑ‚ (Discord ÐºÐ¾Ð½Ñ‚Ñ€Ð¾Ð»Ð¸Ñ€ÑƒÐµÑ‚)
         const intervalSeconds = 5 * 60;
 
-        // Таймер для любого количества фото (включая 1)
+        // Ð¢Ð°Ð¹Ð¼ÐµÑ€ Ð´Ð»Ñ Ð»ÑŽÐ±Ð¾Ð³Ð¾ ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð° Ñ„Ð¾Ñ‚Ð¾ (Ð²ÐºÐ»ÑŽÑ‡Ð°Ñ 1)
         const timeInfo = lastSlideChangeTime > 0 && streamActive
-            ? `\n⏱️ ${formatTime(secondsAgo)} ago (~${formatTime(Math.max(0, intervalSeconds - secondsAgo))} until update)`
-            : streamActive ? "" : "\n⚫ Stream not active";
+            ? `\nâ±ï¸ ${formatTime(secondsAgo)} ago (~${formatTime(Math.max(0, intervalSeconds - secondsAgo))} until update)`
+            : streamActive ? "" : "\nâš« Stream not active";
 
         if (imageCount === 1) return `Stream preview (1 image)${timeInfo}`;
 
         if (isSlideshowEnabled) {
-            const slideInfo = `\n📍 Current: #${currentIndex + 1}`;
+            const slideInfo = `\nðŸ“ Current: #${currentIndex + 1}`;
             if (isRandom) {
                 return `Stream preview (${imageCount} images, random)${slideInfo}${timeInfo}`;
             }
@@ -2017,11 +2017,11 @@ function StreamPreviewPanelButton(props: { nameplate?: any; }) {
         return `Stream preview (${imageCount} images)${timeInfo}`;
     };
 
-    // Кастомный тултип с превью картинки
+    // ÐšÐ°ÑÑ‚Ð¾Ð¼Ð½Ñ‹Ð¹ Ñ‚ÑƒÐ»Ñ‚Ð¸Ð¿ Ñ Ð¿Ñ€ÐµÐ²ÑŒÑŽ ÐºÐ°Ñ€Ñ‚Ð¸Ð½ÐºÐ¸
     const renderTooltip = () => {
         const tooltipText = getTooltip();
 
-        // Показываем превью только если: есть картинка, плагин включен, есть фото И стрим активен
+        // ÐŸÐ¾ÐºÐ°Ð·Ñ‹Ð²Ð°ÐµÐ¼ Ð¿Ñ€ÐµÐ²ÑŒÑŽ Ñ‚Ð¾Ð»ÑŒÐºÐ¾ ÐµÑÐ»Ð¸: ÐµÑÑ‚ÑŒ ÐºÐ°Ñ€Ñ‚Ð¸Ð½ÐºÐ°, Ð¿Ð»Ð°Ð³Ð¸Ð½ Ð²ÐºÐ»ÑŽÑ‡ÐµÐ½, ÐµÑÑ‚ÑŒ Ñ„Ð¾Ñ‚Ð¾ Ð˜ ÑÑ‚Ñ€Ð¸Ð¼ Ð°ÐºÑ‚Ð¸Ð²ÐµÐ½
         if (currentImageUri && isEnabled && imageCount > 0 && streamActive) {
             return (
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "center" }}>
@@ -2076,7 +2076,7 @@ function StreamPreviewPanelButton(props: { nameplate?: any; }) {
     );
 }
 
-// Патч контекстного меню стрима
+// ÐŸÐ°Ñ‚Ñ‡ ÐºÐ¾Ð½Ñ‚ÐµÐºÑÑ‚Ð½Ð¾Ð³Ð¾ Ð¼ÐµÐ½ÑŽ ÑÑ‚Ñ€Ð¸Ð¼Ð°
 interface StreamContextProps {
     stream: {
         ownerId: string;
@@ -2086,30 +2086,30 @@ interface StreamContextProps {
 }
 
 const streamContextMenuPatch: NavContextMenuPatchCallback = (children: any[], { stream }: StreamContextProps) => {
-    // Проверяем, что это наш стрим
+    // ÐŸÑ€Ð¾Ð²ÐµÑ€ÑÐµÐ¼, Ñ‡Ñ‚Ð¾ ÑÑ‚Ð¾ Ð½Ð°Ñˆ ÑÑ‚Ñ€Ð¸Ð¼
     const currentUser = UserStore.getCurrentUser();
     if (!currentUser || stream.ownerId !== currentUser.id) return;
 
-    // Находим группу с "Полный экран" и "Открыть в отдельном окне"
+    // ÐÐ°Ñ…Ð¾Ð´Ð¸Ð¼ Ð³Ñ€ÑƒÐ¿Ð¿Ñƒ Ñ "ÐŸÐ¾Ð»Ð½Ñ‹Ð¹ ÑÐºÑ€Ð°Ð½" Ð¸ "ÐžÑ‚ÐºÑ€Ñ‹Ñ‚ÑŒ Ð² Ð¾Ñ‚Ð´ÐµÐ»ÑŒÐ½Ð¾Ð¼ Ð¾ÐºÐ½Ðµ"
     const group = findGroupChildrenByChildId(["fullscreen", "popout"], children);
 
     if (group) {
-        // Добавляем наш пункт после существующих
+        // Ð”Ð¾Ð±Ð°Ð²Ð»ÑÐµÐ¼ Ð½Ð°Ñˆ Ð¿ÑƒÐ½ÐºÑ‚ Ð¿Ð¾ÑÐ»Ðµ ÑÑƒÑ‰ÐµÑÑ‚Ð²ÑƒÑŽÑ‰Ð¸Ñ…
         group.push(
             <Menu.MenuItem
                 id="custom-stream-preview"
-                label="🖼️ Custom Preview"
+                label="ðŸ–¼ï¸ Custom Preview"
                 icon={ImageIcon}
                 action={openImagePicker}
             />
         );
     } else {
-        // Если группа не найдена, добавляем в конец
+        // Ð•ÑÐ»Ð¸ Ð³Ñ€ÑƒÐ¿Ð¿Ð° Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½Ð°, Ð´Ð¾Ð±Ð°Ð²Ð»ÑÐµÐ¼ Ð² ÐºÐ¾Ð½ÐµÑ†
         children.push(
             <Menu.MenuSeparator />,
             <Menu.MenuItem
                 id="custom-stream-preview"
-                label="🖼️ Custom Preview"
+                label="ðŸ–¼ï¸ Custom Preview"
                 icon={ImageIcon}
                 action={openImagePicker}
             />
@@ -2117,93 +2117,88 @@ const streamContextMenuPatch: NavContextMenuPatchCallback = (children: any[], { 
     }
 };
 
-// Функция для получения кастомного превью (вызывается из webpack patch)
-// При слайд-шоу каждый вызов (~5 мин) возвращает следующую картинку
+// Ð¤ÑƒÐ½ÐºÑ†Ð¸Ñ Ð´Ð»Ñ Ð¿Ð¾Ð»ÑƒÑ‡ÐµÐ½Ð¸Ñ ÐºÐ°ÑÑ‚Ð¾Ð¼Ð½Ð¾Ð³Ð¾ Ð¿Ñ€ÐµÐ²ÑŒÑŽ (Ð²Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ Ð¸Ð· webpack patch)
+// ÐŸÑ€Ð¸ ÑÐ»Ð°Ð¹Ð´-ÑˆÐ¾Ñƒ ÐºÐ°Ð¶Ð´Ñ‹Ð¹ Ð²Ñ‹Ð·Ð¾Ð² (~5 Ð¼Ð¸Ð½) Ð²Ð¾Ð·Ð²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ ÑÐ»ÐµÐ´ÑƒÑŽÑ‰ÑƒÑŽ ÐºÐ°Ñ€Ñ‚Ð¸Ð½ÐºÑƒ
 function getCustomThumbnail(originalThumbnail: string): string {
-    // Помечаем что стрим активен
+    // ÐŸÐ¾Ð¼ÐµÑ‡Ð°ÐµÐ¼ Ñ‡Ñ‚Ð¾ ÑÑ‚Ñ€Ð¸Ð¼ Ð°ÐºÑ‚Ð¸Ð²ÐµÐ½
     isStreamActive = true;
 
     if (!settings.store.replaceEnabled || cachedDataUris.length === 0) {
-        actualStreamImageUri = null; // Нет кастомной картинки
+        actualStreamImageUri = null; // ÐÐµÑ‚ ÐºÐ°ÑÑ‚Ð¾Ð¼Ð½Ð¾Ð¹ ÐºÐ°Ñ€Ñ‚Ð¸Ð½ÐºÐ¸
         notifyImageChange();
         return originalThumbnail;
     }
 
-    // Если одна картинка или слайд-шоу выключено — показываем выбранную
+    // Ð•ÑÐ»Ð¸ Ð¾Ð´Ð½Ð° ÐºÐ°Ñ€Ñ‚Ð¸Ð½ÐºÐ° Ð¸Ð»Ð¸ ÑÐ»Ð°Ð¹Ð´-ÑˆÐ¾Ñƒ Ð²Ñ‹ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¾ â€” Ð¿Ð¾ÐºÐ°Ð·Ñ‹Ð²Ð°ÐµÐ¼ Ð²Ñ‹Ð±Ñ€Ð°Ð½Ð½ÑƒÑŽ
     if (cachedDataUris.length === 1 || !settings.store.slideshowEnabled) {
-        // Проверяем что индекс валиден
+        // ÐŸÑ€Ð¾Ð²ÐµÑ€ÑÐµÐ¼ Ñ‡Ñ‚Ð¾ Ð¸Ð½Ð´ÐµÐºÑ Ð²Ð°Ð»Ð¸Ð´ÐµÐ½
         const idx = currentSlideIndex < cachedDataUris.length ? currentSlideIndex : 0;
-        lastSlideChangeTime = Date.now(); // Обновляем время для таймера
-        actualStreamImageUri = cachedDataUris[idx]; // Обновляем реальную картинку на стриме
+        lastSlideChangeTime = Date.now(); // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ Ð²Ñ€ÐµÐ¼Ñ Ð´Ð»Ñ Ñ‚Ð°Ð¹Ð¼ÐµÑ€Ð°
+        actualStreamImageUri = cachedDataUris[idx]; // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ Ñ€ÐµÐ°Ð»ÑŒÐ½ÑƒÑŽ ÐºÐ°Ñ€Ñ‚Ð¸Ð½ÐºÑƒ Ð½Ð° ÑÑ‚Ñ€Ð¸Ð¼Ðµ
         notifyImageChange();
         return cachedDataUris[idx];
     }
 
-    // Если была ручная смена — показываем выбранную картинку один раз
+    // Ð•ÑÐ»Ð¸ Ð±Ñ‹Ð»Ð° Ñ€ÑƒÑ‡Ð½Ð°Ñ ÑÐ¼ÐµÐ½Ð° â€” Ð¿Ð¾ÐºÐ°Ð·Ñ‹Ð²Ð°ÐµÐ¼ Ð²Ñ‹Ð±Ñ€Ð°Ð½Ð½ÑƒÑŽ ÐºÐ°Ñ€Ñ‚Ð¸Ð½ÐºÑƒ Ð¾Ð´Ð¸Ð½ Ñ€Ð°Ð·
     if (manualSlideChange) {
-        manualSlideChange = false; // Сбрасываем флаг
-        lastSlideChangeTime = Date.now(); // Обновляем время для таймера
-        actualStreamImageUri = cachedDataUris[currentSlideIndex]; // Обновляем реальную картинку на стриме
+        manualSlideChange = false; // Ð¡Ð±Ñ€Ð°ÑÑ‹Ð²Ð°ÐµÐ¼ Ñ„Ð»Ð°Ð³
+        lastSlideChangeTime = Date.now(); // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ Ð²Ñ€ÐµÐ¼Ñ Ð´Ð»Ñ Ñ‚Ð°Ð¹Ð¼ÐµÑ€Ð°
+        actualStreamImageUri = cachedDataUris[currentSlideIndex]; // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ Ñ€ÐµÐ°Ð»ÑŒÐ½ÑƒÑŽ ÐºÐ°Ñ€Ñ‚Ð¸Ð½ÐºÑƒ Ð½Ð° ÑÑ‚Ñ€Ð¸Ð¼Ðµ
         notifyImageChange();
         return cachedDataUris[currentSlideIndex];
     }
 
-    // Слайд-шоу: выбираем следующую картинку
+    // Ð¡Ð»Ð°Ð¹Ð´-ÑˆÐ¾Ñƒ: Ð²Ñ‹Ð±Ð¸Ñ€Ð°ÐµÐ¼ ÑÐ»ÐµÐ´ÑƒÑŽÑ‰ÑƒÑŽ ÐºÐ°Ñ€Ñ‚Ð¸Ð½ÐºÑƒ
     let nextIndex: number;
 
     if (settings.store.slideshowRandom) {
-        // Случайный выбор (но не та же самая)
+        // Ð¡Ð»ÑƒÑ‡Ð°Ð¹Ð½Ñ‹Ð¹ Ð²Ñ‹Ð±Ð¾Ñ€ (Ð½Ð¾ Ð½Ðµ Ñ‚Ð° Ð¶Ðµ ÑÐ°Ð¼Ð°Ñ)
         do {
             nextIndex = Math.floor(Math.random() * cachedDataUris.length);
         } while (nextIndex === currentSlideIndex && cachedDataUris.length > 1);
     } else {
-        // Последовательный выбор
+        // ÐŸÐ¾ÑÐ»ÐµÐ´Ð¾Ð²Ð°Ñ‚ÐµÐ»ÑŒÐ½Ñ‹Ð¹ Ð²Ñ‹Ð±Ð¾Ñ€
         nextIndex = (currentSlideIndex + 1) % cachedDataUris.length;
     }
 
     currentSlideIndex = nextIndex;
-    lastSlideChangeTime = Date.now(); // Запоминаем время смены
-    actualStreamImageUri = cachedDataUris[currentSlideIndex]; // Обновляем реальную картинку на стриме
-    saveSlideIndex(nextIndex); // Сохраняем новый индекс
-    notifyImageChange(); // Обновляем UI
+    lastSlideChangeTime = Date.now(); // Ð—Ð°Ð¿Ð¾Ð¼Ð¸Ð½Ð°ÐµÐ¼ Ð²Ñ€ÐµÐ¼Ñ ÑÐ¼ÐµÐ½Ñ‹
+    actualStreamImageUri = cachedDataUris[currentSlideIndex]; // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ Ñ€ÐµÐ°Ð»ÑŒÐ½ÑƒÑŽ ÐºÐ°Ñ€Ñ‚Ð¸Ð½ÐºÑƒ Ð½Ð° ÑÑ‚Ñ€Ð¸Ð¼Ðµ
+    saveSlideIndex(nextIndex); // Ð¡Ð¾Ñ…Ñ€Ð°Ð½ÑÐµÐ¼ Ð½Ð¾Ð²Ñ‹Ð¹ Ð¸Ð½Ð´ÐµÐºÑ
+    notifyImageChange(); // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ UI
     return cachedDataUris[currentSlideIndex];
 }
 
 export default definePlugin({
     name: "CustomStreamTopQ",
     description: "Custom stream preview images with profiles & slideshow. GitHub: https://github.com/MrTopQ/customStream-Vencord",
-    authors: [
-        {
-            name: "TopQ",
-            id: 523800559791374356n
-        }
-    ],
+    authors: [{ name: "Flocord", id: 0n }],
 
     settings,
 
-    // Патчи для перехвата функции обновления превью
+    // ÐŸÐ°Ñ‚Ñ‡Ð¸ Ð´Ð»Ñ Ð¿ÐµÑ€ÐµÑ…Ð²Ð°Ñ‚Ð° Ñ„ÑƒÐ½ÐºÑ†Ð¸Ð¸ Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ñ Ð¿Ñ€ÐµÐ²ÑŒÑŽ
     patches: [
         {
-            // Патч для добавления кнопки в панель (рядом с микрофоном/наушниками)
+            // ÐŸÐ°Ñ‚Ñ‡ Ð´Ð»Ñ Ð´Ð¾Ð±Ð°Ð²Ð»ÐµÐ½Ð¸Ñ ÐºÐ½Ð¾Ð¿ÐºÐ¸ Ð² Ð¿Ð°Ð½ÐµÐ»ÑŒ (Ñ€ÑÐ´Ð¾Ð¼ Ñ Ð¼Ð¸ÐºÑ€Ð¾Ñ„Ð¾Ð½Ð¾Ð¼/Ð½Ð°ÑƒÑˆÐ½Ð¸ÐºÐ°Ð¼Ð¸)
             find: ".DISPLAY_NAME_STYLES_COACHMARK),",
             replacement: {
-                // Матчим начало массива children после чего угодно, главное чтобы был accountContainerRef дальше
+                // ÐœÐ°Ñ‚Ñ‡Ð¸Ð¼ Ð½Ð°Ñ‡Ð°Ð»Ð¾ Ð¼Ð°ÑÑÐ¸Ð²Ð° children Ð¿Ð¾ÑÐ»Ðµ Ñ‡ÐµÐ³Ð¾ ÑƒÐ³Ð¾Ð´Ð½Ð¾, Ð³Ð»Ð°Ð²Ð½Ð¾Ðµ Ñ‡Ñ‚Ð¾Ð±Ñ‹ Ð±Ñ‹Ð» accountContainerRef Ð´Ð°Ð»ÑŒÑˆÐµ
                 match: /(children:\[)(.{0,150}?)(accountContainerRef)/,
                 replace: "$1$self.StreamPreviewPanelButton(arguments[0]),$2$3"
             }
         },
         {
-            // Перехватываем отправку превью в ApplicationStreamPreviewUploadManager
+            // ÐŸÐµÑ€ÐµÑ…Ð²Ð°Ñ‚Ñ‹Ð²Ð°ÐµÐ¼ Ð¾Ñ‚Ð¿Ñ€Ð°Ð²ÐºÑƒ Ð¿Ñ€ÐµÐ²ÑŒÑŽ Ð² ApplicationStreamPreviewUploadManager
             find: "\"ApplicationStreamPreviewUploadManager\"",
             all: true,
             replacement: [
                 {
-                    // Паттерн 1: body:{thumbnail:x}
+                    // ÐŸÐ°Ñ‚Ñ‚ÐµÑ€Ð½ 1: body:{thumbnail:x}
                     match: /body:\{thumbnail:(\i)\}/,
                     replace: "body:{thumbnail:$self.getCustomThumbnail($1)}"
                 },
                 {
-                    // Паттерн 2: {thumbnail:x} без body
+                    // ÐŸÐ°Ñ‚Ñ‚ÐµÑ€Ð½ 2: {thumbnail:x} Ð±ÐµÐ· body
                     match: /\{thumbnail:(\i)\}/,
                     replace: "{thumbnail:$self.getCustomThumbnail($1)}"
                 }
@@ -2215,10 +2210,10 @@ export default definePlugin({
         "Select stream preview": openImagePicker
     },
 
-    // Кнопка в панели аккаунта
+    // ÐšÐ½Ð¾Ð¿ÐºÐ° Ð² Ð¿Ð°Ð½ÐµÐ»Ð¸ Ð°ÐºÐºÐ°ÑƒÐ½Ñ‚Ð°
     StreamPreviewPanelButton: ErrorBoundary.wrap(StreamPreviewPanelButton, { noop: true }),
 
-    // Функция для замены thumbnail (вызывается из webpack patch)
+    // Ð¤ÑƒÐ½ÐºÑ†Ð¸Ñ Ð´Ð»Ñ Ð·Ð°Ð¼ÐµÐ½Ñ‹ thumbnail (Ð²Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ Ð¸Ð· webpack patch)
     getCustomThumbnail,
 
     contextMenus: {
@@ -2226,13 +2221,13 @@ export default definePlugin({
     },
 
     async start() {
-        // Загружаем профили при старте (включая миграцию со старого формата)
+        // Ð—Ð°Ð³Ñ€ÑƒÐ¶Ð°ÐµÐ¼ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»Ð¸ Ð¿Ñ€Ð¸ ÑÑ‚Ð°Ñ€Ñ‚Ðµ (Ð²ÐºÐ»ÑŽÑ‡Ð°Ñ Ð¼Ð¸Ð³Ñ€Ð°Ñ†Ð¸ÑŽ ÑÐ¾ ÑÑ‚Ð°Ñ€Ð¾Ð³Ð¾ Ñ„Ð¾Ñ€Ð¼Ð°Ñ‚Ð°)
         await loadProfilesFromDataStore();
 
-        // Синхронизируем кэш с активным профилем
+        // Ð¡Ð¸Ð½Ñ…Ñ€Ð¾Ð½Ð¸Ð·Ð¸Ñ€ÑƒÐµÐ¼ ÐºÑÑˆ Ñ Ð°ÐºÑ‚Ð¸Ð²Ð½Ñ‹Ð¼ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»ÐµÐ¼
         syncCacheWithActiveProfile();
 
-        // Уведомляем UI об обновлении (для иконки в панели)
+        // Ð£Ð²ÐµÐ´Ð¾Ð¼Ð»ÑÐµÐ¼ UI Ð¾Ð± Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ð¸ (Ð´Ð»Ñ Ð¸ÐºÐ¾Ð½ÐºÐ¸ Ð² Ð¿Ð°Ð½ÐµÐ»Ð¸)
         notifyImageChange();
 
         const profile = getActiveProfile();
@@ -2240,7 +2235,7 @@ export default definePlugin({
     },
 
     stop() {
-        // Очищаем кэш при выключении
+        // ÐžÑ‡Ð¸Ñ‰Ð°ÐµÐ¼ ÐºÑÑˆ Ð¿Ñ€Ð¸ Ð²Ñ‹ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ð¸
         cachedImages = [];
         cachedDataUris = [];
         currentSlideIndex = 0;

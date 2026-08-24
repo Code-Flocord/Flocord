@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Vencord, a modification for Discord's desktop app
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -161,7 +161,7 @@ const STREAM_TRIAL_OVERRIDES: Record<string, string> = Object.freeze({
 export default definePlugin({
     name: "LightcordBitrate",
     description: "Locks high quality Opus transport, stereo fullband audio, and disables exposed voice processing.",
-    authors: [{ name: "skenzo", id: 842214916135976981n }],
+    authors: [{ name: "Flocord", id: 0n }],
     tags: ["Voice", "Utility"],
 
     toastShown: false,

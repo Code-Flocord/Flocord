@@ -1,305 +1,247 @@
-/*
- * Vencord, a Discord client mod
- * Copyright (c) 2025 Vendicated and contributors
+﻿/*
+ * Nightcord, a Discord client mod
+ * Copyright (c) 2026 Vendicated and contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+import "./styles.css";
+
+import { DataStore } from "@api/index";
+import { addMessagePreSendListener, removeMessagePreSendListener } from "@api/MessageEvents";
 import { definePluginSettings } from "@api/Settings";
-import { showNotification } from "@api/Notifications";
-import { addMessagePreSendListener, MessageSendListener, removeMessagePreSendListener } from "@api/MessageEvents";
 import definePlugin, { OptionType } from "@utils/types";
+import { React, useEffect,useState } from "@webpack/common";
+
+const DS_KEY = "abreviation_entries";
+
+interface AbbrevEntry {
+    abbrev: string;
+    phrase: string;
+}
+
+// â”€â”€ DataStore helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+let cachedEntries: AbbrevEntry[] = [];
+
+async function loadEntries(): Promise<AbbrevEntry[]> {
+    const data = await DataStore.get(DS_KEY) as AbbrevEntry[] | undefined;
+    cachedEntries = data ?? [];
+    return cachedEntries;
+}
+
+async function saveEntries(entries: AbbrevEntry[]) {
+    cachedEntries = entries;
+    await DataStore.set(DS_KEY, entries);
+}
+
+// â”€â”€ UI Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+function AbbreviationManager() {
+    const [entries, setEntries] = useState<AbbrevEntry[]>([]);
+    const [newAbbrev, setNewAbbrev] = useState("");
+    const [newPhrase, setNewPhrase] = useState("");
+
+    useEffect(() => {
+        loadEntries().then(setEntries);
+    }, []);
+
+    async function addEntry() {
+        const abbrev = newAbbrev.trim().toLowerCase();
+        const phrase = newPhrase.trim();
+        if (!abbrev || !phrase) return;
+        if (entries.find(e => e.abbrev === abbrev)) return;
+
+        const updated = [...entries, { abbrev, phrase }];
+        await saveEntries(updated);
+        setEntries(updated);
+        setNewAbbrev("");
+        setNewPhrase("");
+    }
+
+    async function removeEntry(abbrev: string) {
+        const updated = entries.filter(e => e.abbrev !== abbrev);
+        await saveEntries(updated);
+        setEntries(updated);
+    }
+
+    const inputStyle: React.CSSProperties = {
+        background: "var(--background-secondary)",
+        border: "1px solid var(--background-modifier-accent)",
+        borderRadius: 4,
+        color: "#fff",
+        padding: "8px 10px",
+        fontSize: 14,
+        width: "100%",
+        outline: "none",
+    };
+
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {/* Add new */}
+            <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+                <div style={{ flex: 1 }}>
+                    <label style={{ color: "#fff", fontSize: 12, fontWeight: 600, marginBottom: 4, display: "block" }}>
+                        Abbreviation
+                    </label>
+                    <input
+                        style={inputStyle}
+                        placeholder="lol"
+                        value={newAbbrev}
+                        onChange={e => setNewAbbrev(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") addEntry(); }}
+                    />
+                </div>
+                <div style={{ flex: 2 }}>
+                    <label style={{ color: "#fff", fontSize: 12, fontWeight: 600, marginBottom: 4, display: "block" }}>
+                        Replacement phrase
+                    </label>
+                    <input
+                        style={inputStyle}
+                        placeholder="laughing out loud"
+                        value={newPhrase}
+                        onChange={e => setNewPhrase(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") addEntry(); }}
+                    />
+                </div>
+                <button
+                    onClick={addEntry}
+                    style={{
+                        background: "var(--brand-500)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 4,
+                        padding: "8px 16px",
+                        fontSize: 14,
+                        cursor: "pointer",
+                        fontWeight: 600,
+                        whiteSpace: "nowrap",
+                    }}
+                >
+                    + Add
+                </button>
+            </div>
+
+            {/* List */}
+            {entries.length === 0 ? null : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    {entries.map(e => (
+                        <div
+                            key={e.abbrev}
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 10,
+                                background: "var(--background-secondary)",
+                                borderRadius: 4,
+                                padding: "6px 10px",
+                            }}
+                        >
+                            <span style={{ color: "#fff", fontWeight: 600, minWidth: 80 }}>
+                                {e.abbrev}
+                            </span>
+                            <span style={{ color: "#b5bac1" }}>â†’</span>
+                            <span style={{ color: "#fff", flex: 1 }}>
+                                {e.phrase}
+                            </span>
+                            <button
+                                onClick={() => removeEntry(e.abbrev)}
+                                style={{
+                                    background: "var(--status-danger)",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: 4,
+                                    padding: "4px 10px",
+                                    fontSize: 12,
+                                    cursor: "pointer",
+                                    fontWeight: 600,
+                                }}
+                            >
+                                âœ•
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// â”€â”€ Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const settings = definePluginSettings({
-    enabled: {
-        type: OptionType.BOOLEAN,
-        description: "Activer le plugin Abreviation",
-        default: true
-    },
-    showNotifications: {
-        type: OptionType.BOOLEAN,
-        description: "Afficher les notifications lors de l'expansion",
-        default: false
+    matchMode: {
+        type: OptionType.SELECT,
+        description: "",
+        options: [
+            { label: "Whole message only (e.g. 'mdr' alone)", value: "exact" },
+            { label: "Every word in the message", value: "word" },
+        ],
     },
     caseSensitive: {
         type: OptionType.BOOLEAN,
-        description: "Respecter la casse des abréviations",
-        default: false
-    },
-    debugMode: {
-        type: OptionType.BOOLEAN,
-        description: "Mode débogage (logs détaillés)",
-        default: false
-    },
-    toggleKeybind: {
-        type: OptionType.STRING,
-        description: "Raccourci clavier pour activer/désactiver le plugin (ex: ctrl+shift+a)",
-        default: "ctrl+shift+a"
-    },
-    showToggleNotification: {
-        type: OptionType.BOOLEAN,
-        description: "Afficher une notification lors du toggle via keybind",
-        default: true
+        description: "Case sensitive matching (if disabled, 'MDR' = 'mdr')",
+        default: false,
     },
     abbreviations: {
-        type: OptionType.STRING,
-        description: "Abréviations (format: abrév1=texte complet1|abrév2=texte complet2)",
-        default: "btw=by the way|omg=oh my god|brb=be right back|afk=away from keyboard|imo=in my opinion|tbh=to be honest|lol=laughing out loud|wtf=what the f*ck|nvm=never mind|thx=thanks|pls=please|u=you|ur=your|bc=because|rn=right now|irl=in real life|fyi=for your information|asap=as soon as possible|ttyl=talk to you later|gtg=got to go|idk=I don't know|ikr=I know right|smh=shaking my head|dm=direct message|gm=good morning|gn=good night|gl=good luck|hf=have fun|wp=well played|gg=good game|ez=easy|op=overpowered|nerf=reduce power|buff=increase power|meta=most effective tactics available|fdp=fils de pute"
+        type: OptionType.COMPONENT,
+        description: "",
+        component: AbbreviationManager,
     },
-    customAbbreviations: {
-        type: OptionType.STRING,
-        description: "Abréviations personnalisées (même format que ci-dessus)",
-        default: ""
-    }
 });
 
-// État du plugin (peut être différent du setting pour le toggle temporaire)
-let isPluginActive = true;
+// â”€â”€ Pre-send listener â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// Fonction de log avec préfixe
-function log(message: string, level: "info" | "warn" | "error" = "info") {
-    const timestamp = new Date().toLocaleTimeString();
-    const prefix = `[Abreviation ${timestamp}]`;
+function onPreSend(_channelId: string, messageObj: { content: string; }) {
+    if (!messageObj.content) return;
 
-    switch (level) {
-        case "warn":
-            console.warn(prefix, message);
-            break;
-        case "error":
-            console.error(prefix, message);
-            break;
-        default:
-            console.log(prefix, message);
-    }
-}
+    const entries = cachedEntries;
+    if (entries.length === 0) return;
 
-// Log de débogage
-function debugLog(message: string) {
-    if (settings.store.debugMode) {
-        log(`🔍 ${message}`, "info");
-    }
-}
+    const mode = settings.store.matchMode ?? "word";
+    const caseSensitive = settings.store.caseSensitive ?? false;
 
-// Fonction pour parser un keybind
-function parseKeybind(keybind: string): { ctrl: boolean; shift: boolean; alt: boolean; key: string; } {
-    const parts = keybind.toLowerCase().split('+');
-    const result = {
-        ctrl: false,
-        shift: false,
-        alt: false,
-        key: ''
-    };
-
-    for (const part of parts) {
-        const trimmed = part.trim();
-        if (trimmed === 'ctrl' || trimmed === 'control') {
-            result.ctrl = true;
-        } else if (trimmed === 'shift') {
-            result.shift = true;
-        } else if (trimmed === 'alt') {
-            result.alt = true;
-        } else {
-            result.key = trimmed;
-        }
-    }
-
-    return result;
-}
-
-// Fonction pour toggle l'état du plugin
-function togglePlugin() {
-    isPluginActive = !isPluginActive;
-
-    const status = isPluginActive ? "activé" : "désactivé";
-    const emoji = isPluginActive ? "✅" : "❌";
-
-    log(`${emoji} Plugin ${status} via keybind`);
-
-    if (settings.store.showToggleNotification) {
-        showNotification({
-            title: `${emoji} Abreviation ${status}`,
-            body: isPluginActive ? "Les abréviations seront expansées" : "Les abréviations ne seront plus expansées",
-            icon: undefined
+    if (mode === "exact") {
+        // The entire message must match the abbreviation exactly
+        const input = caseSensitive ? messageObj.content.trim() : messageObj.content.trim().toLowerCase();
+        const match = entries.find(e => {
+            const abbrev = caseSensitive ? e.abbrev : e.abbrev.toLowerCase();
+            return input === abbrev;
         });
-    }
-}
-
-// Gestionnaire d'événements clavier
-function handleKeyDown(event: KeyboardEvent) {
-    const keybind = parseKeybind(settings.store.toggleKeybind);
-
-    // Vérifier si le keybind correspond
-    if (
-        event.ctrlKey === keybind.ctrl &&
-        event.shiftKey === keybind.shift &&
-        event.altKey === keybind.alt &&
-        event.key.toLowerCase() === keybind.key
-    ) {
-        event.preventDefault();
-        event.stopPropagation();
-        togglePlugin();
-    }
-}
-
-// Parseur d'abréviations
-function parseAbbreviations(abbreviationsString: string): Map<string, string> {
-    const abbrevMap = new Map<string, string>();
-
-    if (!abbreviationsString.trim()) return abbrevMap;
-
-    const pairs = abbreviationsString.split('|');
-
-    for (const pair of pairs) {
-        const [abbrev, expansion] = pair.split('=');
-        if (abbrev && expansion) {
-            const key = settings.store.caseSensitive ? abbrev.trim() : abbrev.trim().toLowerCase();
-            abbrevMap.set(key, expansion.trim());
+        if (match) {
+            messageObj.content = match.phrase;
         }
-    }
-
-    return abbrevMap;
-}
-
-// Fonction pour obtenir toutes les abréviations
-function getAllAbbreviations(): Map<string, string> {
-    const defaultAbbrevs = parseAbbreviations(settings.store.abbreviations);
-    const customAbbrevs = parseAbbreviations(settings.store.customAbbreviations);
-
-    // Fusionner les deux maps (les personnalisées ont la priorité)
-    const combined = new Map([...defaultAbbrevs, ...customAbbrevs]);
-
-    return combined;
-}
-
-// Fonction pour expandre les abréviations dans un texte
-function expandAbbreviations(text: string): { newText: string; expansions: Array<{ abbrev: string; expansion: string; }>; } {
-    if (!text.trim()) {
-        return { newText: text, expansions: [] };
-    }
-
-    const abbreviations = getAllAbbreviations();
-    const expansions: Array<{ abbrev: string; expansion: string; }> = [];
-
-    // Diviser le texte en mots, en préservant les espaces et la ponctuation
-    const words = text.split(/(\s+)/);
-
-    for (let i = 0; i < words.length; i++) {
-        const word = words[i];
-
-        // Ignorer les espaces
-        if (/^\s+$/.test(word)) continue;
-
-        // Extraire le mot sans ponctuation pour la vérification
-        const cleanWord = word.replace(/[^\w]/g, '');
-        if (!cleanWord) continue;
-
-        // Vérifier si c'est une abréviation
-        const searchKey = settings.store.caseSensitive ? cleanWord : cleanWord.toLowerCase();
-        const expansion = abbreviations.get(searchKey);
-
-        if (expansion) {
-            // Préserver la ponctuation originale
-            const punctuation = word.replace(cleanWord, '');
-            words[i] = expansion + punctuation;
-
-            expansions.push({
-                abbrev: cleanWord,
-                expansion: expansion
+    } else {
+        // Replaces each word individually
+        const words = messageObj.content.split(/(\s+)/); // keep whitespace
+        const replaced = words.map(w => {
+            const test = caseSensitive ? w : w.toLowerCase();
+            const match = entries.find(e => {
+                const abbrev = caseSensitive ? e.abbrev : e.abbrev.toLowerCase();
+                return test === abbrev;
             });
-
-            debugLog(`Expansion trouvée: "${cleanWord}" → "${expansion}"`);
-        }
+            return match ? match.phrase : w;
+        });
+        messageObj.content = replaced.join("");
     }
-
-    return {
-        newText: words.join(''),
-        expansions: expansions
-    };
 }
 
-// Listener pour les messages avant envoi
-const messagePreSendListener: MessageSendListener = (channelId, messageObj, extra) => {
-    // Vérifier si le plugin est activé (état global ET état temporaire)
-    if (!settings.store.enabled || !isPluginActive) {
-        return;
-    }
-
-    const originalContent = messageObj.content;
-    if (!originalContent || !originalContent.trim()) {
-        return;
-    }
-
-    const { newText, expansions } = expandAbbreviations(originalContent);
-
-    if (expansions.length > 0) {
-        messageObj.content = newText;
-
-        log(`✨ ${expansions.length} expansion(s) effectuée(s)`);
-
-        for (const { abbrev, expansion } of expansions) {
-            log(`   "${abbrev}" → "${expansion}"`);
-        }
-
-        if (settings.store.showNotifications) {
-            const expansionText = expansions.map(e => `"${e.abbrev}" → "${e.expansion}"`).join(", ");
-            showNotification({
-                title: "📝 Abreviation",
-                body: `Expansions: ${expansionText}`,
-                icon: undefined
-            });
-        }
-    }
-};
+// â”€â”€ Plugin â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default definePlugin({
-    name: "Abreviation",
-    description: "Transforme automatiquement des abréviations en texte complet lors de l'envoi de messages",
-    authors: [{
-        name: "Bash",
-        id: 1327483363518582784n
-    }],
-    dependencies: ["MessageEventsAPI"],
+    name: "Abbreviation",
+    enabledByDefault: false,
+    description: "Automatically replaces abbreviations with full sentences before sending the message.",
+    authors: [{ name: "Flocord",
+     id: 0n }],
+
     settings,
 
-    start() {
-        log("🚀 Plugin Abreviation démarré");
-
-        // Réinitialiser l'état actif
-        isPluginActive = settings.store.enabled;
-
-        const abbreviations = getAllAbbreviations();
-        log(`📚 ${abbreviations.size} abréviations chargées`);
-        log(`⌨️ Keybind configuré: ${settings.store.toggleKeybind}`);
-
-        // Ajouter le listener pour les messages avant envoi
-        addMessagePreSendListener(messagePreSendListener);
-
-        // Ajouter le listener pour les événements clavier
-        document.addEventListener('keydown', handleKeyDown, true);
-
-        debugLog(`Mode débogage: ${settings.store.debugMode ? "ACTIVÉ" : "DÉSACTIVÉ"}`);
-
-        if (settings.store.showNotifications) {
-            showNotification({
-                title: "📝 Abreviation activé",
-                body: `${abbreviations.size} abréviations disponibles. Toggle: ${settings.store.toggleKeybind}`,
-                icon: undefined
-            });
-        }
+    async start() {
+        await loadEntries();
+        addMessagePreSendListener(onPreSend as any);
     },
 
     stop() {
-        log("🛑 Plugin Abreviation arrêté");
-
-        // Retirer les listeners
-        removeMessagePreSendListener(messagePreSendListener);
-        document.removeEventListener('keydown', handleKeyDown, true);
-
-        if (settings.store.showNotifications) {
-            showNotification({
-                title: "📝 Abreviation désactivé",
-                body: "Plugin arrêté",
-                icon: undefined
-            });
-        }
-    }
-}); 
+        removeMessagePreSendListener(onPreSend as any);
+    },
+});

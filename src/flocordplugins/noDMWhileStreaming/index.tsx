@@ -1,20 +1,38 @@
+﻿/*
+ * Nightcord, a Discord client mod
+ * Copyright (c) 2026 Vendicated and contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+import "./styles.css";
+
 import { definePluginSettings } from "@api/Settings";
 import { Devs } from "@utils/constants";
 import definePlugin, { OptionType } from "@utils/types";
-import { findByPropsLazy } from "@webpack";
-import { FluxDispatcher, UserStore, ChannelStore, ReadStateUtils, useStateFromStores } from "@webpack/common";
+import { findByProps, findByPropsLazy } from "@webpack";
+import { ChannelStore, FluxDispatcher, React,UserStore, useStateFromStores } from "@webpack/common";
 
 const StreamStore = findByPropsLazy("getActiveStreamForUser", "getAllActiveStreams");
 const RTCConnectionStore = findByPropsLazy("getMediaSessionId");
 const StreamerModeStore = findByPropsLazy("hidePersonalInformation");
 
 const settings = definePluginSettings({
+    hideGroups: {
+        type: OptionType.BOOLEAN,
+        description: "Hide Group DMs too while streaming",
+        default: false
+    },
     debugMode: {
         type: OptionType.BOOLEAN,
-        description: "Mode débogage - Affiche des logs détaillés dans la console",
+        description: "Debug Mode - Shows detailed logs in the console",
         default: false
     }
 });
+
+let originalNotification: any = null;
+let originalPlaySound: any = null;
+let originalShowNotification: any = null;
+let originalMakeTextNotification: any = null;
 
 function isStreaming(): boolean {
     try {
@@ -27,7 +45,6 @@ function isStreaming(): boolean {
 
         const userStream = StreamStore?.getActiveStreamForUser?.(currentUser.id);
         if (userStream) {
-            if (settings.store.debugMode) console.log("[NoDMWhileStreaming] [DEBUG] Stream detected via getActiveStreamForUser", userStream);
             return true;
         }
 
@@ -44,19 +61,18 @@ function isStreaming(): boolean {
         }
 
         return false;
-    } catch (e) {
-        console.error("[NoDMWhileStreaming] Erreur lors de la vérification du stream:", e);
+    } catch {
         return false;
     }
 }
 
 export default definePlugin({
     name: "NoDMWhileStreaming",
-    description: "Retire l'affichage des notifications de DM dans la barre latérale lorsqu'un stream est lancé",
-    authors: [Devs.Unknown],
+    description: "Hides DM and Group DM notifications and sidebar items while you are streaming",
+    authors: [{ name: "Flocord", id: 0n }],
     settings,
     patches: [
-        // Filtre les DMs (type 1) de la liste des canaux privés
+        // Filters DMs (type 1) and Group DMs (type 3) from the private channel list
         {
             find: '"dm-quick-launcher"===',
             replacement: {
@@ -64,7 +80,7 @@ export default definePlugin({
                 replace: "privateChannelIds:$self.filterChannels($1)"
             }
         },
-        // Hook réactif pour forcer le re-render quand le statut de stream change
+        // Reactive hook to force re-render when stream status changes
         {
             find: ".FRIENDS},\"friends\"",
             replacement: {
@@ -74,7 +90,7 @@ export default definePlugin({
         }
     ],
 
-    // Flux events — intercepte MESSAGE_CREATE pour auto-ack les DMs pendant le stream
+    // Flux events â€” intercept MESSAGE_CREATE to auto-ack DMs/Groups during stream
     flux: {
         MESSAGE_CREATE(event: any) {
             if (!isStreaming()) return;
@@ -85,51 +101,184 @@ export default definePlugin({
             const channel = ChannelStore?.getChannel?.(message.channel_id);
             if (!channel) return;
 
-            // Type 1 = DM privé uniquement (on garde les groupes type 3)
-            if (channel.type !== 1) return;
+            // Type 1 = Private DM, Type 3 = Group DM
+            const isDM = channel.type === 1;
+            const isGroup = channel.type === 3 && settings.store.hideGroups;
 
-            // Ne pas ack ses propres messages
+            if (!isDM && !isGroup) return;
+
+            // Suppress desktop notification & alert sound at the Flux event level!
+            event.isPushNotification = false;
+            event.optimistic = false;
+            event.silent = true;
+            if (event.message) {
+                event.message.flags = (event.message.flags || 0) | 4096; // 4096 = EPHEMERAL/SILENT
+            }
+
+            // Do not ack own messages
             const currentUser = UserStore?.getCurrentUser?.();
             if (currentUser && message.author?.id === currentUser.id) return;
 
-            if (settings.store.debugMode) {
-                console.log(`[NoDMWhileStreaming] [ACK] Auto-ack DM de ${message.author?.username} dans le channel ${message.channel_id}`);
-            }
-
-            // Marquer le canal comme lu pour supprimer le badge
-            try {
-                ReadStateUtils?.ackChannel?.(channel);
-            } catch (e) {
-                if (settings.store.debugMode) {
-                    console.error("[NoDMWhileStreaming] Erreur lors de l'ack:", e);
-                }
-            }
+            // Mark the channel as read. Must be in a queueMicrotask to prevent Flux dispatch collision synchronously
+            // but process it before the browser repaints the next frame (instant clean)!
+            queueMicrotask(() => {
+                try {
+                    FluxDispatcher.dispatch({
+                        type: "BULK_ACK",
+                        context: "APP",
+                        channels: [{
+                            channelId: channel.id,
+                            messageId: message.id,
+                            readStateType: 0
+                        }]
+                    });
+                } catch { }
+            });
         }
     },
 
     useStreamStatus() {
-        useStateFromStores([StreamerModeStore, StreamStore], () => isStreaming());
+        const streaming = useStateFromStores([StreamerModeStore, StreamStore], () => isStreaming());
+        React.useEffect(() => {
+            if (streaming) {
+                document.body.classList.add("no-dm-while-streaming-active");
+            } else {
+                document.body.classList.remove("no-dm-while-streaming-active");
+            }
+        }, [streaming]);
     },
 
     filterChannels(ids: string[]) {
         const streaming = isStreaming();
-        if (settings.store.debugMode) {
-            console.log(`[NoDMWhileStreaming] [DEBUG] 🎨 filterChannels appelé. IDs count: ${ids?.length}, Streaming: ${streaming}`);
-        }
         if (!streaming) return ids;
 
-        const filtered = ids.filter((id: string) => ChannelStore?.getChannel?.(id)?.type !== 1);
-        if (settings.store.debugMode) {
-            console.log(`[NoDMWhileStreaming] [DEBUG] 🎨 filterChannels filtré. Reste: ${filtered.length}`);
+        const filtered = ids.filter((id: string) => {
+            const type = ChannelStore?.getChannel?.(id)?.type;
+            if (type === 1) return false;
+            if (type === 3 && settings.store.hideGroups) return false;
+            return true;
+        });
+
+        if (filtered.length === 0 && ids.length > 0) {
+            return [ids[0]];
         }
+
         return filtered;
     },
 
     start() {
-        if (settings.store.debugMode) console.log("[NoDMWhileStreaming] Plugin démarré");
+        if (typeof window !== "undefined" && window.Notification) {
+            originalNotification = window.Notification;
+            try {
+                // @ts-ignore
+                window.Notification = function (title: string, options: any) {
+                    if (isStreaming()) {
+                        return {
+                            close() {},
+                            onclick: null,
+                            onclose: null,
+                            onerror: null,
+                            onshow: null,
+                        };
+                    }
+                    return new originalNotification(title, options);
+                };
+                window.Notification.prototype = originalNotification.prototype;
+                window.Notification.permission = originalNotification.permission;
+                window.Notification.requestPermission = originalNotification.requestPermission;
+            } catch { }
+        }
+
+        try {
+            const soundModule = findByProps("playSound", "createSound");
+            if (soundModule) {
+                originalPlaySound = soundModule.playSound;
+                soundModule.playSound = function (soundName: string, ...args: any[]) {
+                    if (isStreaming() && soundName === "message") {
+                        return;
+                    }
+                    return originalPlaySound.call(soundModule, soundName, ...args);
+                };
+            }
+        } catch { }
+
+        try {
+            const notificationActions = findByProps("showNotification");
+            if (notificationActions) {
+                if (notificationActions.showNotification) {
+                    originalShowNotification = notificationActions.showNotification;
+                    notificationActions.showNotification = function (channelId: string, ...args: any[]) {
+                        if (isStreaming()) {
+                            const channel = ChannelStore?.getChannel?.(channelId);
+                            if (channel) {
+                                const isDM = channel.type === 1;
+                                const isGroup = channel.type === 3 && settings.store.hideGroups;
+                                if (isDM || isGroup) {
+                                    return;
+                                }
+                            }
+                        }
+                        return originalShowNotification.call(notificationActions, channelId, ...args);
+                    };
+                }
+
+                if (notificationActions.makeTextNotification) {
+                    originalMakeTextNotification = notificationActions.makeTextNotification;
+                    notificationActions.makeTextNotification = function (channel: any, ...args: any[]) {
+                        if (isStreaming()) {
+                            const isDM = channel?.type === 1;
+                            const isGroup = channel?.type === 3 && settings.store.hideGroups;
+                            if (isDM || isGroup) {
+                                return;
+                            }
+                        }
+                        return originalMakeTextNotification.call(notificationActions, channel, ...args);
+                    };
+                }
+            }
+        } catch { }
     },
 
     stop() {
-        if (settings.store.debugMode) console.log("[NoDMWhileStreaming] Plugin arrêté");
+
+        // Restore window.Notification
+        if (originalNotification && typeof window !== "undefined") {
+            try {
+                window.Notification = originalNotification;
+            } catch (e) {
+                console.error("[NoDMWhileStreaming] Failed to restore window.Notification:", e);
+            }
+            originalNotification = null;
+        }
+
+        // Restore playSound
+        if (originalPlaySound) {
+            try {
+                const soundModule = findByProps("playSound", "createSound");
+                if (soundModule) {
+                    soundModule.playSound = originalPlaySound;
+                }
+            } catch (e) {
+                console.error("[NoDMWhileStreaming] Failed to restore soundModule:", e);
+            }
+            originalPlaySound = null;
+        }
+
+        // Restore notificationActions
+        try {
+            const notificationActions = findByProps("showNotification");
+            if (notificationActions) {
+                if (originalShowNotification && notificationActions.showNotification) {
+                    notificationActions.showNotification = originalShowNotification;
+                }
+                if (originalMakeTextNotification && notificationActions.makeTextNotification) {
+                    notificationActions.makeTextNotification = originalMakeTextNotification;
+                }
+            }
+        } catch (e) {
+            console.error("[NoDMWhileStreaming] Failed to restore notificationActions:", e);
+        }
+        originalShowNotification = null;
+        originalMakeTextNotification = null;
     }
 });

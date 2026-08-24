@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Vencord, a Discord client mod
  * Copyright (c) 2026 Vendicated and contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -286,10 +286,7 @@ function handleVoiceStateUpdates(voiceStates: VoiceState[]) {
 export default definePlugin({
     name: "NormaliserVolume",
     description: "Normalise automatiquement le volume de tous les utilisateurs du canal vocal actuel",
-    authors: [{
-        name: "Bash",
-        id: 1327483363518582784n
-    }],
+    authors: [{ name: "Flocord", id: 0n }],
     settings,
 
     flux: {

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Vencord, a Discord client mod
  * Copyright (c) 2026 Vendicated and contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -220,7 +220,7 @@ function splitMessage(content: string, limit = DISCORD_MESSAGE_LIMIT) {
 }
 
 async function sendResponse(channelId: string, response: string, model: string) {
-    const prefix = settings.store.includeModelTag ? `🤖 **ChatGPT** (${model})\n\n` : "🤖 **ChatGPT**\n\n";
+    const prefix = settings.store.includeModelTag ? `ðŸ¤– **ChatGPT** (${model})\n\n` : "ðŸ¤– **ChatGPT**\n\n";
     const chunks = splitMessage(response, DISCORD_MESSAGE_LIMIT);
 
     chunks.forEach((chunk, index) => {
@@ -327,10 +327,7 @@ async function callChatGPT(prompt: string, requestKey: string) {
 export default definePlugin({
     name: "ChatGPT",
     description: "Permet d'utiliser ChatGPT directement dans Discord avec parametres configurables",
-    authors: [{
-        name: "Bash",
-        id: 1327483363518582784n
-    }],
+    authors: [{ name: "Flocord", id: 0n }],
     dependencies: ["CommandsAPI"],
     settings,
     commands: [
@@ -352,21 +349,21 @@ export default definePlugin({
 
                 if (!question || typeof question !== "string") {
                     sendBotMessage(ctx.channel.id, {
-                        content: "❌ Aucune question fournie."
+                        content: "âŒ Aucune question fournie."
                     });
                     return;
                 }
 
                 if (activeRequests.has(requestKey)) {
                     sendBotMessage(ctx.channel.id, {
-                        content: "⏳ Une requete ChatGPT est deja en cours. Veuillez patienter."
+                        content: "â³ Une requete ChatGPT est deja en cours. Veuillez patienter."
                     });
                     return;
                 }
 
                 if (!validateApiKey(settings.store.apiKey)) {
                     sendBotMessage(ctx.channel.id, {
-                        content: "❌ Cle API OpenRouter non configuree ou invalide. Configurez-la dans les parametres du plugin ChatGPT."
+                        content: "âŒ Cle API OpenRouter non configuree ou invalide. Configurez-la dans les parametres du plugin ChatGPT."
                     });
                     return;
                 }
@@ -395,7 +392,7 @@ export default definePlugin({
 
                     notify("ChatGPT", lastError, true);
                     sendBotMessage(ctx.channel.id, {
-                        content: `❌ **Erreur ChatGPT**: ${lastError}`
+                        content: `âŒ **Erreur ChatGPT**: ${lastError}`
                     });
                 } finally {
                     activeRequests.delete(requestKey);
@@ -410,25 +407,25 @@ export default definePlugin({
             execute: async (_opts, ctx) => {
                 const requestKey = getRequestKey(ctx);
                 const hasValidKey = validateApiKey(settings.store.apiKey);
-                const keyStatus = hasValidKey ? "✅ Configuree" : "❌ Non configuree ou invalide";
+                const keyStatus = hasValidKey ? "âœ… Configuree" : "âŒ Non configuree ou invalide";
                 const memoryLength = getConversationHistory(requestKey).length;
 
                 sendBotMessage(ctx.channel.id, {
                     content:
-                        "🤖 **Configuration ChatGPT / OpenRouter**\n\n" +
+                        "ðŸ¤– **Configuration ChatGPT / OpenRouter**\n\n" +
                         `**Cle API**: ${keyStatus}\n` +
                         `**Cle masquee**: ${maskApiKey(settings.store.apiKey)}\n` +
                         `**Endpoint**: ${settings.store.endpoint}\n` +
                         `**Modele**: ${settings.store.model}\n` +
-                        `**Fallback free**: ${settings.store.enableFallbackModels ? "✅ Active" : "❌ Desactive"}\n` +
-                        `**Memoire**: ${settings.store.enableMemory ? `✅ Active (${memoryLength} messages)` : "❌ Desactivee"}\n` +
+                        `**Fallback free**: ${settings.store.enableFallbackModels ? "âœ… Active" : "âŒ Desactive"}\n` +
+                        `**Memoire**: ${settings.store.enableMemory ? `âœ… Active (${memoryLength} messages)` : "âŒ Desactivee"}\n` +
                         `**Tokens max**: ${settings.store.maxTokens}\n` +
                         `**Temperature**: ${settings.store.temperature}\n` +
                         `**Timeout**: ${settings.store.timeoutSeconds}s\n` +
-                        `**Statut**: ${activeRequests.size > 0 ? `⏳ ${activeRequests.size} requete(s) en cours` : "🟢 Pret"}\n` +
+                        `**Statut**: ${activeRequests.size > 0 ? `â³ ${activeRequests.size} requete(s) en cours` : "ðŸŸ¢ Pret"}\n` +
                         `**Requetes**: ${requestCount} total / ${successCount} succes / ${failureCount} erreurs\n` +
                         `${lastError ? `**Derniere erreur**: ${lastError}\n` : ""}` +
-                        `\n${!hasValidKey ? "⚠️ Configurez votre cle API OpenRouter dans les parametres du plugin." : ""}`
+                        `\n${!hasValidKey ? "âš ï¸ Configurez votre cle API OpenRouter dans les parametres du plugin." : ""}`
                 });
             }
         },
@@ -440,7 +437,7 @@ export default definePlugin({
             execute: async (_opts, ctx) => {
                 clearConversationHistory(getRequestKey(ctx));
                 sendBotMessage(ctx.channel.id, {
-                    content: "🧹 Memoire ChatGPT effacee pour votre utilisateur."
+                    content: "ðŸ§¹ Memoire ChatGPT effacee pour votre utilisateur."
                 });
             }
         }

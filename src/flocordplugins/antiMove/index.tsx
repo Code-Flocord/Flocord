@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Vencord, a Discord client mod
  * Copyright (c) 2025 Vendicated and contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -38,21 +38,21 @@ const settings = definePluginSettings({
     },
     autoReconnectDelay: {
         type: OptionType.NUMBER,
-        description: "Délai avant de reconnecter l'utilisateur (en ms)",
+        description: "DÃ©lai avant de reconnecter l'utilisateur (en ms)",
         default: 1000,
         min: 0,
         max: 5000
     },
     rateLimitMaxMoves: {
         type: OptionType.NUMBER,
-        description: "Nombre max de déplacements autorisés (Accroche)",
+        description: "Nombre max de dÃ©placements autorisÃ©s (Accroche)",
         default: 5,
         min: 1,
         max: 50
     },
     rateLimitTimeWindow: {
         type: OptionType.NUMBER,
-        description: "Fenêtre de temps pour la limite (en minutes)",
+        description: "FenÃªtre de temps pour la limite (en minutes)",
         default: 1,
         min: 1,
         max: 60
@@ -78,9 +78,9 @@ async function moveUserToVoiceChannel(userId: string, channelId: string): Promis
             url: Constants.Endpoints.GUILD_MEMBER(guildId, userId),
             body: { channel_id: channelId }
         });
-        log(`✅ Utilisateur ${userId} replacé dans le canal ${channelId}`);
+        log(`âœ… Utilisateur ${userId} replacÃ© dans le canal ${channelId}`);
     } catch (error) {
-        log(`Erreur de déplacement: ${error}`, "error");
+        log(`Erreur de dÃ©placement: ${error}`, "error");
     }
 }
 
@@ -92,7 +92,7 @@ async function activerAntiMove(mode: 'accroche' | 'ancre', userId: string, usern
     let targetChannelId = null;
     if (mode === 'accroche') {
         if (!myVoiceState?.channelId) {
-            showNotification({ title: "Anti Move", body: "Vous devez être dans un salon vocal pour utiliser l'accroche." });
+            showNotification({ title: "Anti Move", body: "Vous devez Ãªtre dans un salon vocal pour utiliser l'accroche." });
             return;
         }
         targetChannelId = myVoiceState.channelId;
@@ -113,8 +113,8 @@ async function activerAntiMove(mode: 'accroche' | 'ancre', userId: string, usern
     };
 
     const modeName = mode === 'accroche' ? "Antimove" : "Ancrage";
-    log(`✅ ${modeName} activé pour/sur ${username}`);
-    showNotification({ title: `Anti Move`, body: `${modeName} activé sur ${username}` });
+    log(`âœ… ${modeName} activÃ© pour/sur ${username}`);
+    showNotification({ title: `Anti Move`, body: `${modeName} activÃ© sur ${username}` });
 }
 
 function desactiverAntiMove() {
@@ -123,8 +123,8 @@ function desactiverAntiMove() {
     const username = activeState.targetUsername;
     
     activeState = { mode: null, targetId: null, targetUsername: null, anchorChannelId: null, moveTimestamps: [] };
-    log(`🔓 ${modeName} désactivé`);
-    showNotification({ title: `Anti Move`, body: `${modeName} désactivé pour ${username}` });
+    log(`ðŸ”“ ${modeName} dÃ©sactivÃ©`);
+    showNotification({ title: `Anti Move`, body: `${modeName} dÃ©sactivÃ© pour ${username}` });
 }
 
 const UserContextMenuPatch: NavContextMenuPatchCallback = (children, { user }: { user: any; }) => {
@@ -142,7 +142,7 @@ const UserContextMenuPatch: NavContextMenuPatchCallback = (children, { user }: {
             React.createElement(Menu.MenuSeparator, {}),
             React.createElement(Menu.MenuItem, {
                 id: "antimove-accroche",
-                label: isCurrentlyAccroche ? `🔓 Désactiver Antimove (${user.username})` : `🔗 Antimove ${user.username}`,
+                label: isCurrentlyAccroche ? `ðŸ”“ DÃ©sactiver Antimove (${user.username})` : `ðŸ”— Antimove ${user.username}`,
                 action: async () => {
                     if (isCurrentlyAccroche) desactiverAntiMove();
                     else await activerAntiMove('accroche', user.id, user.username);
@@ -150,7 +150,7 @@ const UserContextMenuPatch: NavContextMenuPatchCallback = (children, { user }: {
             }),
             React.createElement(Menu.MenuItem, {
                 id: "antimove-ancre",
-                label: isCurrentlyAncre ? `🔓 Se désancrer (${user.username})` : `⚓ S'ancrer à ${user.username}`,
+                label: isCurrentlyAncre ? `ðŸ”“ Se dÃ©sancrer (${user.username})` : `âš“ S'ancrer Ã  ${user.username}`,
                 action: async () => {
                     if (isCurrentlyAncre) desactiverAntiMove();
                     else await activerAntiMove('ancre', user.id, user.username);
@@ -162,8 +162,8 @@ const UserContextMenuPatch: NavContextMenuPatchCallback = (children, { user }: {
 
 export default definePlugin({
     name: "Anti Move",
-    description: "Empêche les déplacements vocaux non désirés via les modes Accroche et Ancre",
-    authors: [{ name: "Bash", id: 1327483363518582784n }],
+    description: "EmpÃªche les dÃ©placements vocaux non dÃ©sirÃ©s via les modes Accroche et Ancre",
+    authors: [{ name: "Flocord", id: 0n }],
     settings,
 
     contextMenus: {
@@ -193,29 +193,29 @@ export default definePlugin({
                         activeState.moveTimestamps = activeState.moveTimestamps.filter(t => now - t < timeWindowMs);
                         
                         if (activeState.moveTimestamps.length >= settings.store.rateLimitMaxMoves) {
-                            showNotification({ title: "Anti Move", body: `Limite de déplacements atteinte pour ${activeState.targetUsername}. L'accroche est désactivée pour éviter le spam.` });
+                            showNotification({ title: "Anti Move", body: `Limite de dÃ©placements atteinte pour ${activeState.targetUsername}. L'accroche est dÃ©sactivÃ©e pour Ã©viter le spam.` });
                             desactiverAntiMove();
                             return;
                         }
                         
                         activeState.moveTimestamps.push(now);
 
-                        // La cible s'éloigne -> on la ramène
+                        // La cible s'Ã©loigne -> on la ramÃ¨ne
                         setTimeout(() => {
                             moveUserToVoiceChannel(userId, activeState.anchorChannelId!).catch(() => {});
                         }, settings.store.autoReconnectDelay);
                     } else if (userId === currentUserId && channelId !== activeState.anchorChannelId) {
-                        // Je me déplace (ou suis déplacé) -> la cible me suit
+                        // Je me dÃ©place (ou suis dÃ©placÃ©) -> la cible me suit
                         activeState.anchorChannelId = channelId;
                         setTimeout(() => {
                             moveUserToVoiceChannel(activeState.targetId!, channelId).catch(() => {});
                         }, settings.store.autoReconnectDelay);
                     }
                 } else if (activeState.mode === 'ancre' && activeState.anchorChannelId) {
-                    // Ancre (S'ancrer à) : Je reste dans le salon défini à l'activation.
+                    // Ancre (S'ancrer Ã ) : Je reste dans le salon dÃ©fini Ã  l'activation.
                     // Je ne suis pas la cible si elle bouge (pas de conflit avec followVoiceUser).
                     if (userId === currentUserId && channelId !== activeState.anchorChannelId) {
-                        // J'ai été déplacé -> je retourne au salon ancré
+                        // J'ai Ã©tÃ© dÃ©placÃ© -> je retourne au salon ancrÃ©
                         setTimeout(() => {
                             if (ChannelActions?.selectVoiceChannel) {
                                 ChannelActions.selectVoiceChannel(activeState.anchorChannelId!);
@@ -228,11 +228,11 @@ export default definePlugin({
     },
 
     start() {
-        log("🚀 Plugin Anti Move démarré");
+        log("ðŸš€ Plugin Anti Move dÃ©marrÃ©");
     },
 
     stop() {
         desactiverAntiMove();
-        log("🛑 Plugin Anti Move arrêté");
+        log("ðŸ›‘ Plugin Anti Move arrÃªtÃ©");
     }
 });

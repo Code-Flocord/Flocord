@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Vencord, a Discord client mod
  * Copyright (c) 2024 Vendicated and contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -10,7 +10,7 @@ import definePlugin, { OptionType } from "@utils/types";
 
 const settings = definePluginSettings({
     forceMono: {
-        description: "Forcer le mono (désactiver la stéréo)",
+        description: "Forcer le mono (dÃ©sactiver la stÃ©rÃ©o)",
         type: OptionType.BOOLEAN,
         default: true,
     },
@@ -23,11 +23,8 @@ const settings = definePluginSettings({
 
 export default definePlugin({
     name: "AntiStereo",
-    description: "Force Discord à utiliser le mono au lieu de la stéréo en sortie audio",
-    authors: [{
-        name: "Bash",
-        id: 1327483363518582784n
-    }],
+    description: "Force Discord Ã  utiliser le mono au lieu de la stÃ©rÃ©o en sortie audio",
+    authors: [{ name: "Flocord", id: 0n }],
     settings,
 
     patches: [
@@ -59,16 +56,16 @@ export default definePlugin({
 
     start() {
         if (settings.store.forceMono) {
-            console.log("[AntiStereo] Plugin AntiStereo activé - Forçage du mono");
+            console.log("[AntiStereo] Plugin AntiStereo activÃ© - ForÃ§age du mono");
 
             if (settings.store.showNotifications) {
-                // Note: Les notifications nécessiteraient l'import de @api/Notifications
-                console.log("[AntiStereo] Notifications activées");
+                // Note: Les notifications nÃ©cessiteraient l'import de @api/Notifications
+                console.log("[AntiStereo] Notifications activÃ©es");
             }
         }
     },
 
     stop() {
-        console.log("[AntiStereo] Plugin AntiStereo désactivé");
+        console.log("[AntiStereo] Plugin AntiStereo dÃ©sactivÃ©");
     }
 });
