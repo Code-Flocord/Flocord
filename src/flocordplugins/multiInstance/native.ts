@@ -32,7 +32,9 @@ const openWindows = new Map<string, BrowserWindow>();
 // déjà personnalisé pour ne rien casser.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SHARED_SETTINGS_FILE = join(app.getPath("userData"), "nightcord-mi-shared-settings.json");
+function getSharedSettingsFile() {
+    return join(app.getPath("userData"), "nightcord-mi-shared-settings.json");
+}
 
 // Clés qu'on ne veut jamais copier d'une fenêtre à l'autre (identité du compte / session)
 const SHARED_SETTINGS_BLOCKLIST = new Set([
@@ -68,8 +70,8 @@ const DUMP_LOCAL_STORAGE_SCRIPT = `
 
 function loadSharedSettings(): Record<string, string> {
     try {
-        if (!existsSync(SHARED_SETTINGS_FILE)) return {};
-        const raw = readFileSync(SHARED_SETTINGS_FILE, "utf-8");
+        if (!existsSync(getSharedSettingsFile())) return {};
+        const raw = readFileSync(getSharedSettingsFile(), "utf-8");
         const parsed = JSON.parse(raw);
         return parsed && typeof parsed === "object" ? parsed : {};
     } catch {
@@ -79,7 +81,7 @@ function loadSharedSettings(): Record<string, string> {
 
 function saveSharedSettings(settings: Record<string, string>): void {
     try {
-        writeFileSync(SHARED_SETTINGS_FILE, JSON.stringify(settings), "utf-8");
+        writeFileSync(getSharedSettingsFile(), JSON.stringify(settings), "utf-8");
     } catch (e) {
         console.warn("[NightcordMI] Failed to save shared settings:", e);
     }

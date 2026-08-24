@@ -127,10 +127,13 @@ export async function navigateFrame(action: "back" | "forward" | "reload"): Prom
 
 // ─── Extension Management ────────────────────────────────────────────────────
 
-const EXTENSIONS_DIR = path.join(app.getPath("userData"), "nightcord-extensions");
+function getExtensionsDir() {
+    return path.join(app.getPath("userData"), "nightcord-extensions");
+}
 
 function ensureExtensionsDir() {
-    if (!fs.existsSync(EXTENSIONS_DIR)) fs.mkdirSync(EXTENSIONS_DIR, { recursive: true });
+    const dir = getExtensionsDir();
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
 /**
@@ -227,13 +230,13 @@ export async function installExtension(srcPath: string): Promise<ExtensionInfo> 
         const manifestPath = path.join(srcPath, "manifest.json");
         if (!fs.existsSync(manifestPath)) throw new Error("No manifest.json found in folder");
         const extId = crypto.createHash("md5").update(srcPath + fs.statSync(manifestPath).mtimeMs).digest("hex");
-        extDir = path.join(EXTENSIONS_DIR, extId);
+        extDir = path.join(getExtensionsDir(), extId);
         if (!fs.existsSync(extDir)) copyDirRecursive(srcPath, extDir);
     } else if (srcPath.toLowerCase().endsWith(".crx")) {
         const crxBuffer = fs.readFileSync(srcPath);
         const zipBuffer = extractCrxZip(crxBuffer);
         const extId = crypto.createHash("md5").update(crxBuffer.slice(0, 128)).digest("hex");
-        extDir = path.join(EXTENSIONS_DIR, extId);
+        extDir = path.join(getExtensionsDir(), extId);
         if (!fs.existsSync(extDir)) {
             fs.mkdirSync(extDir, { recursive: true });
             await extractZip(zipBuffer, extDir);
@@ -274,10 +277,10 @@ export async function loadPersistedExtensions(): Promise<ExtensionInfo[]> {
     ensureExtensionsDir();
     const loaded: ExtensionInfo[] = [];
     try {
-        const entries = fs.readdirSync(EXTENSIONS_DIR, { withFileTypes: true });
+        const entries = fs.readdirSync(getExtensionsDir(), { withFileTypes: true });
         for (const entry of entries) {
             if (!entry.isDirectory()) continue;
-            const extDir = path.join(EXTENSIONS_DIR, entry.name);
+            const extDir = path.join(getExtensionsDir(), entry.name);
             const manifestPath = path.join(extDir, "manifest.json");
             if (!fs.existsSync(manifestPath)) continue;
             try {
@@ -338,7 +341,7 @@ export function listExtensions(): ExtensionInfo[] {
                 iconUrl,
                 dir: extDir,
             };
-        }).filter(e => e.dir.startsWith(EXTENSIONS_DIR));
+        }).filter(e => e.dir.startsWith(getExtensionsDir()));
     } catch { return []; }
 }
 
@@ -351,7 +354,7 @@ export async function removeExtension(extensionId: string): Promise<void> {
         const ext = all[extensionId];
         const extPath = ext?.path ?? "";
         session.defaultSession.removeExtension(extensionId);
-        if (extPath && extPath.startsWith(EXTENSIONS_DIR) && fs.existsSync(extPath)) {
+        if (extPath && extPath.startsWith(getExtensionsDir()) && fs.existsSync(extPath)) {
             fs.rmSync(extPath, { recursive: true, force: true });
         }
     } catch (e) {
@@ -362,7 +365,7 @@ export async function removeExtension(extensionId: string): Promise<void> {
 /** Open the extensions directory in the system file explorer. */
 export function openExtensionsDir(): void {
     ensureExtensionsDir();
-    shell.openPath(EXTENSIONS_DIR);
+    shell.openPath(getExtensionsDir());
 }
 
 /** Open a folder picker dialog for selecting an unpacked extension. */
