@@ -67,6 +67,9 @@
             ],
             "@nightcordplugins/*": [
                 "./src/flocordplugins/*"
+            ],
+            "@plugins/_core/concatenatedModules": [
+                "./src/api/concatenatedModules.ts"
             ]
         },
         "plugins": [
