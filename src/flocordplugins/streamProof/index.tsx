@@ -1,212 +1,274 @@
 /*
- * Nightcord, a Discord client mod
+ * Vencord, a Discord client mod
  * Copyright (c) 2026 Vendicated and contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import "./styles.css";
-
-import { ChatBarButton, ChatBarButtonFactory } from "@api/ChatButtons";
 import { definePluginSettings } from "@api/Settings";
-import { EquicordDevs } from "@utils/constants";
+import { Devs } from "@utils/constants";
 import definePlugin, { OptionType } from "@utils/types";
 import { findByPropsLazy } from "@webpack";
-import { React, UserStore,useState, useStateFromStores } from "@webpack/common";
-import { t } from "../autoTranslateNightcord";
+import { FluxDispatcher } from "@webpack/common";
 
 const StreamStore = findByPropsLazy("getActiveStreamForUser", "getAllActiveStreams");
+const UserStore = findByPropsLazy("getCurrentUser");
 const RTCConnectionStore = findByPropsLazy("getMediaSessionId");
-const StreamerModeStore = findByPropsLazy("hidePersonalInformation");
+
+let styleElement: HTMLStyleElement | null = null;
 
 const settings = definePluginSettings({
-    autoEnableWithStream: {
+    hideEquicord: {
         type: OptionType.BOOLEAN,
-        description: "AutoEnable With Stream",
-        default: false,
-        onChange(value) {
-            if (value && isStreaming()) {
-                enableStreamProof();
-            }
-        }
+        description: "Cacher automatiquement la section Equicord pendant le stream",
+        default: true
+    },
+    hideSettingsButton: {
+        type: OptionType.BOOLEAN,
+        description: "Cacher aussi le bouton des paramètres Equicord",
+        default: true
+    },
+    customSelectors: {
+        type: OptionType.STRING,
+        description: "Sélecteurs CSS personnalisés à cacher (séparés par des virgules)",
+        default: ""
+    },
+    debugMode: {
+        type: OptionType.BOOLEAN,
+        description: "Mode débogage - Affiche des logs détaillés dans la console",
+        default: false
     }
 });
 
-let clickHandler: ((e: MouseEvent) => void) | null = null;
-let streamProofActive = false;
-
 function isStreaming(): boolean {
     try {
-        if (StreamerModeStore?.hidePersonalInformation) {
+        const currentUser = UserStore?.getCurrentUser?.();
+        if (!currentUser) {
+            if (settings.store.debugMode) {
+                console.log("[StreamProof] Aucun utilisateur trouvé");
+            }
+            return false;
+        }
+
+        // Méthode 1: Vérifier via StreamStore
+        const userStream = StreamStore?.getActiveStreamForUser?.(currentUser.id);
+        if (userStream) {
+            if (settings.store.debugMode) {
+                console.log("[StreamProof] Stream détecté via getActiveStreamForUser:", userStream);
+            }
             return true;
         }
 
-        const currentUser = UserStore?.getCurrentUser?.();
-        if (!currentUser) return false;
-
-        const userStream = StreamStore?.getActiveStreamForUser?.(currentUser.id);
-        if (userStream) return true;
-
+        // Méthode 2: Vérifier tous les streams actifs
         const allStreams = StreamStore?.getAllActiveStreams?.();
         if (allStreams && allStreams.length > 0) {
             const myStream = allStreams.find((s: any) => s.ownerId === currentUser.id);
-            if (myStream) return true;
+            if (myStream) {
+                if (settings.store.debugMode) {
+                    console.log("[StreamProof] Stream détecté via getAllActiveStreams:", myStream);
+                }
+                return true;
+            }
         }
 
+        // Méthode 3: Vérifier via RTCConnectionStore
         const mediaSessionId = RTCConnectionStore?.getMediaSessionId?.();
         if (mediaSessionId) {
             const state = RTCConnectionStore?.getState?.();
-            if (state && state.context === "stream") return true;
+            if (state && state.context === "stream") {
+                if (settings.store.debugMode) {
+                    console.log("[StreamProof] Stream détecté via RTCConnectionStore");
+                }
+                return true;
+            }
         }
 
+        if (settings.store.debugMode) {
+            console.log("[StreamProof] Aucun stream détecté");
+        }
         return false;
     } catch (e) {
+        console.error("[StreamProof] Erreur lors de la vérification du stream:", e);
         return false;
     }
 }
 
-function handleStreamChange() {
-    if (!settings.store.autoEnableWithStream) return;
-
-    if (isStreaming()) {
-        enableStreamProof();
-    } else {
-        disableStreamProof();
-    }
-}
-
-function enableStreamProof() {
-    if (streamProofActive) return;
-    streamProofActive = true;
-    document.body.classList.add("stream-proof-enabled");
-    if (!clickHandler) {
-        clickHandler = (e: MouseEvent) => {
-            const target = e.target as HTMLElement | null;
-            if (!target) return;
-            const targetElement = target.closest("[class*=\"messageContent_\"], [class*=\"markup_\"], [class*=\"imageWrapper_\"], [class*=\"embedWrapper_\"], [id^=\"message-accessories-\"] article, [class*=\"attachment_\"], [class*=\"video_\"], [class*=\"voiceMessage_\"], [class*=\"wrapperPaused_\"], [class*=\"wrapperPlaying_\"], [class*=\"audioAttachment_\"], [class*=\"fileUpload_\"], [class*=\"wrapperAudio_\"], [class*=\"mediaBarInteraction_\"], [class*=\"newMosaicStyle_\"], [class*=\"stickerAsset_\"], [class*=\"channel_\"][class*=\"interactive_\"]");
-            if (targetElement && !targetElement.classList.contains("stream-proof-revealed")) {
-                targetElement.classList.add("stream-proof-revealed");
-                e.preventDefault();
-                e.stopPropagation();
-            }
-        };
-        document.addEventListener("click", clickHandler as any, true);
-    }
-}
-
-function disableStreamProof() {
-    if (!streamProofActive) return;
-    streamProofActive = false;
-    document.body.classList.remove("stream-proof-enabled");
-    if (clickHandler) {
-        document.removeEventListener("click", clickHandler as any, true);
-        clickHandler = null;
-    }
-    document.querySelectorAll(".stream-proof-revealed").forEach(el => {
-        el.classList.remove("stream-proof-revealed");
-    });
-}
-
-// ── Eye Icons ──────────────────────────────────────────────────────────────────
-
-function EyeIcon({ height = 20, width = 20 }: { height?: number; width?: number; }) {
-    return (
-        <svg
-            aria-hidden="true"
-            role="img"
-            xmlns="http://www.w3.org/2000/svg"
-            width={width}
-            height={height}
-            fill="none"
-            viewBox="0 0 24 24"
-        >
-            <path
-                fill="currentColor"
-                d="M12 5C5.648 5 1 12 1 12s4.648 7 11 7 11-7 11-7-4.648-7-11-7Zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10Zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"
-            />
-        </svg>
-    );
-}
-
-function EyeSlashIcon({ height = 20, width = 20 }: { height?: number; width?: number; }) {
-    return (
-        <svg
-            aria-hidden="true"
-            role="img"
-            xmlns="http://www.w3.org/2000/svg"
-            width={width}
-            height={height}
-            fill="none"
-            viewBox="0 0 24 24"
-        >
-            <path
-                fill="currentColor"
-                d="M2.22 2.22a.75.75 0 0 1 1.06 0l18.5 18.5a.75.75 0 1 1-1.06 1.06l-3.56-3.56A11.18 11.18 0 0 1 12 19C5.648 19 1 12 1 12s1.81-2.73 4.69-4.95L2.22 3.28a.75.75 0 0 1 0-1.06ZM7.1 8.52A8.87 8.87 0 0 0 3.07 12 9.57 9.57 0 0 0 12 17c1.47 0 2.85-.34 4.1-.93l-1.7-1.7A3 3 0 0 1 10.63 10.6L7.1 8.52ZM12 5c1.92 0 3.7.52 5.25 1.37l-1.5 1.5A8.87 8.87 0 0 0 20.93 12a9.57 9.57 0 0 1-3.37 3.44l1.5 1.5C21.42 15.2 23 12 23 12s-4.648-7-11-7Z"
-            />
-        </svg>
-    );
-}
-
-// ── Chat Bar Button ────────────────────────────────────────────────────────────
-
-const StreamProofButton: ChatBarButtonFactory = ({ isMainChat }) => {
-    useStateFromStores([StreamerModeStore, StreamStore, RTCConnectionStore], () => isStreaming());
-    const [, forceUpdate] = useState({});
-
-    if (!isMainChat) return null;
-
-    function toggle() {
-        if (streamProofActive) {
-            disableStreamProof();
-        } else {
-            enableStreamProof();
+function injectHideCSS() {
+    if (styleElement) {
+        if (settings.store.debugMode) {
+            console.log("[StreamProof] CSS déjà injecté, pas besoin de réinjecter");
         }
-        forceUpdate({});
+        return;
     }
 
-    const active = streamProofActive;
-    const tooltip = active
-        ? t("StreamProof : ON — click to disable")
-        : t("StreamProof : OFF — click to enable");
+    styleElement = document.createElement("style");
+    styleElement.id = "streamproof-hide-css";
 
-    return (
-        <ChatBarButton tooltip={tooltip} onClick={toggle}>
-            <span style={{ color: active ? "var(--status-danger)" : "currentColor" }}>
-                {active ? <EyeSlashIcon /> : <EyeIcon />}
-            </span>
-        </ChatBarButton>
-    );
-};
+    let cssRules = "";
 
-// ── Plugin ─────────────────────────────────────────────────────────────────────
+    if (settings.store.hideEquicord) {
+        // Cache les éléments Equicord/Vencord courants
+        cssRules += `
+            /* Cache la section complète Equicord dans la sidebar */
+            ul[class*="section"][aria-label*="Equicord" i] {
+                display: none !important;
+            }
+
+            /* Cache tous les items de menu Equicord */
+            div[data-settings-sidebar-item^="equicord_"],
+            div[data-settings-sidebar-item*="equicord" i] {
+                display: none !important;
+            }
+
+            /* Cache les sections avec label Equicord/Vencord */
+            [class*="sectionLabel"]:has([data-text-variant*="heading"]:has-text(/Equicord|Vencord/i)),
+            div[class*="sectionLabel"]:has(h1:has-text(/Equicord|Vencord/i)) {
+                display: none !important;
+            }
+
+            /* Sélecteurs de fallback pour d'autres structures */
+            [class*="contentRegion"] [class*="sidebar"] [aria-label*="Equicord" i],
+            [class*="contentRegion"] [class*="sidebar"] [aria-label*="Vencord" i],
+            [class*="item"][class*="themed"]:has([class*="Equicord" i]),
+            [class*="item"][class*="themed"]:has([class*="Vencord" i]),
+            div[class*="side"] > div[role="tab"]:has([class*="Equicord" i]),
+            div[class*="side"] > div[role="tab"]:has([class*="Vencord" i]) {
+                display: none !important;
+            }
+
+            /* Cache les onglets Equicord/Vencord */
+            [class*="item"]:has(> [class*="Equicord" i]),
+            [class*="item"]:has(> [class*="Vencord" i]),
+            div[id*="Equicord" i],
+            div[id*="Vencord" i] {
+                display: none !important;
+            }
+
+            /* Cache les sections contenant "Equicord x" */
+            ul[aria-label*="Equicord x" i] {
+                display: none !important;
+            }
+        `;
+    }
+
+    if (settings.store.hideSettingsButton) {
+        // Cache le bouton des paramètres Equicord
+        cssRules += `
+            /* Cache les icônes et boutons Equicord/Vencord dans la barre d'outils */
+            [class*="toolbar"] [class*="iconWrapper"]:has(.vc-icon),
+            [class*="toolbar"] button:has(.vc-icon),
+            [class*="toolbarIcon"]:has([d*="M10.56" i]),
+            button[aria-label*="Equicord" i],
+            button[aria-label*="Vencord" i],
+            [class*="listItem"]:has([aria-label*="Equicord" i]),
+            [class*="listItem"]:has([aria-label*="Vencord" i]),
+            div[class*="iconWrapper"]:has(svg.vc-icon) {
+                display: none !important;
+            }
+
+            /* Cache spécifiquement l'icône engrenage d'Equicord */
+            svg.vc-icon[viewBox="0 0 24 24"]:has(path[d*="M10.56 1.1" i]) {
+                display: none !important;
+            }
+        `;
+    }
+
+    // Ajoute les sélecteurs personnalisés
+    if (settings.store.customSelectors && settings.store.customSelectors.trim()) {
+        const customSelectors = settings.store.customSelectors
+            .split(",")
+            .map((s: string) => s.trim())
+            .filter((s: string) => s.length > 0)
+            .join(", ");
+
+        if (customSelectors) {
+            cssRules += `
+                /* Sélecteurs personnalisés */
+                ${customSelectors} {
+                    display: none !important;
+                }
+            `;
+        }
+    }
+
+    styleElement.textContent = cssRules;
+    document.head.appendChild(styleElement);
+    console.log("[StreamProof] 🔒 CSS de masquage injecté - Les éléments Equicord sont maintenant cachés");
+    if (settings.store.debugMode) {
+        console.log("[StreamProof] Règles CSS appliquées:", cssRules);
+    }
+}
+
+function removeHideCSS() {
+    if (styleElement) {
+        styleElement.remove();
+        styleElement = null;
+        console.log("[StreamProof] 🔓 CSS de masquage retiré - Les éléments Equicord sont à nouveau visibles");
+    }
+}
+
+function updateHideStatus() {
+    const streaming = isStreaming();
+
+    if (settings.store.debugMode) {
+        console.log(`[StreamProof] État du stream: ${streaming ? "EN STREAM" : "PAS EN STREAM"}`);
+    }
+
+    if (streaming && settings.store.hideEquicord) {
+        injectHideCSS();
+    } else {
+        removeHideCSS();
+    }
+}
 
 export default definePlugin({
     name: "StreamProof",
-    enabledByDefault: true,
-    description: "Hides messages, links, images, DMs, but not the screen share/voice grid. Toggle via chat bar button.",
-    authors: [EquicordDevs.TheArmagan],
-    dependencies: ["ChatInputButtonAPI"],
+    description: "Détecte automatiquement quand vous êtes en stream et cache la section Equicord pour protéger votre vie privée",
+    authors: [Devs.Unknown],
     settings,
 
-    chatBarButton: {
-        icon: EyeSlashIcon,
-        render: StreamProofButton,
-    },
-
-    flux: {
-        STREAM_START() { handleStreamChange(); },
-        STREAM_STOP() { handleStreamChange(); },
-        STREAM_CREATE() { handleStreamChange(); },
-        STREAM_DELETE() { handleStreamChange(); },
-        STREAMER_MODE_UPDATE() { handleStreamChange(); },
-        RTC_CONNECTION_STATE() { handleStreamChange(); }
-    },
-
     start() {
-        if (settings.store.autoEnableWithStream && isStreaming()) {
-            enableStreamProof();
+        console.log("[StreamProof] Plugin démarré - Surveillance du stream activée");
+        if (settings.store.debugMode) {
+            console.log("[StreamProof] Mode débogage activé");
         }
+
+        // Vérification initiale
+        updateHideStatus();
+
+        // Écoute les changements d'état du stream
+        FluxDispatcher.subscribe("STREAM_CREATE", updateHideStatus);
+        FluxDispatcher.subscribe("STREAM_UPDATE", updateHideStatus);
+        FluxDispatcher.subscribe("STREAM_DELETE", updateHideStatus);
+        FluxDispatcher.subscribe("STREAM_START", updateHideStatus);
+        FluxDispatcher.subscribe("STREAM_STOP", updateHideStatus);
+        FluxDispatcher.subscribe("STREAM_CLOSE", updateHideStatus);
+        FluxDispatcher.subscribe("RTC_CONNECTION_STATE", updateHideStatus);
+        FluxDispatcher.subscribe("MEDIA_ENGINE_VIDEO_STATE_UPDATE", updateHideStatus);
+
+        // Vérification périodique de sécurité (toutes les 2 secondes)
+        (this as any).checkInterval = setInterval(updateHideStatus, 2000);
     },
+
     stop() {
-        disableStreamProof();
+        console.log("[StreamProof] Plugin arrêté");
+
+        // Nettoie les écouteurs
+        FluxDispatcher.unsubscribe("STREAM_CREATE", updateHideStatus);
+        FluxDispatcher.unsubscribe("STREAM_UPDATE", updateHideStatus);
+        FluxDispatcher.unsubscribe("STREAM_DELETE", updateHideStatus);
+        FluxDispatcher.unsubscribe("STREAM_START", updateHideStatus);
+        FluxDispatcher.unsubscribe("STREAM_STOP", updateHideStatus);
+        FluxDispatcher.unsubscribe("STREAM_CLOSE", updateHideStatus);
+        FluxDispatcher.unsubscribe("RTC_CONNECTION_STATE", updateHideStatus);
+        FluxDispatcher.unsubscribe("MEDIA_ENGINE_VIDEO_STATE_UPDATE", updateHideStatus);
+
+        // Arrête la vérification périodique
+        if ((this as any).checkInterval) {
+            clearInterval((this as any).checkInterval);
+            (this as any).checkInterval = null;
+        }
+
+        // Retire le CSS de masquage
+        removeHideCSS();
     }
 });
