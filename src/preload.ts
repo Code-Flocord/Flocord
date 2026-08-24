@@ -29,7 +29,17 @@ if (location.protocol !== "data:") {
     invoke(IpcEvents.INIT_FILE_WATCHERS);
 
     if (IS_DISCORD_DESKTOP) {
-        webFrame.executeJavaScript(sendSync<string>(IpcEvents.PRELOAD_GET_RENDERER_JS));
+        webFrame.executeJavaScript(sendSync<string>(IpcEvents.PRELOAD_GET_RENDERER_JS))
+            .catch((err: unknown) => {
+                const msg = `[${new Date().toISOString()}] Flocord renderer crash:\n${err}\n${(err as any)?.stack ?? ""}`;
+                console.error("[Flocord]", msg);
+                try {
+                    const { writeFileSync } = require("fs") as typeof import("fs");
+                    const { join } = require("path") as typeof import("path");
+                    const log = join(process.env.APPDATA || process.env.HOME || ".", "flocord-crash.log");
+                    writeFileSync(log, msg + "\n", { flag: "a" });
+                } catch { /* ignore write errors */ }
+            });
         // Not supported in sandboxed preload scripts but Discord doesn't support it either so who cares
         require(process.env.DISCORD_PRELOAD!);
     }
