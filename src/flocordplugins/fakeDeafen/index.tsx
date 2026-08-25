@@ -201,16 +201,27 @@ const settings = definePluginSettings({
     }
 });
 
-let suppressingSpeaking = false;
+let _originalDispatch: ((action: any) => any) | null = null;
 
-function onSpeaking(data: any) {
-    if (!fakeDeafenEnabled || suppressingSpeaking) return;
-    const myId = UserStore.getCurrentUser()?.id;
-    if (data.userId && String(data.userId) === String(myId) && data.speaking) {
-        suppressingSpeaking = true;
-        FluxDispatcher.dispatch({ ...data, speaking: false });
-        suppressingSpeaking = false;
-    }
+function patchSpeakingDispatch() {
+    if (_originalDispatch) return;
+    const orig = FluxDispatcher.dispatch.bind(FluxDispatcher);
+    _originalDispatch = orig;
+    (FluxDispatcher as any).dispatch = function (action: any) {
+        if (fakeDeafenEnabled && action?.type === "SPEAKING") {
+            const myId = UserStore.getCurrentUser()?.id;
+            if (myId && String(action.userId) === String(myId) && action.speaking) {
+                return orig({ ...action, speaking: false });
+            }
+        }
+        return orig(action);
+    };
+}
+
+function unpatchSpeakingDispatch() {
+    if (!_originalDispatch) return;
+    (FluxDispatcher as any).dispatch = _originalDispatch;
+    _originalDispatch = null;
 }
 
 function handleKeyPress(e: KeyboardEvent) {
@@ -279,8 +290,8 @@ export default definePlugin({
         // Add keyboard listener
         document.addEventListener("keydown", handleKeyPress, true);
 
-        // Suppress speaking indicator when fakeDeafen is active
-        FluxDispatcher.subscribe("SPEAKING", onSpeaking);
+        // Intercept SPEAKING events before stores process them
+        patchSpeakingDispatch();
 
         // Patch voiceStateUpdate
         if (!patchGatewayConnection()) {
@@ -295,7 +306,7 @@ export default definePlugin({
         document.removeEventListener("keydown", handleKeyPress, true);
 
         // Remove speaking suppressor
-        FluxDispatcher.unsubscribe("SPEAKING", onSpeaking);
+        unpatchSpeakingDispatch();
 
         // Restore original function using cached reference only.
         if (patchedGatewayConnection && originalVoiceStateUpdate) {
@@ -304,6 +315,7 @@ export default definePlugin({
 
         // Reset state
         fakeDeafenEnabled = false;
+        _originalDispatch = null;
         originalVoiceStateUpdate = null;
         patchedGatewayConnection = null;
         ChannelStore = null;
