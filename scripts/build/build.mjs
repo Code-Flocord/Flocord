@@ -129,7 +129,8 @@ const buildConfigs = ([
         ...nodeCommonOpts,
         entryPoints: [join(dirname(fileURLToPath(import.meta.url)), "../../src/main/index.ts")],
         outfile: "dist/desktop/patcher.js",
-        footer: { js: "//# sourceURL=file:///VencordPatcher\n" + sourceMapFooter("patcher") },
+        banner: { js: "(function(){if(typeof global!==\"undefined\"&&global.__flocordMainLoaded)return;if(typeof global!==\"undefined\")global.__flocordMainLoaded=true;" },
+        footer: { js: "})();\n//# sourceURL=file:///VencordPatcher\n" + sourceMapFooter("patcher") },
         sourcemap,
         plugins: [
             // @ts-ignore this is never undefined

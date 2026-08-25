@@ -4,7 +4,7 @@ import { ConfirmModal, Modal, closeModal, openModal } from "@webpack/common";
 import { React } from "@webpack/common";
 
 
-const CURRENT_VERSION = "1.0.29";
+const CURRENT_VERSION = "1.0.30";
 
 const Native = VencordNative.pluginHelpers.FlocordAutoUpdater as PluginNative<typeof import("./native")>;
 
