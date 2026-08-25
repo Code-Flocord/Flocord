@@ -8,7 +8,7 @@ import { definePluginSettings } from "@api/Settings";
 import definePlugin, { OptionType } from "@utils/types";
 import { findByProps, find } from "@webpack";
 import { React, useState } from "@webpack/common";
-import { Forms } from "@webpack/common";
+import { FluxDispatcher, Forms, UserStore } from "@webpack/common";
 
 let originalVoiceStateUpdate: any;
 let patchedGatewayConnection: any;
@@ -201,6 +201,18 @@ const settings = definePluginSettings({
     }
 });
 
+let suppressingSpeaking = false;
+
+function onSpeaking(data: any) {
+    if (!fakeDeafenEnabled || suppressingSpeaking) return;
+    const myId = UserStore.getCurrentUser()?.id;
+    if (data.userId && String(data.userId) === String(myId) && data.speaking) {
+        suppressingSpeaking = true;
+        FluxDispatcher.dispatch({ ...data, speaking: false });
+        suppressingSpeaking = false;
+    }
+}
+
 function handleKeyPress(e: KeyboardEvent) {
     const keybind = settings.store.keybind || "Ctrl+Shift+D";
     const keys = keybind.split("+");
@@ -267,6 +279,9 @@ export default definePlugin({
         // Add keyboard listener
         document.addEventListener("keydown", handleKeyPress, true);
 
+        // Suppress speaking indicator when fakeDeafen is active
+        FluxDispatcher.subscribe("SPEAKING", onSpeaking);
+
         // Patch voiceStateUpdate
         if (!patchGatewayConnection()) {
             console.warn(`[FakeDeafen] GatewayConnection.${gatewayMethodName} not found`);
@@ -278,6 +293,9 @@ export default definePlugin({
 
         // Remove keyboard listener
         document.removeEventListener("keydown", handleKeyPress, true);
+
+        // Remove speaking suppressor
+        FluxDispatcher.unsubscribe("SPEAKING", onSpeaking);
 
         // Restore original function using cached reference only.
         if (patchedGatewayConnection && originalVoiceStateUpdate) {
