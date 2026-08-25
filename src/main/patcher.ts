@@ -181,16 +181,46 @@ if (!IS_VANILLA) {
     console.log("[Equicord] Running in vanilla mode. Not loading Equicord");
 }
 
-// Rendre ipcMain.handle idempotent avant de charger _app.asar.
-// Quand _app.asar/index.js référence un ancien patcher Flocord, celui-ci tente
-// d'enregistrer les mêmes handlers IPC → erreur "second handler". Le wrapper
-// try-catch ignore silencieusement les doublons sans remplacer nos handlers.
+// Safety: make ipcMain.handle idempotent so duplicate registrations are silently ignored.
 {
     const { ipcMain } = require("electron") as typeof import("electron");
     const _origHandle = ipcMain.handle.bind(ipcMain);
     (ipcMain as any).handle = function (channel: string, listener: any) {
         try { return _origHandle(channel, listener); } catch { /* already registered */ }
     };
+}
+
+// Discord's update chain (Canary 1.0.1131+): _app.asar/index.js redirects to the previous
+// version's patcher. We bypass the old Flocord patcher entirely and load Discord directly.
+// Without this, the old patcher runs double-initialization and Discord's core never loads.
+{
+    const { readFileSync } = require("fs") as typeof import("fs");
+    try {
+        const content = readFileSync(require.main!.filename, "utf8");
+        const redirectMatch = content.match(/require\(["'](.+?patcher\.js)["']\)/);
+        if (redirectMatch) {
+            // Unescape JS string literal double-backslashes → real Windows path
+            const oldPatcherPath = redirectMatch[1].replace(/\\\\/g, "\\");
+            console.log("[Flocord] Update chain detected — bypassing old patcher:", oldPatcherPath);
+
+            // Stub the old patcher so _app.asar/index.js's require returns {} instead of running it
+            if (!(require as any).cache[oldPatcherPath]) {
+                (require as any).cache[oldPatcherPath] = {
+                    id: oldPatcherPath, filename: oldPatcherPath,
+                    loaded: true, exports: {}, parent: null, children: [], paths: [],
+                };
+            }
+
+            // Navigate to the real Discord from the old version's _app.asar
+            const oldResourcesDir = dirname(dirname(oldPatcherPath)); // .../app-OLD/resources
+            const oldAsarPath = join(oldResourcesDir, "_app.asar");
+            const oldPkg = JSON.parse(readFileSync(join(oldAsarPath, "package.json"), "utf8"));
+            app.setAppPath(oldAsarPath);
+            require.main!.filename = join(oldAsarPath, oldPkg.main);
+        }
+    } catch (e) {
+        console.error("[Flocord] Update chain bypass failed:", e);
+    }
 }
 
 console.log("[Equicord] Loading original Discord app.asar");
