@@ -182,7 +182,8 @@ const buildConfigs = ([
         ...nodeCommonOpts,
         entryPoints: [join(dirname(fileURLToPath(import.meta.url)), "../../src/main/index.ts")],
         outfile: "dist/equibop/main.js",
-        footer: { js: "//# sourceURL=file:///VencordDesktopMain\n" + sourceMapFooter("main") },
+        banner: { js: "(function(){if(typeof global!==\"undefined\"&&global.__flocordMainLoaded)return;if(typeof global!==\"undefined\")global.__flocordMainLoaded=true;" },
+        footer: { js: "})();\n//# sourceURL=file:///VencordDesktopMain\n" + sourceMapFooter("main") },
         sourcemap,
         plugins: [
             ...nodeCommonOpts.plugins,
