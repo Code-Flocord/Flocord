@@ -1,5 +1,5 @@
 import { IpcMainInvokeEvent } from "electron";
-import { writeFile } from "fs/promises";
+import { rename, stat, writeFile } from "fs/promises";
 
 const VERSION_URL = "https://raw.githubusercontent.com/Code-Flocord/FlocordCLI/master/version.json";
 
@@ -34,6 +34,14 @@ export async function downloadAndInstall(
         const response = await fetch(url);
         if (!response.ok) return { success: false, error: `HTTP ${response.status}` };
         const data = Buffer.from(await response.arrayBuffer());
+
+        // Nouveau format Discord : app.asar est un dossier → le renommer en _app.asar
+        const targetStat = await stat(targetPath).catch(() => null);
+        if (targetStat?.isDirectory()) {
+            const originalPath = targetPath.replace(/app\.asar$/, "_app.asar");
+            await rename(targetPath, originalPath);
+        }
+
         await writeFile(targetPath, data);
         return { success: true };
     } catch (e: any) {
