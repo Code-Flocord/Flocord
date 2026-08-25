@@ -181,5 +181,17 @@ if (!IS_VANILLA) {
     console.log("[Equicord] Running in vanilla mode. Not loading Equicord");
 }
 
+// Rendre ipcMain.handle idempotent avant de charger _app.asar.
+// Quand _app.asar/index.js référence un ancien patcher Flocord, celui-ci tente
+// d'enregistrer les mêmes handlers IPC → erreur "second handler". Le wrapper
+// try-catch ignore silencieusement les doublons sans remplacer nos handlers.
+{
+    const { ipcMain } = require("electron") as typeof import("electron");
+    const _origHandle = ipcMain.handle.bind(ipcMain);
+    (ipcMain as any).handle = function (channel: string, listener: any) {
+        try { return _origHandle(channel, listener); } catch { /* already registered */ }
+    };
+}
+
 console.log("[Equicord] Loading original Discord app.asar");
 require(require.main!.filename);
