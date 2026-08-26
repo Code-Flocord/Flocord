@@ -32,8 +32,15 @@ const injectorPath = require.main!.filename;
 // The original app.asar
 const asarPath = join(dirname(injectorPath), "..", "_app.asar");
 
-const discordPkg = require(join(asarPath, "package.json"));
-require.main!.filename = join(asarPath, discordPkg.main);
+// Modern Discord (_app.asar may be an ASAR file without package.json — fall back to bundle.js)
+let discordMain: string;
+try {
+    const discordPkg = require(join(asarPath, "package.json"));
+    discordMain = join(asarPath, discordPkg.main);
+} catch {
+    discordMain = join(asarPath, "bundle.js");
+}
+require.main!.filename = discordMain;
 if (IS_VESKTOP || IS_EQUIBOP) require.main!.filename = join(dirname(injectorPath), "..", "..", "package.json");
 
 // @ts-expect-error Untyped method? Dies from cringe

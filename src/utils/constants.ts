@@ -67,6 +67,10 @@ export interface Dev {
  * If you are fine with attribution but don't want the badge, add badge: false
  */
 export const Devs = /* #__PURE__*/ Object.freeze({
+    Unknown: {
+        name: "Unknown",
+        id: 0n
+    },
     Ven: {
         name: "V",
         id: 343383572805058560n
@@ -671,6 +675,10 @@ export const Devs = /* #__PURE__*/ Object.freeze({
 export const EquicordDevs = Object.freeze({
     nobody: {
         name: "nobody",
+        id: 0n
+    },
+    Stealtech: {
+        name: "Stealtech",
         id: 0n
     },
     thororen: {
