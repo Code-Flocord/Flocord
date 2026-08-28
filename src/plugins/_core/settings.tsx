@@ -16,6 +16,7 @@ import {
     UpdaterTab,
     VencordTab,
 } from "@components/settings";
+import FlocordUpdaterTab from "../../flocordplugins/FlocordAutoUpdater/UpdaterTab";
 import { gitHashShort } from "@shared/vencordUserAgent";
 import { Devs } from "@utils/constants";
 import { isTruthy } from "@utils/guards";
@@ -209,11 +210,11 @@ export default definePlugin({
                 Component: ThemesTab,
                 Icon: PaintbrushIcon
             }),
-            !IS_UPDATER_DISABLED && UpdaterTab && buildEntry({
-                key: "equicord_updater",
+            buildEntry({
+                key: "flocord_updater",
                 title: "Updater",
                 panelTitle: "Flocord Updater",
-                Component: UpdaterTab,
+                Component: FlocordUpdaterTab,
                 Icon: UpdaterIcon
             }),
             buildEntry({
