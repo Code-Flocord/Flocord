@@ -14,16 +14,9 @@ import { relaunch } from "@utils/native";
 import { type PluginNative } from "@utils/types";
 import { React } from "@webpack/common";
 
-import { FLOCORD_VERSION } from "./version";
+import { FLOCORD_VERSION, versionGt } from "./version";
 
 const Native = FlocordNative.pluginHelpers.FlocordAutoUpdater as PluginNative<typeof import("./native")>;
-
-function versionGt(a: string, b: string): boolean {
-    const parse = (v: string) => v.split(".").map(Number);
-    const [a1 = 0, a2 = 0, a3 = 0] = parse(a);
-    const [b1 = 0, b2 = 0, b3 = 0] = parse(b);
-    return a1 !== b1 ? a1 > b1 : a2 !== b2 ? a2 > b2 : a3 > b3;
-}
 
 function FlocordUpdater() {
     const [latestVersion, setLatestVersion] = React.useState<string | null>(null);
@@ -51,10 +44,7 @@ function FlocordUpdater() {
         setInstalling(true);
         setError(null);
         try {
-            const info = await Native.fetchVersionInfo();
-            if (!info) throw new Error("Could not fetch version info");
-            const resourcesPath = await Native.getResourcesPath();
-            const result = await Native.downloadAndInstall(info.url, `${resourcesPath}/app.asar`, info.version);
+            const result = await Native.installUpdate();
             if (result.success) {
                 setDone(true);
             } else {

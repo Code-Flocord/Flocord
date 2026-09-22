@@ -46,7 +46,7 @@
 
 - **Thème Glass intégré** — fond violet profond, surfaces translucides, popouts et menus givrés. Couleurs, opacité, halo et arrondi réglables en direct, ou style *Flat* pour un rendu sobre.
 - **Plus de 350 plugins** — la base Vencord, une sélection héritée d'Equicord, et une couche de plugins exclusifs orientés vocal, stream et vie privée.
-- **Mises à jour automatiques** — Flocord se met à jour depuis Discord au démarrage ; l'installeur se met à jour lui-même.
+- **Mises à jour automatiques et signées** — Flocord se met à jour depuis Discord au démarrage ; l'installeur se met à jour lui-même. Chaque version est signée hors de GitHub : un fichier dont la signature ne correspond pas est refusé.
 - **Protection automatique** — quand Discord se met à jour et efface le mod, Flocord est réinstallé tout seul au démarrage de Windows.
 - **Indépendant** — aucun serveur tiers, aucune dépendance à un projet amont : le code, l'infrastructure et les mises à jour sont gérés ici.
 
