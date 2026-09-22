@@ -4,4 +4,4 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-export const FLOCORD_VERSION = "2.8.2";
+export const FLOCORD_VERSION = "2.8.3";

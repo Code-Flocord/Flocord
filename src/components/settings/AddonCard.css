@@ -1,15 +1,24 @@
 .vc-addon-card {
-    background-color: var(--card-background-default);
+    /* Same violet contouring as the Flocord hero card. --card-tint is what each card is nudged
+       towards, so a grid of them reads as a palette instead of one flat tone; it defaults to the
+       theme accent and is varied per position where the cards are laid out in a grid. */
+    --card-tint: var(--brand-500, #8b5cf6);
+    --card-accent: color-mix(in srgb, var(--brand-500, #8b5cf6) 65%, var(--card-tint));
+
+    background:
+        radial-gradient(75% 130% at 0% 0%, color-mix(in srgb, var(--card-accent) 13%, transparent), transparent 70%),
+        var(--card-background-default);
     color: var(--interactive-icon-active);
-    border: 1px solid var(--border-subtle);
+    border: 1px solid color-mix(in srgb, var(--card-accent) 26%, transparent);
     border-radius: 8px;
     display: block;
     height: 100%;
     padding: 12px;
     width: 100%;
     transition: 0.1s ease-out;
-    transition-property: box-shadow, transform, background, opacity;
+    transition-property: box-shadow, transform, background, opacity, border-color;
     box-sizing: border-box;
+    box-shadow: 0 10px 28px -22px color-mix(in srgb, var(--card-accent) 70%, transparent);
 }
 
 .vc-addon-card-disabled {
@@ -18,7 +27,10 @@
 
 .vc-addon-card:hover {
     transform: translateY(-1px);
-    box-shadow: var(--elevation-high);
+    border-color: color-mix(in srgb, var(--card-accent) 55%, transparent);
+    box-shadow:
+        var(--elevation-high),
+        0 14px 34px -18px color-mix(in srgb, var(--card-accent) 85%, transparent);
 }
 
 .vc-addon-header {

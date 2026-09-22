@@ -23,6 +23,28 @@
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
 }
 
+/* Six neighbouring tones, from indigo to magenta, cycled across the grid. Each one is still blended
+   with the theme accent in AddonCard.css, so a custom accent shifts the whole set with it. */
+.vc-plugins-grid > .vc-addon-card:nth-child(6n + 2) {
+    --card-tint: #6d28d9;
+}
+
+.vc-plugins-grid > .vc-addon-card:nth-child(6n + 3) {
+    --card-tint: #4f46e5;
+}
+
+.vc-plugins-grid > .vc-addon-card:nth-child(6n + 4) {
+    --card-tint: #a855f7;
+}
+
+.vc-plugins-grid > .vc-addon-card:nth-child(6n + 5) {
+    --card-tint: #c026d3;
+}
+
+.vc-plugins-grid > .vc-addon-card:nth-child(6n) {
+    --card-tint: #7c3aed;
+}
+
 .vc-plugins-info-button {
     height: 24px;
     width: 24px;
