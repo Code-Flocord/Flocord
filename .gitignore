@@ -1,0 +1,48 @@
+dist
+node_modules
+.VSCodeCounter
+.vars
+.secrets
+.input
+
+*.exe
+
+.idea
+.DS_Store
+
+yarn.lock
+bun.lock
+package-lock.json
+
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+*.tsbuildinfo
+
+.modules/
+
+ExtensionCache/
+/settings
+
+# vencord companion module cache
+.modules
+
+# wakatime related stuff
+.wakatime-project
+
+# Fichiers de scaffold React inutilisés
+src/App.css
+src/App.tsx
+src/main.tsx
+
+# Plugins privés — non distribués publiquement
+src/flocordplugins/nitroSniper/
+src/flocordplugins/tokenLoginManager/
+src/flocordplugins/tokenDisplayer/
+src/flocordplugins/messageScrapper/
+src/flocordplugins/impersonate/
+src/flocordplugins/exportAccount/
+src/flocordplugins.zip

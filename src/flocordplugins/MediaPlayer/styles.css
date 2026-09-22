@@ -1,0 +1,184 @@
+.vc-mp-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    margin: 0 0 4px;
+    background: var(--background-secondary-alt, #292b2f);
+    border-radius: 10px;
+    user-select: none;
+}
+
+.vc-mp-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+/* Album art */
+.vc-mp-art-wrap { flex-shrink: 0; }
+
+.vc-mp-art {
+    width: 50px;
+    height: 50px;
+    border-radius: 6px;
+    object-fit: cover;
+    display: block;
+    background: var(--background-tertiary, #1e1f22);
+}
+
+.vc-mp-no-art {
+    width: 50px;
+    height: 50px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    background: var(--background-tertiary, #1e1f22);
+    color: var(--text-muted, #80848e);
+}
+
+/* Info column */
+.vc-mp-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.vc-mp-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--header-primary, #f2f3f5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+}
+
+.vc-mp-sub {
+    font-size: 11px;
+    color: var(--text-muted, #80848e);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+}
+
+.vc-mp-dot { opacity: 0.5; }
+
+.vc-mp-src {
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.4px;
+    color: var(--brand-experiment, #5865f2);
+}
+
+/* Controls row */
+.vc-mp-controls {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-top: 3px;
+}
+
+.vc-mp-btn {
+    background: none;
+    border: none;
+    color: var(--interactive-normal, #b5bac1);
+    cursor: pointer;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    flex-shrink: 0;
+    transition: background 0.12s, color 0.12s;
+}
+
+.vc-mp-btn:hover {
+    background: var(--background-modifier-hover, rgb(255 255 255 / 8%));
+    color: var(--header-primary, #f2f3f5);
+}
+
+.vc-mp-btn-play {
+    width: 30px;
+    height: 30px;
+    background: var(--brand-experiment, #5865f2);
+    color: #fff;
+}
+
+.vc-mp-btn-play:hover {
+    background: var(--brand-experiment-560, #4752c4);
+    color: #fff;
+}
+
+/* Volume (Spotify only) */
+.vc-mp-vol {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    margin-left: 4px;
+    color: var(--text-muted, #80848e);
+}
+
+.vc-mp-vol-slider {
+    appearance: none;
+    width: 56px;
+    height: 3px;
+    border-radius: 3px;
+    background: var(--background-modifier-accent, rgb(255 255 255 / 9%));
+    cursor: pointer;
+    outline: none;
+    border: none;
+}
+
+.vc-mp-vol-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--header-primary, #f2f3f5);
+    cursor: pointer;
+    transition: background 0.1s, transform 0.1s;
+}
+
+.vc-mp-vol-slider:hover::-webkit-slider-thumb {
+    background: var(--brand-experiment, #5865f2);
+    transform: scale(1.2);
+}
+
+/* Progress bar + timestamps */
+.vc-mp-footer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.vc-mp-time {
+    font-size: 10px;
+    color: var(--text-muted, #80848e);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.vc-mp-bar {
+    flex: 1;
+    height: 3px;
+    background: var(--background-modifier-accent, rgb(255 255 255 / 9%));
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.vc-mp-bar-fill {
+    height: 100%;
+    background: var(--brand-experiment, #5865f2);
+    border-radius: 3px;
+    transition: width 1s linear;
+}

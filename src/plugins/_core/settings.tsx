@@ -1,0 +1,328 @@
+/*
+ * Vencord, a Discord client mod
+ * Copyright (c) 2025 Vendicated and contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+import { definePluginSettings } from "@api/Settings";
+import { BackupRestoreIcon, LogIcon, MainSettingsIcon, PaintbrushIcon, PatchHelperIcon, PluginsIcon, UpdaterIcon } from "@components/Icons";
+import {
+    BackupAndRestoreTab,
+    ChangelogTab,
+    FlocordTab,
+    PatchHelperTab,
+    PluginsTab,
+    ThemesTab,
+} from "@components/settings";
+import FlocordUpdaterTab from "@flocordplugins/FlocordAutoUpdater/UpdaterTab";
+import { shouldHideSettingsSection } from "@flocordplugins/streamProof";
+import { gitHashShort } from "@shared/flocordUserAgent";
+import { Devs } from "@utils/constants";
+import { isTruthy } from "@utils/guards";
+import definePlugin, { IconProps, OptionType } from "@utils/types";
+import { waitFor } from "@webpack";
+import { React } from "@webpack/common";
+import type { ComponentType, PropsWithChildren, ReactNode } from "react";
+
+const enum LayoutType {
+    ROOT = 0,
+    SECTION = 1,
+    SIDEBAR_ITEM = 2,
+    PANEL = 3,
+    SPLIT = 4,
+    CATEGORY = 5,
+    ACCORDION = 6,
+    LIST = 7,
+    RELATED = 8,
+    FIELD_SET = 9,
+    TAB_ITEM = 10,
+    STATIC = 11,
+    BUTTON = 12,
+    TOGGLE = 13,
+    SLIDER = 14,
+    SELECT = 15,
+    RADIO = 16,
+    NAVIGATOR = 17,
+    CUSTOM = 18
+}
+
+let LayoutTypes = {
+    SECTION: 1,
+    SIDEBAR_ITEM: 2,
+    PANEL: 3,
+    CATEGORY: 5,
+    CUSTOM: 19,
+};
+waitFor(["SECTION", "SIDEBAR_ITEM", "PANEL", "CUSTOM"], v => LayoutTypes = v);
+
+const enum SectionType {
+    HEADER = "HEADER",
+    DIVIDER = "DIVIDER",
+    CUSTOM = "CUSTOM"
+}
+
+type SettingsLocation =
+    | "top"
+    | "aboveNitro"
+    | "belowNitro"
+    | "aboveActivity"
+    | "belowActivity"
+    | "bottom";
+
+interface SettingsLayoutNode {
+    type: LayoutType;
+    key?: string;
+    legacySearchKey?: string;
+    getLegacySearchKey?(): string;
+    useLabel?(): string;
+    useTitle?(): string;
+    buildLayout?(): SettingsLayoutNode[];
+    icon?(): ReactNode;
+    render?(): ReactNode;
+    StronglyDiscouragedCustomComponent?(): ReactNode;
+}
+
+interface EntryOptions {
+    key: string;
+    title: string;
+    panelTitle?: string;
+    Component: ComponentType<{}>;
+    Icon: ComponentType<IconProps>;
+}
+
+interface SettingsLayoutBuilder {
+    key?: string;
+    buildLayout(): SettingsLayoutNode[];
+}
+
+const settings = definePluginSettings({
+    settingsLocation: {
+        type: OptionType.SELECT,
+        description: "Where to put the Flocord settings section",
+        options: [
+            { label: "At the very top", value: "top" },
+            { label: "Above the Nitro section", value: "aboveNitro", default: true },
+            { label: "Below the Nitro section", value: "belowNitro" },
+            { label: "Above Activity Settings", value: "aboveActivity" },
+            { label: "Below Activity Settings", value: "belowActivity" },
+            { label: "At the very bottom", value: "bottom" },
+        ] as { label: string; value: SettingsLocation; default?: boolean; }[]
+    },
+    includeFlocordInfoWhenCopying: {
+        type: OptionType.BOOLEAN,
+        description: "Also copy Flocord info (Flocord, Electron, Chromium) when clicking the version info in the bottom left area of the Settings page",
+        default: true
+    }
+});
+
+export default definePlugin({
+    name: "Settings",
+    description: "Adds Settings UI and debug info",
+    authors: [Devs.Ven, Devs.Megu],
+    required: true,
+
+    settings,
+
+    patches: [
+        {
+            find: "#{intl::COPY_VERSION}",
+            replacement: [
+                {
+                    match: /\.RELEASE_CHANNEL/,
+                    replace: "$&.replace(/^./, c => c.toUpperCase())"
+                },
+                {
+                    match: /"text-xxs\/normal".{0,300}?(?=null!=(\i)&&(.{0,20}\i\.\i.{0,200}?,children:).{0,15}?("span"),{className:(\i\.\i),children:\["Build Override: ",\1\.id,\i\]\}\)\}\))/,
+                    replace: (m, _buildOverride, makeRow, component, className) =>
+                        `${m},$self.makeInfoElements(${component},${className}).map(e=>${makeRow}e})),`
+                },
+                {
+                    match: /copyValue:\i\.join\(" "\)/g,
+                    replace: "$& + $self.getInfoString()"
+                }
+            ]
+        },
+        {
+            find: ".buildLayout().map",
+            replacement: {
+                match: /(\i)\.buildLayout\(\)(?=\.map)/,
+                replace: "$self.buildLayout($1)"
+            }
+        }
+    ],
+
+    buildEntry(options: EntryOptions): SettingsLayoutNode {
+        const { key, title, panelTitle = title, Component, Icon } = options;
+
+        const panel: SettingsLayoutNode = {
+            key: key + "_panel",
+            type: LayoutTypes.PANEL,
+            useTitle: () => panelTitle,
+            buildLayout: () => [{
+                type: LayoutTypes.CATEGORY,
+                key: key + "_category",
+                buildLayout: () => [{
+                    type: LayoutTypes.CUSTOM,
+                    key: key + "_custom",
+                    Component: Component,
+                    useSearchTerms: () => [title]
+                }]
+            }]
+        };
+
+        return ({
+            key,
+            type: LayoutTypes.SIDEBAR_ITEM,
+            useTitle: () => title,
+            icon: () => <Icon width={20} height={20} />,
+            buildLayout: () => [panel]
+        });
+    },
+
+    buildLayout(originalLayoutBuilder: SettingsLayoutBuilder) {
+        const layout = originalLayoutBuilder.buildLayout();
+        if (originalLayoutBuilder.key !== "$Root") return layout;
+        if (!Array.isArray(layout)) return layout;
+        if (layout.some(s => s?.key === "flocord_section")) return layout;
+        if (shouldHideSettingsSection()) return layout;
+
+        const { buildEntry } = this;
+
+        const flocordEntries: SettingsLayoutNode[] = [
+            buildEntry({
+                key: "flocord_main",
+                title: "Flocord",
+                panelTitle: "Flocord Settings",
+                Component: FlocordTab,
+                Icon: MainSettingsIcon
+            }),
+            buildEntry({
+                key: "flocord_plugins",
+                title: "Plugins",
+                Component: PluginsTab,
+                Icon: PluginsIcon
+            }),
+            buildEntry({
+                key: "flocord_themes",
+                title: "Themes",
+                Component: ThemesTab,
+                Icon: PaintbrushIcon
+            }),
+            buildEntry({
+                key: "flocord_updater",
+                title: "Updater",
+                panelTitle: "Flocord Updater",
+                Component: FlocordUpdaterTab,
+                Icon: UpdaterIcon
+            }),
+            buildEntry({
+                key: "flocord_changelog",
+                title: "Changelog",
+                Component: ChangelogTab,
+                Icon: LogIcon,
+            }),
+            buildEntry({
+                key: "flocord_backup_restore",
+                title: "Backup & Restore",
+                Component: BackupAndRestoreTab,
+                Icon: BackupRestoreIcon
+            }),
+            !IS_STANDALONE && PatchHelperTab && buildEntry({
+                key: "flocord_patch_helper",
+                title: "Patch Helper",
+                Component: PatchHelperTab,
+                Icon: PatchHelperIcon
+            }),
+            ...this.customEntries.map(buildEntry)
+        ].filter(isTruthy);
+
+        const flocordSection: SettingsLayoutNode = {
+            key: "flocord_section",
+            type: LayoutTypes.SECTION,
+            useTitle: () => "Flocord Settings",
+            buildLayout: () => flocordEntries
+        };
+
+        const { settingsLocation } = settings.store;
+
+        const places: Record<SettingsLocation, string> = {
+            top: "user_section",
+            aboveNitro: "billing_section",
+            belowNitro: "billing_section",
+            aboveActivity: "activity_section",
+            belowActivity: "activity_section",
+            bottom: "utility_section"
+        };
+
+        const key = places[settingsLocation] ?? places.top;
+        let idx = layout.findIndex(s => typeof s?.key === "string" && s.key === key);
+
+        if (idx === -1) {
+            idx = 2;
+        } else if (settingsLocation.startsWith("below")) {
+            idx += 1;
+        }
+
+        layout.splice(idx, 0, flocordSection);
+
+        return layout;
+    },
+
+    customSections: [] as ((SectionTypes: Record<string, string>) => { section: string; element: ComponentType; label: string; id?: string; })[],
+    customEntries: [] as EntryOptions[],
+
+    get electronVersion() {
+        return FlocordNative.native.getVersions().electron ?? window.legcord?.electron ?? null;
+    },
+
+    get chromiumVersion() {
+        try {
+            return (
+                FlocordNative.native.getVersions().chrome ??
+                // @ts-expect-error userAgentData types
+                navigator.userAgentData?.brands?.find(
+                    (b: { brand: string; }) => b.brand === "Chromium" || b.brand === "Google Chrome",
+                )?.version ??
+                null
+            );
+        } catch {
+            return null;
+        }
+    },
+
+    getVersionInfo(support = true) {
+        let version = "";
+
+        if (IS_DEV) version = "Dev Build";
+        if (IS_WEB) version = "Web";
+        if (IS_VESKTOP) version = `Vesktop v${VesktopNative.app.getVersion()}`;
+        if (IS_EQUIBOP) version = `Equibop v${VesktopNative.app.getVersion()}`;
+        if (IS_STANDALONE) version = "Standalone";
+
+        return support && version ? ` (${version})` : version;
+    },
+
+    getInfoRows() {
+        const { electronVersion, chromiumVersion, getVersionInfo } = this;
+
+        const rows = [`Flocord ${gitHashShort}${getVersionInfo()}`];
+
+        if (electronVersion) rows.push(`Electron ${electronVersion}`);
+        if (chromiumVersion) rows.push(`Chromium ${chromiumVersion}`);
+
+        return rows;
+    },
+
+    getInfoString() {
+        if (!settings.store.includeFlocordInfoWhenCopying) return "";
+        return "\n" + this.getInfoRows().join("\n");
+    },
+
+    makeInfoElements(Component: ComponentType<PropsWithChildren<{ className?: string; }>>, className: string) {
+        return this.getInfoRows().map((text, i) => (
+            <Component key={i} className={className}>
+                {text}
+            </Component>
+        ));
+    },
+});

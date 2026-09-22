@@ -1,0 +1,62 @@
+/*
+ * Vencord, a Discord client mod
+ * Copyright (c) 2024 Vendicated and contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+import { definePluginSettings } from "@api/Settings";
+import { FlocordDevs } from "@utils/constants";
+import definePlugin, { OptionType } from "@utils/types";
+
+const settings = definePluginSettings({
+    forceMono: {
+        description: "Force mono output and disable stereo.",
+        type: OptionType.BOOLEAN,
+        default: true,
+    },
+    showNotifications: {
+        description: "Show notifications.",
+        type: OptionType.BOOLEAN,
+        default: false,
+    }
+});
+
+export default definePlugin({
+    name: "AntiStereo",
+    description: "Forces Discord to use mono instead of stereo for audio output.",
+    authors: [FlocordDevs.Flocord],
+    settings,
+
+    patches: [
+        {
+            find: "Audio codecs",
+            replacement: {
+                match: /channels:\d+(?:\.\d+)?,/,
+                replace: "channels:1,",
+                predicate: () => settings.store.forceMono
+            }
+        },
+        {
+            find: "Audio codecs",
+            replacement: {
+                match: /stereo:"\d+(?:\.\d+)?"/g,
+                replace: 'stereo:"0"',
+                predicate: () => settings.store.forceMono
+            }
+        }
+    ],
+
+    start() {
+        if (settings.store.forceMono) {
+            console.log("[AntiStereo] Enabled, forcing mono");
+
+            if (settings.store.showNotifications) {
+                console.log("[AntiStereo] Notifications enabled");
+            }
+        }
+    },
+
+    stop() {
+        console.log("[AntiStereo] Disabled");
+    }
+});

@@ -1,0 +1,326 @@
+/*
+ * Vencord, a Discord client mod
+ * Copyright (c) 2026 Vendicated and contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+import { definePluginSettings } from "@api/Settings";
+import { FlocordDevs } from "@utils/constants";
+import definePlugin, { OptionType } from "@utils/types";
+import { find } from "@webpack";
+import { FluxDispatcher, Forms, React, UserStore, useState } from "@webpack/common";
+
+let originalVoiceStateUpdate: any;
+let patchedGatewayConnection: any;
+let fakeDeafenEnabled = false;
+let gatewayMethodName = "voiceStateUpdate";
+
+let ChannelStore: any;
+let SelectedChannelStore: any;
+let GatewayConnection: any;
+let MediaEngineStore: any;
+
+const failedLookups = new Set<string>();
+
+function safeFindByProps<T = any>(...props: string[]): T | null {
+    const lookupKey = props.join("|");
+    if (failedLookups.has(lookupKey)) {
+        return null;
+    }
+
+    try {
+        const mod = find((m: any) => m && typeof m === "object" && props.every(p => m[p] !== undefined));
+        if (mod) return mod as T;
+    } catch {}
+
+    failedLookups.add(lookupKey);
+    return null;
+}
+
+function resolveGatewayConnection() {
+    let mod = find((m: any) => m && typeof m === "object" && typeof m.updateVoiceState === "function");
+    if (mod) {
+        gatewayMethodName = "updateVoiceState";
+        return mod;
+    }
+
+    mod = find((m: any) => m && typeof m === "object" && typeof m.voiceStateUpdate === "function");
+    if (mod) {
+        gatewayMethodName = "voiceStateUpdate";
+        return mod;
+    }
+
+    // Try finding via getSocket() if it exists
+    const getSocketMod = find((m: any) => m && typeof m === "object" && typeof m.getSocket === "function");
+    if (getSocketMod) {
+        const socket = getSocketMod.getSocket();
+        if (socket) {
+            if (typeof socket.updateVoiceState === "function") {
+                gatewayMethodName = "updateVoiceState";
+                return socket;
+            }
+            if (typeof socket.voiceStateUpdate === "function") {
+                gatewayMethodName = "voiceStateUpdate";
+                return socket;
+            }
+        }
+    }
+
+    return null;
+}
+
+function resolveRuntimeModules() {
+    ChannelStore = ChannelStore
+        ?? safeFindByProps("getChannel", "getDMFromUserId")
+        ?? safeFindByProps("getChannel");
+
+    SelectedChannelStore = SelectedChannelStore
+        ?? safeFindByProps("getVoiceChannelId")
+        ?? safeFindByProps("getVoiceChannelId", "getChannelId");
+
+    MediaEngineStore = MediaEngineStore
+        ?? safeFindByProps("isDeaf", "isMute")
+        ?? safeFindByProps("isSelfDeaf", "isSelfMute");
+
+    GatewayConnection = GatewayConnection ?? resolveGatewayConnection();
+}
+
+function patchGatewayConnection() {
+    if (!GatewayConnection || typeof GatewayConnection[gatewayMethodName] !== "function") return false;
+    if (patchedGatewayConnection === GatewayConnection && originalVoiceStateUpdate) return true;
+
+    originalVoiceStateUpdate = GatewayConnection[gatewayMethodName];
+    patchedGatewayConnection = GatewayConnection;
+    GatewayConnection[gatewayMethodName] = function (args: any) {
+        if (fakeDeafenEnabled && args && typeof args === "object") {
+            args.selfMute = true;
+            args.selfDeaf = true;
+        }
+        return originalVoiceStateUpdate.apply(this, arguments);
+    };
+
+    return true;
+}
+
+function getSelfMuteState() {
+    return MediaEngineStore?.isMute?.() ?? MediaEngineStore?.isSelfMute?.() ?? false;
+}
+
+function getSelfDeafState() {
+    return MediaEngineStore?.isDeaf?.() ?? MediaEngineStore?.isSelfDeaf?.() ?? false;
+}
+
+function getCurrentVoiceChannel() {
+    const channelId = SelectedChannelStore?.getVoiceChannelId?.() ?? SelectedChannelStore?.getChannelId?.();
+    return channelId ? ChannelStore?.getChannel?.(channelId) : null;
+}
+
+function ensureRuntimeReadyForToggle() {
+    resolveRuntimeModules();
+    if (!patchGatewayConnection()) return false;
+    return Boolean(ChannelStore && SelectedChannelStore && typeof GatewayConnection?.[gatewayMethodName] === "function");
+}
+
+function KeybindRecorder() {
+    const [isRecording, setIsRecording] = useState(false);
+    const [keybind, setKeybind] = useState(settings.store.keybind || "Ctrl+Shift+D");
+
+    React.useEffect(() => {
+        if (!isRecording) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Ignorer les touches modificatrices seules
+            if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) return;
+
+            const keys: string[] = [];
+            if (e.ctrlKey) keys.push("Ctrl");
+            if (e.shiftKey) keys.push("Shift");
+            if (e.altKey) keys.push("Alt");
+
+            // Ajouter la touche principale
+            const mainKey = e.key.length === 1 ? e.key.toUpperCase() : e.key;
+            keys.push(mainKey);
+
+            const newKeybind = keys.join("+");
+            setKeybind(newKeybind);
+            settings.store.keybind = newKeybind;
+            setIsRecording(false);
+        };
+
+        document.addEventListener("keydown", handleKeyDown, true);
+        return () => document.removeEventListener("keydown", handleKeyDown, true);
+    }, [isRecording]);
+
+    return (
+        <section>
+            <Forms.FormTitle tag="h3">Keyboard shortcut</Forms.FormTitle>
+            <Forms.FormText>Click "Record", then press the key combination you want.</Forms.FormText>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "8px" }}>
+                <input
+                    type="text"
+                    value={isRecording ? "Press a key..." : keybind}
+                    readOnly
+                    style={{
+                        padding: "8px",
+                        borderRadius: "4px",
+                        border: "1px solid var(--background-modifier-accent)",
+                        backgroundColor: isRecording ? "var(--background-tertiary)" : "var(--background-secondary)",
+                        color: "var(--text-normal)",
+                        flex: "1",
+                        cursor: "default"
+                    }}
+                />
+                <button
+                    onClick={() => setIsRecording(!isRecording)}
+                    style={{
+                        padding: "8px 16px",
+                        borderRadius: "4px",
+                        border: "none",
+                        backgroundColor: isRecording ? "var(--button-danger-background)" : "var(--button-secondary-background)",
+                        color: "var(--white)",
+                        cursor: "pointer"
+                    }}
+                >
+                    {isRecording ? "Cancel" : "Record"}
+                </button>
+            </div>
+        </section>
+    );
+}
+
+const settings = definePluginSettings({
+    keybind: {
+        type: OptionType.STRING,
+        description: "Current keyboard shortcut.",
+        default: "Ctrl+Shift+D",
+        hidden: true
+    }
+});
+
+let _originalDispatch: ((action: any) => any) | null = null;
+
+function patchSpeakingDispatch() {
+    if (_originalDispatch) return;
+    const orig = FluxDispatcher.dispatch.bind(FluxDispatcher);
+    _originalDispatch = orig;
+    (FluxDispatcher as any).dispatch = function (action: any) {
+        if (fakeDeafenEnabled && action?.type === "SPEAKING") {
+            const myId = UserStore.getCurrentUser()?.id;
+            if (myId && String(action.userId) === String(myId) && action.speaking) {
+                return orig({ ...action, speaking: false });
+            }
+        }
+        return orig(action);
+    };
+}
+
+function unpatchSpeakingDispatch() {
+    if (!_originalDispatch) return;
+    (FluxDispatcher as any).dispatch = _originalDispatch;
+    _originalDispatch = null;
+}
+
+function handleKeyPress(e: KeyboardEvent) {
+    const keybind = settings.store.keybind || "Ctrl+Shift+D";
+    const keys = keybind.split("+");
+
+    const needsCtrl = keys.includes("Ctrl");
+    const needsShift = keys.includes("Shift");
+    const needsAlt = keys.includes("Alt");
+    const mainKey = keys[keys.length - 1].toUpperCase();
+
+    if (
+        e.ctrlKey === needsCtrl &&
+        e.shiftKey === needsShift &&
+        e.altKey === needsAlt &&
+        e.key.toUpperCase() === mainKey
+    ) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!ensureRuntimeReadyForToggle()) {
+            console.warn("[FakeDeafen] Runtime modules missing, toggle ignored");
+            return;
+        }
+
+        const channel = getCurrentVoiceChannel();
+        if (!channel) {
+            console.warn("[FakeDeafen] Not in a voice channel, toggle ignored");
+            return;
+        }
+
+        fakeDeafenEnabled = !fakeDeafenEnabled;
+
+        if (fakeDeafenEnabled) {
+            GatewayConnection[gatewayMethodName]({
+                channelId: channel.id,
+                guildId: channel.guild_id,
+                selfMute: true,
+                selfDeaf: true
+            });
+        } else {
+            const selfMute = getSelfMuteState();
+            const selfDeaf = getSelfDeafState();
+            GatewayConnection[gatewayMethodName]({
+                channelId: channel.id,
+                guildId: channel.guild_id,
+                selfMute,
+                selfDeaf
+            });
+        }
+    }
+}
+
+export default definePlugin({
+    name: "FakeDeafen",
+    description: "Toggle fake deafen with a customizable keyboard shortcut. Others see you as deafened and muted, but you can still hear and talk.",
+    authors: [FlocordDevs.Flocord],
+    settings,
+    settingsAboutComponent: () => <KeybindRecorder />,
+    start() {
+        console.log("[FakeDeafen] Plugin started, shortcut:", settings.store.keybind);
+
+        // Resolve and cache runtime modules once at startup.
+        resolveRuntimeModules();
+
+        // Add keyboard listener
+        document.addEventListener("keydown", handleKeyPress, true);
+
+        // Intercept SPEAKING events before stores process them
+        patchSpeakingDispatch();
+
+        // Patch voiceStateUpdate
+        if (!patchGatewayConnection()) {
+            console.warn(`[FakeDeafen] GatewayConnection.${gatewayMethodName} not found`);
+        }
+    },
+
+    stop() {
+        console.log("[FakeDeafen] Plugin stopped");
+
+        // Remove keyboard listener
+        document.removeEventListener("keydown", handleKeyPress, true);
+
+        // Remove speaking suppressor
+        unpatchSpeakingDispatch();
+
+        // Restore original function using cached reference only.
+        if (patchedGatewayConnection && originalVoiceStateUpdate) {
+            patchedGatewayConnection[gatewayMethodName] = originalVoiceStateUpdate;
+        }
+
+        // Reset state
+        fakeDeafenEnabled = false;
+        _originalDispatch = null;
+        originalVoiceStateUpdate = null;
+        patchedGatewayConnection = null;
+        ChannelStore = null;
+        SelectedChannelStore = null;
+        GatewayConnection = null;
+        MediaEngineStore = null;
+        failedLookups.clear();
+    }
+});

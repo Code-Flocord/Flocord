@@ -1,0 +1,74 @@
+/*
+ * Vencord, a modification for Discord's desktop app
+ * Copyright (c) 2023 Vendicated and contributors
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+import { definePluginSettings } from "@api/Settings";
+import { UserAreaButton, UserAreaRenderProps } from "@api/UserArea";
+import { PluginInfo } from "@flocordplugins/betterMicrophone.desktop/constants";
+import { openMicrophoneSettingsModal } from "@flocordplugins/betterMicrophone.desktop/modals";
+import { MicrophonePatcher } from "@flocordplugins/betterMicrophone.desktop/patchers";
+import { initMicrophoneStore } from "@flocordplugins/betterMicrophone.desktop/stores";
+import { Emitter, MicrophoneSettingsIcon } from "@flocordplugins/philsPluginLibrary";
+import { FlocordDevs } from "@utils/constants";
+import definePlugin, { OptionType } from "@utils/types";
+
+function MicSettingsButton({ iconForeground, hideTooltips, nameplate }: UserAreaRenderProps) {
+    const { hideSettingsIcon } = settings.use(["hideSettingsIcon"]);
+    if (hideSettingsIcon) return null;
+    return (
+        <UserAreaButton
+            tooltipText={hideTooltips ? void 0 : "Microphone settings"}
+            icon={<MicrophoneSettingsIcon className={iconForeground} />}
+            role="button"
+            plated={nameplate != null}
+            onClick={openMicrophoneSettingsModal}
+        />
+    );
+}
+
+const settings = definePluginSettings({
+    hideSettingsIcon: {
+        type: OptionType.BOOLEAN,
+        description: "Hide the settings icon",
+        default: true,
+    }
+});
+
+export default definePlugin({
+    name: "BetterMicrophone",
+    description: "This plugin allows you to further customize your microphone.",
+    authors: [FlocordDevs.philhk],
+    dependencies: ["PhilsPluginLibrary", "UserAreaAPI"],
+    settings,
+    userAreaButton: {
+        icon: MicrophoneSettingsIcon,
+        render: MicSettingsButton
+    },
+    start(): void {
+        initMicrophoneStore();
+
+        this.microphonePatcher = new MicrophonePatcher().patch();
+    },
+    stop(): void {
+        this.microphonePatcher?.unpatch();
+
+        Emitter.removeAllListeners(PluginInfo.PLUGIN_NAME);
+    },
+    toolboxActions: {
+        "Open Microphone Settings": openMicrophoneSettingsModal
+    }
+});
