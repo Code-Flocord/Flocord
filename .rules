@@ -204,6 +204,7 @@ replace: "$self.exampleWrap({ children: $& })";
 - `mapMangledModuleLazy(code, mapping)` to extract multiple exports from one mangled module. `extractAndLoadChunksLazy([codes], matcher?)` to force-load a lazy chunk before a `find*`.
 - Before `findStoreLazy("X")`, check `src/webpack/common/stores.ts` - many are already exported.
 - `@webpack/common` exports backed by `waitFor` (stores, `FluxDispatcher`, `Parser`, `Alerts`, hooks) are `undefined` until webpack ready. Reference inside functions, not at module top.
+- A custom `waitFor` filter runs against every module the moment it finishes evaluating. Never read arbitrary property *values* there (`Object.values`, `filters.byClassNames`, `for...in` with access): Discord modules export getters (the markup `Parser` has `defaultRules`, `guildEventRules`, ...) that throw when invoked during initialisation and then cache `undefined` forever, crashing the client later. Inspect `Object.getOwnPropertyDescriptors` and only look at `descriptor.value`.
 - No `eagerPatches`, no `wreq(id)` brute forcing.
 
 ## React
