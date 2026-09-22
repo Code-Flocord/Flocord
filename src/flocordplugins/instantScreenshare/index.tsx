@@ -103,8 +103,8 @@ export default definePlugin({
             find: '"push-to-talk-priority"',
             predicate: () => settings.store.keybindScreenshare,
             replacement: {
-                match: /=\[(\{id:.{0,25}value:\i\.\i\.UNASSIGNED)/,
-                replace: '=[{id:"instant-screen-share",value:"INSTANT_SCREEN_SHARE",label:"Instant Screenshare"},$1'
+                match: /(\{id:.{0,25}?value:\i\.\i\.UNASSIGNED)/,
+                replace: '{id:"instant-screen-share",value:"INSTANT_SCREEN_SHARE",label:"Instant Screenshare"},$1'
             }
         }
     ],

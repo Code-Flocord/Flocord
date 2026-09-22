@@ -1,0 +1,49 @@
+.vc-theme-presets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.vc-theme-presets-card {
+    all: unset;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid var(--border-subtle);
+    background: var(--background-surface-high);
+    cursor: pointer;
+    transition: 0.1s ease-out;
+}
+
+.vc-theme-presets-card:hover {
+    border-color: var(--brand-500);
+    transform: translateY(-1px);
+}
+
+.vc-theme-presets-preview {
+    height: 42px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+}
+
+.vc-theme-presets-name {
+    font-weight: 600;
+    color: var(--header-primary);
+}
+
+.vc-theme-presets-description {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.vc-theme-presets-share {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.vc-theme-presets-share > div {
+    flex: 1;
+}

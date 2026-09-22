@@ -335,6 +335,10 @@ export default definePlugin({
     settings,
     startAt: StartAt.DOMContentLoaded,
 
+    // Re-renders the theme after another plugin (ThemePresets) wrote the settings directly:
+    // setting onChange handlers only run when the value is changed from the settings UI
+    applyTheme: apply,
+
     async start() {
         style = createAndAppendStyle("flocord-theme", managedStyleRootNode);
         try {

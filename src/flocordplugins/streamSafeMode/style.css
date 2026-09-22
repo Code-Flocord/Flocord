@@ -1,0 +1,29 @@
+/* Stream safe mode: hide what should not end up on a recording.
+   Class names are matched loosely because Discord appends a build hash to each of them. */
+
+/* The direct message list and the friends page */
+.flocord-stream-safe-dms [class*="privateChannels_"],
+.flocord-stream-safe-dms [class*="peopleColumn_"] {
+    display: none !important;
+}
+
+/* Usernames and avatars in the member list, the DM list and message headers */
+.flocord-stream-safe-names [class*="membersWrap"] [class*="name_"],
+.flocord-stream-safe-names [class*="privateChannels_"] [class*="name_"],
+.flocord-stream-safe-names [class*="membersWrap"] [class*="avatar_"],
+.flocord-stream-safe-names [class*="privateChannels_"] [class*="avatar_"] {
+    filter: blur(5px);
+    transition: filter 0.12s ease-out;
+}
+
+/* A discreet marker so it is obvious safe mode is on, even at a glance on stream */
+.flocord-stream-safe::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    border: 2px solid var(--brand-500, #8b5cf6);
+    border-radius: 6px;
+    opacity: 0.55;
+}

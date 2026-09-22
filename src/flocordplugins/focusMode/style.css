@@ -1,0 +1,39 @@
+/* Focus mode: hide the chrome around the conversation. Class names are matched loosely because
+   Discord appends a build hash to each of them. */
+
+.flocord-focus-mode-servers [class*="guilds_"] {
+    display: none !important;
+}
+
+.flocord-focus-mode-channels [class*="sidebar_"] {
+    display: none !important;
+}
+
+.flocord-focus-mode-members [class*="membersWrap"] {
+    display: none !important;
+}
+
+/* The header bar is emptied rather than removed: visibility is inherited, so everything inside it
+   disappears whatever its depth, and the focus mode button opts back in on its own. Hiding the bar
+   outright would take away the only way out of focus mode. */
+.flocord-focus-mode-header [class*="upperContainer"] {
+    visibility: hidden !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border-color: transparent !important;
+}
+
+.flocord-focus-mode-header .flocord-focus-mode-toggle {
+    visibility: visible !important;
+}
+
+/* The account panel lives inside the sidebar, so it is brought back on its own when kept */
+.flocord-focus-mode-channels:not(.flocord-focus-mode-user-area) [class*="sidebar_"] {
+    display: flex !important;
+    width: auto !important;
+    flex: 0 0 auto !important;
+}
+
+.flocord-focus-mode-channels:not(.flocord-focus-mode-user-area) [class*="sidebar_"] > *:not([class*="panels_"]) {
+    display: none !important;
+}

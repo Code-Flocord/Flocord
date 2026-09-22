@@ -1,0 +1,146 @@
+/* Lock screen: covers the whole app, above every Discord layer */
+
+#flocord-lock-root {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    pointer-events: none;
+}
+
+.flocord-locked-blur #app-mount {
+    filter: blur(18px) saturate(0.6);
+    transition: filter 0.2s ease-out;
+}
+
+.flocord-lock {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    pointer-events: all;
+    background: rgb(10 6 18 / 72%);
+    -webkit-app-region: no-drag;
+    animation: flocord-lock-in 0.18s ease-out;
+}
+
+@keyframes flocord-lock-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.flocord-lock-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 32px 36px;
+    border-radius: 18px;
+    background: var(--background-surface-high, #1c1430);
+    border: 1px solid var(--brand-500, #8b5cf6);
+    box-shadow: 0 24px 64px -20px rgb(0 0 0 / 70%);
+}
+
+.flocord-lock-icon {
+    color: var(--brand-500, #8b5cf6);
+    margin-bottom: 4px;
+}
+
+.flocord-lock-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--header-primary, #fff);
+}
+
+.flocord-lock-subtitle {
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: var(--text-muted, #a09ac0);
+}
+
+.flocord-lock-dots {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.flocord-lock-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1.5px solid var(--brand-500, #8b5cf6);
+}
+
+.flocord-lock-dot-filled {
+    background: var(--brand-500, #8b5cf6);
+}
+
+.flocord-lock-pad {
+    display: grid;
+    grid-template-columns: repeat(3, 64px);
+    gap: 8px;
+}
+
+.flocord-lock-key {
+    all: unset;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--header-primary, #fff);
+    background: var(--background-mod-subtle, rgb(255 255 255 / 8%));
+    border: 1px solid var(--border-subtle, rgb(255 255 255 / 10%));
+    cursor: pointer;
+    transition: 0.08s ease-out;
+}
+
+.flocord-lock-key:hover {
+    background: var(--brand-500, #8b5cf6);
+    color: #fff;
+}
+
+.flocord-lock-key-wide {
+    grid-column: span 2;
+    font-size: 14px;
+}
+
+.flocord-lock-unlock {
+    width: 200px;
+    margin-top: 6px;
+    background: var(--brand-500, #8b5cf6);
+    color: #fff;
+}
+
+.flocord-lock-shake {
+    animation: flocord-lock-shake 0.35s ease-in-out;
+}
+
+@keyframes flocord-lock-shake {
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    20% {
+        transform: translateX(-10px);
+    }
+
+    40% {
+        transform: translateX(10px);
+    }
+
+    60% {
+        transform: translateX(-6px);
+    }
+
+    80% {
+        transform: translateX(6px);
+    }
+}
