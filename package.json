@@ -1,7 +1,7 @@
 {
     "name": "flocord",
     "private": true,
-    "version": "2.7.1",
+    "version": "2.8.0",
     "description": "A custom Discord client mod by Code-Flocord",
     "homepage": "https://github.com/Code-Flocord/Flocord#readme",
     "bugs": {
