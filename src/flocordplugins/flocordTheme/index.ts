@@ -17,8 +17,19 @@ const logger = new Logger("FlocordTheme");
 const HEX = /^#?([0-9a-f]{6})$/i;
 
 const panelButtonClasses = findCssClassesLazy("redGlow", "button", "enabled");
+const modalClasses = findCssClassesLazy("root", "focusLock", "fullscreenOnMobile");
+const menuClasses = findCssClassesLazy("menu", "customMenuItem", "customNotches");
 
 const settings = definePluginSettings({
+    style: {
+        type: OptionType.SELECT,
+        description: "Overall look of the client.",
+        options: [
+            { label: "Glass — translucent surfaces over a soft violet backdrop", value: "glass", default: true },
+            { label: "Flat — solid surfaces, no backdrop", value: "flat" }
+        ],
+        onChange: () => apply()
+    },
     background: {
         type: OptionType.STRING,
         description: "Base background color (hex). Every surface is derived from it while keeping Discord's contrast.",
@@ -31,6 +42,36 @@ const settings = definePluginSettings({
         description: "Accent color (hex) used for buttons, links, mentions and selections.",
         default: "#8b5cf6",
         isValid: (v: string) => HEX.test(v) || "Enter a 6-digit hex color, for example #8b5cf6.",
+        onChange: () => apply()
+    },
+    surfaceOpacity: {
+        type: OptionType.SLIDER,
+        description: "Glass only: opacity of sidebars, chat and inputs over the backdrop. Lower is more see-through.",
+        markers: [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+        default: 0.55,
+        stickToMarkers: false,
+        onChange: () => apply()
+    },
+    backdropIntensity: {
+        type: OptionType.SLIDER,
+        description: "Glass only: strength of the colored glow in the backdrop.",
+        markers: [0, 0.25, 0.5, 0.75, 1],
+        default: 0.8,
+        stickToMarkers: false,
+        onChange: () => apply()
+    },
+    accentTint: {
+        type: OptionType.BOOLEAN,
+        description: "Tint hovers, selections, scrollbars and focused inputs with the accent color instead of grey.",
+        default: true,
+        onChange: () => apply()
+    },
+    roundness: {
+        type: OptionType.SLIDER,
+        description: "Corner radius of cards, popouts and buttons (1 = Discord default).",
+        markers: [0.5, 0.75, 1, 1.25, 1.5],
+        default: 1.25,
+        stickToMarkers: false,
         onChange: () => apply()
     },
     mutedColor: {
@@ -62,44 +103,123 @@ function hexToHsl(hex: string): Hsl {
     return { h, s: s * 100, l: l * 100 };
 }
 
-// Discord's brand shades, from lightest to darkest, with their approximate lightness
+const clamp = (v: number, min = 0, max = 100) => Math.max(min, Math.min(max, v));
+const hsl = (c: Hsl, l = c.l) => `${c.h.toFixed(1)} ${c.s.toFixed(1)}% ${clamp(l).toFixed(2)}%`;
+const hsla = (c: Hsl, alpha: number, l = c.l) => `hsl(${hsl(c, l)} / ${alpha})`;
+
+// Discord's legacy brand shades, from lightest to darkest, with their approximate lightness
 const BRAND_SHADES: Array<[number, number]> = [
     [100, 99], [130, 98], [160, 97], [200, 95], [230, 93], [260, 91], [300, 88], [330, 85], [360, 81],
     [400, 77], [430, 74], [460, 70], [500, 66], [530, 62], [560, 58], [600, 53], [630, 48], [660, 43],
     [700, 38], [730, 34], [760, 29], [800, 24], [830, 20], [860, 16], [900, 12]
 ];
 
-const NEUTRAL_LIGHTNESS = /(--neutral-\d{1,3}-hsl):[^;]*?([\d.]+)%;/g;
+// Lightness of each `--neutral-N-hsl` / `--blurple-N-hsl` shade, read from Discord's own stylesheets
+const PALETTE_LIGHTNESS = /(--(?:neutral|blurple)-\d{1,3}-hsl):[^;]*?([\d.]+)%;/g;
 
-let neutralLightness: Record<string, number> | null = null;
+let palette: Record<string, number> | null = null;
 let style: HTMLStyleElement | null = null;
 
-async function readNeutralLightness() {
+async function readPalette() {
     const links = document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]');
     const sheets = await Promise.all(Array.from(links, l => l.href ? fetch(l.href).then(r => r.text()).catch(() => "") : ""));
 
     const result: Record<string, number> = {};
-    for (const [, name, lightness] of sheets.join("\n").matchAll(NEUTRAL_LIGHTNESS)) {
+    for (const [, name, lightness] of sheets.join("\n").matchAll(PALETTE_LIGHTNESS)) {
         result[name] = parseFloat(lightness);
     }
     return result;
 }
 
-function neutralOverrides(base: Hsl) {
-    if (!neutralLightness) return "";
-    // --neutral-69 is the lightness Discord's dark theme is built around
-    const darkBase = neutralLightness["--neutral-69-hsl"];
-    if (darkBase == null) return "";
+function shadeOverrides(prefix: "neutral" | "blurple", color: Hsl, referenceShade: string) {
+    if (!palette) return "";
+    const reference = palette[referenceShade];
+    if (reference == null) return "";
 
-    return Object.entries(neutralLightness)
-        .map(([name, lightness]) => `${name}: ${base.h.toFixed(1)} ${base.s.toFixed(1)}% ${Math.max(0, Math.min(100, base.l + lightness - darkBase)).toFixed(2)}%;`)
+    return Object.entries(palette)
+        .filter(([name]) => name.startsWith(`--${prefix}-`))
+        .map(([name, lightness]) => `${name}: ${hsl(color, color.l + lightness - reference)};`)
         .join("\n");
 }
 
 function brandOverrides(accent: Hsl) {
-    return BRAND_SHADES
-        .map(([shade, l]) => `--brand-${shade}-hsl: ${accent.h.toFixed(1)} ${accent.s.toFixed(1)}% ${l}%;\n--brand-${shade}: hsl(var(--brand-${shade}-hsl));`)
+    const legacy = BRAND_SHADES
+        .map(([shade, l]) => `--brand-${shade}-hsl: ${hsl(accent, l)};\n--brand-${shade}: hsl(var(--brand-${shade}-hsl));`)
         .join("\n");
+    // The modern palette: --blurple-N shades, plus the translucent opacity-blurple shades that all share blurple-50
+    const modern = shadeOverrides("blurple", accent, "--blurple-50-hsl");
+    const opacity = Array.from({ length: 24 }, (_, i) => `--opacity-blurple-${(i + 1) * 4}-hsl: ${hsl(accent)};`).join("\n");
+
+    return [legacy, modern, opacity, `--opacity-blurple-1-hsl: ${hsl(accent)};`].join("\n");
+}
+
+function glassOverrides(base: Hsl, accent: Hsl) {
+    const intensity = settings.store.backdropIntensity;
+    const opacity = settings.store.surfaceOpacity;
+    const secondary: Hsl = { h: (accent.h + 40) % 360, s: accent.s, l: accent.l };
+
+    const backdrop = [
+        `radial-gradient(75% 60% at 5% 0%, ${hsla(accent, 0.6 * intensity)}, transparent 70%)`,
+        `radial-gradient(60% 65% at 100% 100%, ${hsla(secondary, 0.45 * intensity)}, transparent 70%)`,
+        `radial-gradient(45% 45% at 65% 35%, ${hsla(accent, 0.22 * intensity, accent.l - 25)}, transparent 70%)`,
+        `linear-gradient(160deg, ${hsla(base, 1, base.l + 3)} 0%, ${hsla(base, 1, base.l - 2)} 55%, ${hsla(base, 1, base.l - 5)} 100%)`
+    ].map(layer => `${layer} fixed 0 0/cover`).join(", ");
+
+    // Same surface -> neutral mapping Discord uses, each one becoming a tinted pane over the shared backdrop
+    const surfaces: Array<[string, number, number]> = [
+        ["lowest", 73, opacity + 0.15],
+        ["lower", 69, opacity + 0.1],
+        ["low", 66, opacity + 0.05],
+        ["high", 64, opacity],
+        ["higher", 62, opacity - 0.05],
+        ["chat", 64, opacity],
+        ["highest", 60, opacity - 0.1],
+        ["app-frame", 73, opacity - 0.1]
+    ];
+
+    return surfaces.map(([name, neutral, alpha]) => {
+        const tint = `hsl(var(--neutral-${neutral}-hsl) / ${clamp(alpha, 0.2, 1).toFixed(2)})`;
+        return `--background-gradient-${name}: linear-gradient(${tint}, ${tint}) fixed 0 0/cover, ${backdrop};`;
+    }).join("\n");
+}
+
+function accentTintOverrides(accent: Hsl) {
+    return [
+        `--interactive-background-hover: ${hsla(accent, 0.12)};`,
+        `--interactive-background-selected: ${hsla(accent, 0.22)};`,
+        `--interactive-background-active: ${hsla(accent, 0.18)};`,
+        `--message-background-hover: ${hsla(accent, 0.05)};`,
+        `--message-mentioned-background-default: ${hsla(accent, 0.1)};`,
+        `--message-mentioned-background-hover: ${hsla(accent, 0.16)};`,
+        `--scrollbar-auto-thumb: ${hsla(accent, 0.35)};`,
+        "--scrollbar-auto-track: transparent;",
+        `--scrollbar-thin-thumb: ${hsla(accent, 0.35)};`,
+        `--input-border-active: ${hsla(accent, 1)};`,
+        `--border-focus: ${hsla(accent, 1)};`,
+        `--border-strong: ${hsla(accent, 0.28)};`,
+        `--border-subtle: ${hsla(accent, 0.14)};`,
+        `--shadow-high: 0 12px 36px 0 ${hsla(accent, 0.18, 20)};`
+    ].join("\n");
+}
+
+// Modals and context menus become frosted panes over whatever is behind them
+function frostedOverrides(accent: Hsl) {
+    const opacity = clamp(settings.store.surfaceOpacity + 0.25, 0.5, 0.95).toFixed(2);
+    const modal = classNameToSelector(modalClasses.root);
+    const menu = classNameToSelector(menuClasses.menu);
+
+    return `.theme-dark ${modal}, .theme-dark ${menu} {
+background-color: hsl(var(--neutral-64-hsl) / ${opacity});
+backdrop-filter: blur(18px) saturate(1.3);
+border: 1px solid ${hsla(accent, 0.22)};
+box-shadow: 0 16px 48px -16px ${hsla(accent, 0.45, 15)}, inset 0 1px 0 hsl(0 0% 100% / 0.06);
+}`;
+}
+
+function roundnessOverrides() {
+    const r = settings.store.roundness;
+    const radius = (px: number) => `${Math.round(px * r)}px`;
+    return `--radius-xs: ${radius(4)};\n--radius-sm: ${radius(8)};\n--radius-md: ${radius(12)};\n--radius-lg: ${radius(16)};\n--radius-xl: ${radius(24)};\n--radius-xxl: ${radius(32)};`;
 }
 
 function mutedOverrides() {
@@ -118,23 +238,38 @@ function apply() {
     const background = hexToHsl(settings.store.background);
     const accent = hexToHsl(settings.store.accent);
 
-    let muted = "";
+    let muted = "", frosted = "";
     try {
         muted = mutedOverrides();
     } catch {
         // account panel classes not loaded yet, applied again once webpack is ready
     }
+    if (settings.store.style === "glass") {
+        try {
+            frosted = frostedOverrides(accent);
+        } catch {
+            // modal / menu classes not loaded yet, applied again once webpack is ready
+        }
+    }
+
+    const dark = [
+        shadeOverrides("neutral", background, "--neutral-69-hsl"),
+        settings.store.style === "glass" ? glassOverrides(background, accent) : "",
+        settings.store.accentTint ? accentTintOverrides(accent) : "",
+        roundnessOverrides()
+    ].filter(Boolean).join("\n");
 
     style.textContent = [
-        `.theme-dark {\n${neutralOverrides(background)}\n}`,
-        `:root, .theme-dark, .theme-light {\n${brandOverrides(accent)}\n--brand-experiment: var(--brand-500);\n--brand-experiment-560: var(--brand-560);\n--brand-experiment-600: var(--brand-600);\n--text-link: hsl(var(--brand-400-hsl));\n}`,
-        muted
+        `.theme-dark {\n${dark}\n}`,
+        `:root, .theme-dark, .theme-light {\n${brandOverrides(accent)}\n--brand-experiment: var(--brand-500);\n--brand-experiment-560: var(--brand-560);\n--brand-experiment-600: var(--brand-600);\n--text-link: ${hsla(accent, 1, Math.max(accent.l, 68))};\n}`,
+        muted,
+        frosted
     ].join("\n\n");
 }
 
 export default definePlugin({
     name: "FlocordTheme",
-    description: "Flocord's own look: a deep violet dark theme with a violet accent. Colors are adjustable below.",
+    description: "Flocord's own look: a deep violet glass theme with a violet accent. Style and colors are adjustable below.",
     authors: [FlocordDevs.Flocord],
     tags: ["Appearance"],
     enabledByDefault: true,
@@ -144,7 +279,7 @@ export default definePlugin({
     async start() {
         style = createAndAppendStyle("flocord-theme", managedStyleRootNode);
         try {
-            neutralLightness = await readNeutralLightness();
+            palette = await readPalette();
         } catch (err) {
             logger.warn("Could not read Discord's palette, applying accent only", err);
         }

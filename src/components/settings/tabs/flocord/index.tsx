@@ -13,20 +13,20 @@ import { Button } from "@components/Button";
 import { Divider } from "@components/Divider";
 import { FormSwitch } from "@components/FormSwitch";
 import { Heading } from "@components/Heading";
-import { FolderIcon, GithubIcon, LogIcon, PaintbrushIcon, RestartIcon } from "@components/Icons";
+import { BackupRestoreIcon, ColorPaletteIcon, FolderIcon, GithubIcon, LogIcon, PaintbrushIcon, PluginsIcon, RestartIcon, WarningIcon } from "@components/Icons";
 import { Notice } from "@components/Notice";
 import { Paragraph } from "@components/Paragraph";
 import { openContributorModal, openPluginModal, SettingsTab, wrapTab } from "@components/settings";
 import { QuickAction, QuickActionCard } from "@components/settings/QuickAction";
 import { SpecialCard } from "@components/settings/SpecialCard";
-import { gitRemote } from "@shared/flocordUserAgent";
-import { IS_WINDOWS } from "@utils/constants";
+import { IS_WINDOWS, REPO_URL } from "@utils/constants";
 import { classNameFactory } from "@utils/css";
 import { Margins } from "@utils/margins";
 import { isAnyPluginDev } from "@utils/misc";
 import { relaunch } from "@utils/native";
-import { Alerts, React, UserStore } from "@webpack/common";
+import { Alerts, React, SettingsRouter, UserStore } from "@webpack/common";
 
+import { FlocordHero } from "./FlocordHero";
 import { MacOSVibrancySettings } from "./MacVibrancySettings";
 import { NotificationSection } from "./NotificationSettings";
 import { WindowsMaterialSettings } from "./WindowsMaterialSettings";
@@ -152,6 +152,8 @@ function FlocordSettings() {
 
     return (
         <SettingsTab>
+            <FlocordHero />
+
             {isAnyPluginDev(user?.id) && (
                 <SpecialCard
                     title="Contributions"
@@ -176,20 +178,42 @@ function FlocordSettings() {
 
             <Heading className={Margins.top16}>Quick Actions</Heading>
             <Paragraph className={Margins.bottom16}>
-                Common actions you might want to perform. These shortcuts give you quick access to frequently used features without navigating through menus.
+                Shortcuts to the things you do most, without digging through menus.
             </Paragraph>
 
             <QuickActionCard>
                 <QuickAction
-                    Icon={LogIcon}
-                    text="Notification Log"
-                    action={openNotificationLogModal}
+                    Icon={PluginsIcon}
+                    text="Plugins"
+                    action={() => SettingsRouter.openUserSettings("flocord_plugins_panel")}
+                />
+                <QuickAction
+                    Icon={ColorPaletteIcon}
+                    text="Themes"
+                    action={() => SettingsRouter.openUserSettings("flocord_themes_panel")}
                 />
                 <QuickAction
                     Icon={PaintbrushIcon}
                     text="Edit QuickCSS"
                     action={() => FlocordNative.quickCss.openEditor()}
                 />
+                <QuickAction
+                    Icon={LogIcon}
+                    text="Notification Log"
+                    action={openNotificationLogModal}
+                />
+                <QuickAction
+                    Icon={BackupRestoreIcon}
+                    text="Backup & Restore"
+                    action={() => SettingsRouter.openUserSettings("flocord_backup_restore_panel")}
+                />
+                {!IS_WEB && (
+                    <QuickAction
+                        Icon={FolderIcon}
+                        text="Settings Folder"
+                        action={() => FlocordNative.settings.openFolder()}
+                    />
+                )}
                 {!IS_WEB && (
                     <QuickAction
                         Icon={RestartIcon}
@@ -197,21 +221,15 @@ function FlocordSettings() {
                         action={relaunch}
                     />
                 )}
-                {!IS_WEB && (
-                    <QuickAction
-                        Icon={FolderIcon}
-                        text="Open Settings Folder"
-                        action={() => FlocordNative.settings.openFolder()}
-                    />
-                )}
+                <QuickAction
+                    Icon={WarningIcon}
+                    text="Report a Bug"
+                    action={() => FlocordNative.native.openExternal(`${REPO_URL}/issues/new`)}
+                />
                 <QuickAction
                     Icon={GithubIcon}
-                    text="View Source Code"
-                    action={() =>
-                        FlocordNative.native.openExternal(
-                            "https://github.com/" + gitRemote,
-                        )
-                    }
+                    text="Source Code"
+                    action={() => FlocordNative.native.openExternal(REPO_URL)}
                 />
             </QuickActionCard>
 

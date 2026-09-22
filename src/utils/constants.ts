@@ -17,6 +17,8 @@
 */
 
 export const REACT_GLOBAL = "Flocord.Webpack.Common.React";
+export const SUPPORT_INVITE = "CH45T3PH5r";
+export const REPO_URL = "https://github.com/Code-Flocord/Flocord";
 
 const platform = navigator.platform.toLowerCase();
 export const IS_WINDOWS = platform.startsWith("win");

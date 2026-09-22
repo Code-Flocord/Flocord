@@ -54,7 +54,7 @@ function FlocordUpdater() {
             const info = await Native.fetchVersionInfo();
             if (!info) throw new Error("Could not fetch version info");
             const resourcesPath = await Native.getResourcesPath();
-            const result = await Native.downloadAndInstall(info.url, `${resourcesPath}/app.asar`);
+            const result = await Native.downloadAndInstall(info.url, `${resourcesPath}/app.asar`, info.version);
             if (result.success) {
                 setDone(true);
             } else {

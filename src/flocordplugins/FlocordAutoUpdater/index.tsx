@@ -35,7 +35,7 @@ function UpdateModal({ modalProps, version, url, resourcesPath }: UpdateModalPro
     async function handleInstall() {
         setInstalling(true);
         setError(null);
-        const result = await Native.downloadAndInstall(url, `${resourcesPath}/app.asar`);
+        const result = await Native.downloadAndInstall(url, `${resourcesPath}/app.asar`, version);
         if (result.success) {
             setDone(true);
         } else {

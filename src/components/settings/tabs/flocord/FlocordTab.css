@@ -1,41 +1,3 @@
-:root {
-    --vc-donatebutton: #ffc1cbc2;
-    --vc-donatebutton-secondary: #f7536fe5;
-}
-
-.vc-donatebutton {
-    background-color: var(--background-base-low) !important;
-    border-color: var(--vc-donatebutton) !important;
-    filter: brightness(1);
-    border-width: .1rem !important;
-    border-style: solid !important;
-}
-
-.vc-donatebutton:hover {
-    background-color: var(--vc-donatebutton) !important;
-    border-color: transparent !important;
-}
-
-
-.vc-joindiscordbutton {
-    background-color: var(--channeltextarea-background) !important;
-}
-
-.vc-joindiscordbutton:hover {
-    background-color: var(--redesign-button-tertiary-pressed-background) !important;
-}
-
-.vc-settings-card-buttons {
-    display: flex;
-    gap: 1em !important;
-    margin-left: .2rem;
-    margin-bottom: .2rem;
-}
-
-.vc-settingbuttons {
-    border-radius: 5px !important;
-}
-
 .form-switch-warning {
     font-size: 16px;
     background-color: rgb(240 71 71 / 10%);
@@ -51,4 +13,199 @@
 .vc-flocord-tab-settings-link {
     color: var(--text-link);
     display: inline-block;
+}
+
+/* ---------- Hero card ---------- */
+
+.vc-flocord-hero-card {
+    --hero-accent: var(--brand-500, #8b5cf6);
+    --hero-accent-soft: hsl(var(--brand-500-hsl, 258 90% 66%) / 18%);
+
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+        "identity stats"
+        "actions actions";
+    gap: 20px 24px;
+    padding: 22px 24px;
+    margin-bottom: 20px;
+    border-radius: var(--radius-lg, 16px);
+    border: 1px solid hsl(var(--brand-500-hsl, 258 90% 66%) / 28%);
+    background:
+        radial-gradient(60% 120% at 0% 0%, var(--hero-accent-soft), transparent 70%),
+        var(--background-surface-high, var(--background-secondary));
+    box-shadow: 0 12px 40px -18px hsl(var(--brand-500-hsl, 258 90% 66%) / 55%);
+}
+
+.vc-flocord-hero-glow {
+    position: absolute;
+    inset: -40% auto auto 55%;
+    width: 60%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle, hsl(var(--brand-500-hsl, 258 90% 66%) / 22%), transparent 65%);
+    pointer-events: none;
+}
+
+.vc-flocord-hero-identity {
+    grid-area: identity;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+}
+
+.vc-flocord-hero-logo {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+    border-radius: 18px;
+    background: linear-gradient(145deg, var(--brand-400, #a78bfa), var(--brand-600, #6d28d9));
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 25%),
+        0 10px 24px -10px var(--hero-accent);
+}
+
+.vc-flocord-hero-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.vc-flocord-hero-name-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.vc-flocord-hero-name {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--header-primary);
+}
+
+.vc-flocord-hero-version {
+    font-family: var(--font-code);
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    color: var(--text-muted);
+    background: var(--background-mod-subtle, rgb(255 255 255 / 8%));
+    border: 1px solid var(--border-subtle, rgb(255 255 255 / 10%));
+}
+
+.vc-flocord-hero-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    width: fit-content;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.vc-flocord-hero-pill-muted {
+    color: var(--text-muted);
+    background: var(--background-mod-subtle, rgb(255 255 255 / 8%));
+}
+
+.vc-flocord-hero-pill-ok {
+    color: var(--text-positive, #3ba55d);
+    background: hsl(139deg 47% 44% / 14%);
+}
+
+.vc-flocord-hero-pill-update {
+    color: var(--text-warning, #f0b232);
+    background: hsl(38deg 96% 54% / 16%);
+}
+
+.vc-flocord-hero-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentcolor;
+    box-shadow: 0 0 0 3px color-mix(in srgb, currentcolor 25%, transparent);
+}
+
+.vc-flocord-hero-stats {
+    grid-area: stats;
+    display: flex;
+    gap: 8px;
+    margin: 0;
+    align-self: center;
+}
+
+.vc-flocord-hero-stat {
+    min-width: 88px;
+    padding: 10px 14px;
+    border-radius: var(--radius-md, 12px);
+    background: var(--background-mod-subtle, rgb(255 255 255 / 6%));
+    border: 1px solid var(--border-subtle, rgb(255 255 255 / 8%));
+}
+
+.vc-flocord-hero-stat dt {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.vc-flocord-hero-stat dd {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--header-primary);
+    line-height: 1.1;
+}
+
+.vc-flocord-hero-stat-total {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.vc-flocord-hero-actions {
+    grid-area: actions;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.vc-flocord-hero-actions button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+@media (width <= 900px) {
+    .vc-flocord-hero-card {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "identity"
+            "stats"
+            "actions";
+    }
+
+    .vc-flocord-hero-stats {
+        align-self: stretch;
+    }
+
+    .vc-flocord-hero-stat {
+        flex: 1;
+        min-width: 0;
+    }
 }

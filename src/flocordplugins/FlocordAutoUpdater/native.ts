@@ -5,7 +5,7 @@
  */
 
 import { IpcMainInvokeEvent } from "electron";
-import { rename, rm, stat, writeFile } from "fs/promises";
+import { rm, stat, writeFile } from "fs/promises";
 
 const VERSION_URL = "https://raw.githubusercontent.com/Code-Flocord/FlocordCLI/master/version.json";
 
@@ -34,27 +34,26 @@ export function getResourcesPath(_: IpcMainInvokeEvent): string {
 export async function downloadAndInstall(
     _: IpcMainInvokeEvent,
     url: string,
-    targetPath: string
+    targetPath: string,
+    version: string
 ): Promise<{ success: boolean; error?: string; }> {
     try {
         const response = await fetch(url);
         if (!response.ok) return { success: false, error: `HTTP ${response.status}` };
         const data = Buffer.from(await response.arrayBuffer());
 
-        // New Discord format: app.asar is a directory. Rename it to _app.asar,
-        // or remove it if _app.asar already exists (Windows refuses to rename onto an existing path)
+        // app.asar may be the relay folder left by the host update hook: it only makes sense next to
+        // the original _app.asar, in which case it is simply replaced by the real asar
         const targetStat = await stat(targetPath).catch(() => null);
         if (targetStat?.isDirectory()) {
-            const originalPath = targetPath.replace(/app\.asar$/, "_app.asar");
-            const originalStat = await stat(originalPath).catch(() => null);
-            if (originalStat) {
-                await rm(targetPath, { recursive: true, force: true });
-            } else {
-                await rename(targetPath, originalPath);
-            }
+            const originalStat = await stat(targetPath.replace(/app\.asar$/, "_app.asar")).catch(() => null);
+            if (!originalStat) return { success: false, error: "Original Discord app.asar is missing, run the installer's Repair" };
+            await rm(targetPath, { recursive: true, force: true });
         }
 
         await writeFile(targetPath, data);
+        // Same marker the installer writes, so it can report the installed version
+        await writeFile(targetPath.replace(/app\.asar$/, "flocord.lock"), version).catch(() => { });
         return { success: true };
     } catch (e: any) {
         return { success: false, error: String(e?.message ?? e) };
