@@ -10,15 +10,57 @@ import { FlocordDevs } from "@utils/constants";
 import { classNameToSelector, createAndAppendStyle } from "@utils/css";
 import { Logger } from "@utils/Logger";
 import definePlugin, { OptionType, StartAt } from "@utils/types";
-import { findCssClassesLazy, onceReady } from "@webpack";
+import { findCssClassesLazy, onceReady, waitFor } from "@webpack";
 
 const logger = new Logger("FlocordTheme");
 
 const HEX = /^#?([0-9a-f]{6})$/i;
 
 const panelButtonClasses = findCssClassesLazy("redGlow", "button", "enabled");
-const modalClasses = findCssClassesLazy("root", "focusLock", "fullscreenOnMobile");
-const menuClasses = findCssClassesLazy("menu", "customMenuItem", "customNotches");
+// Floating surfaces that become frosted panes: [class to style, ...other classes identifying the module].
+// Some of these modules (emoji picker, user popout) only load when first opened, so they are watched
+// with waitFor and the style is re-applied as they appear.
+const FROSTED_SURFACES: string[][] = [
+    ["root", "focusLock", "fullscreenOnMobile"], // modals
+    ["menu", "customMenuItem", "customNotches"], // context menus
+    ["outer", "isPrivate", "inner", "overlay"], // user popout
+    ["contentWrapper", "drawerSizingWrapper", "navButtonActive"], // emoji / gif / sticker picker
+    ["autocomplete", "autocompleteInner", "autocompleteRow"] // chat autocomplete
+];
+const frostedClassNames = new Map<string, string>();
+
+const classNameRegex = (name: string) => new RegExp(`^${name}_{1,2}[0-9a-f]{5,6}(?: |$)`);
+
+/**
+ * String values of a module's own data properties. Getters are deliberately skipped: waitFor filters run
+ * while a module is still initialising, and invoking a getter there (Discord's markup parser has several)
+ * throws and poisons the getter's cached result for the rest of the session.
+ */
+function dataStrings(module: any): string[] {
+    const values: string[] = [];
+    for (const descriptor of Object.values(Object.getOwnPropertyDescriptors(module))) {
+        if (typeof descriptor.value === "string") values.push(descriptor.value);
+    }
+    return values;
+}
+
+function watchFrostedSurfaces() {
+    for (const names of FROSTED_SURFACES) {
+        const regexes = names.map(classNameRegex);
+        const filter = (module: any) => {
+            if (typeof module !== "object" || module === null) return false;
+            const values = dataStrings(module);
+            return regexes.every(re => values.some(v => re.test(v)));
+        };
+
+        waitFor(filter, module => {
+            const className = dataStrings(module).find(v => regexes[0].test(v));
+            if (!className) return;
+            frostedClassNames.set(names[0], className);
+            apply();
+        });
+    }
+}
 
 const settings = definePluginSettings({
     style: {
@@ -177,10 +219,19 @@ function glassOverrides(base: Hsl, accent: Hsl) {
         ["app-frame", 73, opacity - 0.1]
     ];
 
-    return surfaces.map(([name, neutral, alpha]) => {
+    const gradients = surfaces.map(([name, neutral, alpha]) => {
         const tint = `hsl(var(--neutral-${neutral}-hsl) / ${clamp(alpha, 0.2, 1).toFixed(2)})`;
         return `--background-gradient-${name}: linear-gradient(${tint}, ${tint}) fixed 0 0/cover, ${backdrop};`;
-    }).join("\n");
+    });
+
+    // Layout-level surfaces that Discord paints with a plain color (server list scroller, sidebar bottom):
+    // made translucent so the backdrop shows through them too
+    const plain = [
+        `--background-base-lowest: hsl(var(--neutral-73-hsl) / ${clamp(opacity + 0.15, 0.2, 1).toFixed(2)});`,
+        `--background-base-lower: hsl(var(--neutral-69-hsl) / ${clamp(opacity + 0.1, 0.2, 1).toFixed(2)});`
+    ];
+
+    return [...gradients, ...plain].join("\n");
 }
 
 function accentTintOverrides(accent: Hsl) {
@@ -202,17 +253,27 @@ function accentTintOverrides(accent: Hsl) {
     ].join("\n");
 }
 
-// Modals and context menus become frosted panes over whatever is behind them
 function frostedOverrides(accent: Hsl) {
     const opacity = clamp(settings.store.surfaceOpacity + 0.25, 0.5, 0.95).toFixed(2);
-    const modal = classNameToSelector(modalClasses.root);
-    const menu = classNameToSelector(menuClasses.menu);
 
-    return `.theme-dark ${modal}, .theme-dark ${menu} {
+    const selectors = Array.from(frostedClassNames.values(), cls => `.theme-dark ${classNameToSelector(cls)}`);
+    if (!selectors.length) return "";
+
+    // Inside a pane, the surfaces Discord stacks on top (headers, category bars, inspector) become
+    // translucent as well, otherwise they show up as solid dark blocks over the frosted glass
+    return `${selectors.join(",\n")} {
 background-color: hsl(var(--neutral-64-hsl) / ${opacity});
 backdrop-filter: blur(18px) saturate(1.3);
 border: 1px solid ${hsla(accent, 0.22)};
 box-shadow: 0 16px 48px -16px ${hsla(accent, 0.45, 15)}, inset 0 1px 0 hsl(0 0% 100% / 0.06);
+--background-base-lowest: hsl(var(--neutral-73-hsl) / 0.45);
+--background-base-lower: hsl(var(--neutral-69-hsl) / 0.4);
+--background-base-low: hsl(var(--neutral-66-hsl) / 0.35);
+--background-surface-high: hsl(var(--neutral-64-hsl) / 0.3);
+--background-surface-higher: hsl(var(--neutral-62-hsl) / 0.4);
+--background-surface-highest: hsl(var(--neutral-60-hsl) / 0.5);
+--modal-background: hsl(var(--neutral-64-hsl) / 0.3);
+--modal-footer-background: hsl(var(--neutral-66-hsl) / 0.3);
 }`;
 }
 
@@ -244,13 +305,11 @@ function apply() {
     } catch {
         // account panel classes not loaded yet, applied again once webpack is ready
     }
-    if (settings.store.style === "glass") {
-        try {
-            frosted = frostedOverrides(accent);
-        } catch {
-            // modal / menu classes not loaded yet, applied again once webpack is ready
-        }
-    }
+    const glass = settings.store.style === "glass";
+    if (glass) frosted = frostedOverrides(accent);
+    // Discord's own class for Nitro gradient themes: unlocks its rules that unset decorative panels
+    // and route the remaining surfaces through the --background-gradient-* variables we define
+    document.documentElement.classList.toggle("custom-theme-background", glass);
 
     const dark = [
         shadeOverrides("neutral", background, "--neutral-69-hsl"),
@@ -285,10 +344,12 @@ export default definePlugin({
         }
         apply();
         onceReady.then(apply);
+        watchFrostedSurfaces();
     },
 
     stop() {
         style?.remove();
         style = null;
+        document.documentElement.classList.remove("custom-theme-background");
     }
 });
