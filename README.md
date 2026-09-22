@@ -38,7 +38,7 @@
   </tr>
   <tr>
     <td align="center"><sub>Paramètres → Flocord : version, état de mise à jour, raccourcis</sub></td>
-    <td align="center"><sub>L'installeur : état de chaque Discord, réparation, protection automatique</sub></td>
+    <td align="center"><sub>L'installeur : état de chaque Discord, réparation en un clic, protection automatique</sub></td>
   </tr>
 </table>
 
@@ -53,15 +53,15 @@
 ## Installation
 
 1. Télécharge [`FlocordCLI.exe`](https://github.com/Code-Flocord/FlocordCLI/releases/latest/download/FlocordCLI.exe) et lance-le.
-2. L'installeur affiche chaque Discord trouvé (Stable, PTB, Canary) et l'état de Flocord dessus.
-3. Choisis **[1] Installer** — Discord est fermé, patché puis relancé.
-4. Recommandé : active **[4] Protection automatique** pour ne plus jamais avoir à réparer à la main.
+2. La fenêtre affiche chaque Discord trouvé (Stable, PTB, Canary) et l'état de Flocord dessus.
+3. Clique **Installer Flocord** — Discord est fermé, patché, puis tu peux le relancer d'un clic.
+4. Recommandé : active **Protection automatique** pour ne plus jamais avoir à réparer à la main.
 
 > **Windows SmartScreen** peut afficher un avertissement la première fois : *Informations complémentaires → Exécuter quand même*. L'installeur n'est pas signé (certificat payant), son code est [public](https://github.com/Code-Flocord/FlocordCLI).
 
 ### Discord s'est mis à jour et Flocord a disparu ?
 
-Relance `FlocordCLI.exe` → **[2] Réparer**. Avec la protection automatique activée, ça se fait tout seul au prochain démarrage de Windows.
+Relance `FlocordCLI.exe` → **Réparer** sur le Discord concerné. Avec la protection automatique activée, ça se fait tout seul au prochain démarrage de Windows.
 
 ### Ligne de commande
 
@@ -69,11 +69,12 @@ Relance `FlocordCLI.exe` → **[2] Réparer**. Avec la protection automatique ac
 FlocordCLI.exe --install | --repair | --uninstall | --status
                [--channel stable|ptb|canary] [--silent]
                --enable-protection | --disable-protection
+FlocordCLI.exe --cli        # menu console à l'ancienne
 ```
 
 ### Désinstaller
 
-`FlocordCLI.exe` → **[3] Désinstaller** : le Discord d'origine est restauré à l'identique.
+`FlocordCLI.exe` → **Désinstaller** : le Discord d'origine est restauré à l'identique.
 
 ## Plugins exclusifs
 
