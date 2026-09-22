@@ -8,7 +8,7 @@ import { isPluginEnabled, plugins } from "@api/PluginManager";
 import { useSettings } from "@api/Settings";
 import { Button } from "@components/Button";
 import { FlocordIcon, GithubIcon, HeadphonesIcon, UpdaterIcon } from "@components/Icons";
-import { FLOCORD_VERSION } from "@flocordplugins/FlocordAutoUpdater/version";
+import { FLOCORD_VERSION, versionGt } from "@flocordplugins/FlocordAutoUpdater/version";
 import { REPO_URL, SUPPORT_INVITE } from "@utils/constants";
 import { classNameFactory } from "@utils/css";
 import { PluginNative } from "@utils/types";
@@ -23,12 +23,6 @@ type UpdateState =
     | { kind: "current"; }
     | { kind: "outdated"; version: string; }
     | { kind: "unknown"; };
-
-function versionGt(a: string, b: string) {
-    const [a1 = 0, a2 = 0, a3 = 0] = a.split(".").map(Number);
-    const [b1 = 0, b2 = 0, b3 = 0] = b.split(".").map(Number);
-    return a1 !== b1 ? a1 > b1 : a2 !== b2 ? a2 > b2 : a3 > b3;
-}
 
 function useUpdateState(): UpdateState {
     const [state, setState] = React.useState<UpdateState>({ kind: "checking" });
