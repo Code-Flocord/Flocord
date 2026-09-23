@@ -292,17 +292,6 @@ export default definePlugin({
                 replace: "childrenAccessories:arguments[0].childrenAccessories || null,$&"
             }
         },
-        // fix vidoes failing because there are no thumbnails
-        {
-            find: ".handleImageLoad)",
-            replacement: {
-                match: /(componentDidMount\(\){)(.{1,150}===(.+?)\.LOADING)/,
-                replace:
-                    "$1if(this.props?.src?.startsWith('blob:') && this.props?.item?.type === 'VIDEO')" +
-                    "return this.setState({readyState: $3.READY});$2"
-            }
-        },
-
         // dont fetch messages for channels in modal
         {
             find: "Using PollReferenceMessageContext without",

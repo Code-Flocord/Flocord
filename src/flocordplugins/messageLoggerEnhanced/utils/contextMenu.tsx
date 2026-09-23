@@ -161,7 +161,10 @@ export const contextMenuPath: NavContextMenuPatchCallback = (children, props) =>
 };
 
 export const setupContextMenuPatches = () => {
-    addContextMenuPatch("message", contextMenuPath);
+    // Le sous-menu n'est plus ajouté au menu contextuel des messages : sur les versions récentes de
+    // Discord il casse le positionnement du popout du menu et part en boucle de rendu (React #185,
+    // écran "Awkward error") au clic droit sur un message. Les autres menus ne sont pas affectés, et
+    // les logs restent accessibles via les menus salon/utilisateur/serveur, la toolbox et l'en-tête.
     addContextMenuPatch("channel-context", contextMenuPath);
     addContextMenuPatch("user-context", contextMenuPath);
     addContextMenuPatch("guild-context", contextMenuPath);
@@ -169,7 +172,6 @@ export const setupContextMenuPatches = () => {
 };
 
 export const removeContextMenuBindings = () => {
-    removeContextMenuPatch("message", contextMenuPath);
     removeContextMenuPatch("channel-context", contextMenuPath);
     removeContextMenuPatch("user-context", contextMenuPath);
     removeContextMenuPatch("guild-context", contextMenuPath);
