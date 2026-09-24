@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-export const FLOCORD_VERSION = "2.9.2";
+export const FLOCORD_VERSION = "2.9.3";
 
 export function versionGt(a: string, b: string) {
     const [a1 = 0, a2 = 0, a3 = 0] = a.split(".").map(Number);
