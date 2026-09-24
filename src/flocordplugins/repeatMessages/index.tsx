@@ -88,12 +88,7 @@ function repeatMessage(msg: Message) {
         });
 }
 
-const messageCtxPatch: NavContextMenuPatchCallback = (children, { msg }: { msg: Message; }) => {
-    if (!msg) return null;
-
-    const group = findGroupChildrenByChildId("copy-text", children);
-    if (!group) return;
-
+function RepeatMenuItem({ msg }: { msg: Message; }) {
     const forceUpdate = useForceUpdater();
 
     useEffect(() => {
@@ -110,13 +105,28 @@ const messageCtxPatch: NavContextMenuPatchCallback = (children, { msg }: { msg: 
         };
     }, []);
 
-    group.splice(group.findIndex(c => c?.props?.id === "reply") + 1, 0, (
+    return (
         <Menu.MenuItem
             id="vc-repeat"
             label={shift ? "Repeat and Reply" : "Repeat"}
             icon={RepeatMessageIcon}
             action={async () => repeatMessage(msg)}
         />
+    );
+}
+
+const messageCtxPatch: NavContextMenuPatchCallback = (children, { msg }: { msg: Message; }) => {
+    if (!msg) return null;
+
+    const group = findGroupChildrenByChildId("copy-text", children);
+    if (!group) return;
+
+    // Les hooks vivent dans RepeatMenuItem, pas ici : ce callback est rappelé à chaque ouverture du menu
+    // avec des props qui varient (msg/group selon le message cliqué), donc des hooks appelés directement ici
+    // seraient conditionnels d'un clic droit à l'autre sur le même composant de menu réutilisé par Discord —
+    // ordre de hooks incohérent, crash React et boucle de rendu au clic droit sur n'importe quel message.
+    group.splice(group.findIndex(c => c?.props?.id === "reply") + 1, 0, (
+        <RepeatMenuItem key="vc-repeat" msg={msg} />
     ));
 };
 
