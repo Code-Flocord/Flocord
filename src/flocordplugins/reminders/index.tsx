@@ -150,6 +150,23 @@ function messageLink(guildId: string | null | undefined, channelId: string, mess
     return `/channels/${guildId ?? "@me"}/${channelId}/${messageId}`;
 }
 
+function untilTomorrowMorning() {
+    const date = new Date();
+    date.setDate(date.getDate() + 1);
+    date.setHours(9, 0, 0, 0);
+    return date.getTime() - Date.now();
+}
+
+// Discord's Menu re-renders whenever an item id changes, so ids must stay stable across renders:
+// delays are computed when clicked, never while rendering.
+const QUICK_DELAYS: [id: string, label: string, getDelay: () => number][] = [
+    ["10m", "In 10 minutes", () => 10 * 60_000],
+    ["30m", "In 30 minutes", () => 30 * 60_000],
+    ["1h", "In 1 hour", () => 3_600_000],
+    ["3h", "In 3 hours", () => 3 * 3_600_000],
+    ["tomorrow", "Tomorrow morning", untilTomorrowMorning]
+];
+
 export default definePlugin({
     name: "Reminders",
     description: "Set reminders with /remind, or from a message's context menu. A notification brings you back to where you were.",
@@ -239,25 +256,15 @@ export default definePlugin({
 
             children.push(
                 <Menu.MenuItem id="flocord-remind" label="Remind me about this">
-                    {[
-                        ["In 10 minutes", 10 * 60_000],
-                        ["In 30 minutes", 30 * 60_000],
-                        ["In 1 hour", 3_600_000],
-                        ["In 3 hours", 3 * 3_600_000],
-                        ["Tomorrow morning", (() => {
-                            const date = new Date();
-                            date.setDate(date.getDate() + 1);
-                            date.setHours(9, 0, 0, 0);
-                            return date.getTime() - Date.now();
-                        })()]
-                    ].map(([label, delay]) => (
+                    {QUICK_DELAYS.map(([id, label, getDelay]) => (
                         <Menu.MenuItem
-                            key={label as string}
-                            id={`flocord-remind-${delay}`}
-                            label={label as string}
+                            key={id}
+                            id={`flocord-remind-${id}`}
+                            label={label}
                             action={() => {
-                                add(preview, delay as number, link);
-                                showToast(`Reminder set in ${formatDelay(delay as number)}.`, Toasts.Type.SUCCESS);
+                                const delay = getDelay();
+                                add(preview, delay, link);
+                                showToast(`Reminder set in ${formatDelay(delay)}.`, Toasts.Type.SUCCESS);
                             }}
                         />
                     ))}
