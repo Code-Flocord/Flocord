@@ -153,7 +153,8 @@ export const globPlugins = kind => ({
                 "plugins",
                 "flocordplugins/_api",
                 "flocordplugins/_core",
-                "flocordplugins"
+                "flocordplugins",
+                "userplugins"
             ];
             let code = "";
             let pluginsCode = "\n";
