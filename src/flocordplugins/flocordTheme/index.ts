@@ -12,6 +12,9 @@ import { Logger } from "@utils/Logger";
 import definePlugin, { OptionType, StartAt } from "@utils/types";
 import { findCssClassesLazy, onceReady, waitFor } from "@webpack";
 
+import { DEFAULT_BACKGROUND } from "./assets/defaultBackground";
+import { HOME_ORB } from "./assets/homeOrb";
+
 const logger = new Logger("FlocordTheme");
 
 const HEX = /^#?([0-9a-f]{6})$/i;
@@ -75,8 +78,14 @@ const settings = definePluginSettings({
     background: {
         type: OptionType.STRING,
         description: "Base background color (hex). Every surface is derived from it while keeping Discord's contrast.",
-        default: "#14101c",
-        isValid: (v: string) => HEX.test(v) || "Enter a 6-digit hex color, for example #14101c.",
+        default: "#0a0a18",
+        isValid: (v: string) => HEX.test(v) || "Enter a 6-digit hex color, for example #0a0a18.",
+        onChange: () => apply()
+    },
+    starfield: {
+        type: OptionType.BOOLEAN,
+        description: "Glass only: scatter faint stars across the backdrop.",
+        default: true,
         onChange: () => apply()
     },
     accent: {
@@ -121,6 +130,26 @@ const settings = definePluginSettings({
         description: "Color (hex) of the mute and deafen buttons when they are active, instead of Discord's red.",
         default: "#6d28d9",
         isValid: (v: string) => HEX.test(v) || "Enter a 6-digit hex color, for example #6d28d9.",
+        onChange: () => apply()
+    },
+    backgroundImage: {
+        type: OptionType.STRING,
+        description: "Glass only: URL of an image behind the glass panels, tinted by the accent glow above it. Leave empty for the plain gradient backdrop.",
+        default: DEFAULT_BACKGROUND,
+        onChange: () => apply()
+    },
+    backgroundImageDim: {
+        type: OptionType.SLIDER,
+        description: "Background image only: how much to darken the photo so text stays readable.",
+        markers: [0, 0.2, 0.4, 0.6, 0.8],
+        default: 0.35,
+        stickToMarkers: false,
+        onChange: () => apply()
+    },
+    replaceHomeIcon: {
+        type: OptionType.BOOLEAN,
+        description: "Replace the Discord logo on the Home button with Flocord's ringed planet.",
+        default: true,
         onChange: () => apply()
     }
 });
@@ -195,17 +224,59 @@ function brandOverrides(accent: Hsl) {
     return [legacy, modern, opacity, `--opacity-blurple-1-hsl: ${hsl(accent)};`].join("\n");
 }
 
+// Deterministic (seeded) so the starfield doesn't reshuffle on every reload
+function mulberry32(seed: number) {
+    return () => {
+        seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+        let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+let starfieldDataUri: string | null = null;
+function starfieldLayer(): string {
+    if (starfieldDataUri) return starfieldDataUri;
+
+    const size = 480;
+    const rand = mulberry32(0xf10c0d);
+    const stars: string[] = [];
+    for (let i = 0; i < 140; i++) {
+        const x = (rand() * size).toFixed(1);
+        const y = (rand() * size).toFixed(1);
+        const r = (rand() * 0.9 + 0.2).toFixed(2);
+        const o = (rand() * 0.65 + 0.15).toFixed(2);
+        stars.push(`<circle cx="${x}" cy="${y}" r="${r}" fill="white" opacity="${o}"/>`);
+    }
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">${stars.join("")}</svg>`;
+    starfieldDataUri = `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+    return starfieldDataUri;
+}
+
 function glassOverrides(base: Hsl, accent: Hsl) {
     const intensity = settings.store.backdropIntensity;
     const opacity = settings.store.surfaceOpacity;
     const secondary: Hsl = { h: (accent.h + 40) % 360, s: accent.s, l: accent.l };
+    const tertiary: Hsl = { h: (accent.h + 300) % 360, s: accent.s, l: accent.l };
 
-    const backdrop = [
-        `radial-gradient(75% 60% at 5% 0%, ${hsla(accent, 0.6 * intensity)}, transparent 70%)`,
-        `radial-gradient(60% 65% at 100% 100%, ${hsla(secondary, 0.45 * intensity)}, transparent 70%)`,
-        `radial-gradient(45% 45% at 65% 35%, ${hsla(accent, 0.22 * intensity, accent.l - 25)}, transparent 70%)`,
-        `linear-gradient(160deg, ${hsla(base, 1, base.l + 3)} 0%, ${hsla(base, 1, base.l - 2)} 55%, ${hsla(base, 1, base.l - 5)} 100%)`
-    ].map(layer => `${layer} fixed 0 0/cover`).join(", ");
+    const image = settings.store.backgroundImage?.trim();
+
+    const layers = [
+        `radial-gradient(75% 60% at 5% 0%, ${hsla(accent, (image ? 0.4 : 0.6) * intensity)}, transparent 70%) fixed 0 0/cover`,
+        `radial-gradient(60% 65% at 100% 100%, ${hsla(secondary, (image ? 0.3 : 0.45) * intensity)}, transparent 70%) fixed 0 0/cover`,
+        `radial-gradient(50% 50% at 80% 15%, ${hsla(tertiary, 0.16 * intensity, tertiary.l - 15)}, transparent 65%) fixed 0 0/cover`,
+        `radial-gradient(45% 45% at 65% 35%, ${hsla(accent, 0.22 * intensity, accent.l - 25)}, transparent 70%) fixed 0 0/cover`,
+        `linear-gradient(160deg, ${hsla(base, 1, base.l + 3)} 0%, ${hsla(base, 1, base.l - 2)} 55%, ${hsla(base, 1, base.l - 5)} 100%) fixed 0 0/cover`
+    ];
+    if (image) {
+        const dim = clamp(settings.store.backgroundImageDim, 0, 0.9);
+        layers.splice(3, 0,
+            `linear-gradient(hsl(0 0% 0% / ${dim}), hsl(0 0% 0% / ${dim})) fixed 0 0/cover`,
+            `url("${image.replace(/"/g, '\\"')}") fixed center/cover no-repeat`
+        );
+    }
+    if (settings.store.starfield) layers.unshift(`${starfieldLayer()} fixed 0 0/340px repeat`);
+    const backdrop = layers.join(", ");
 
     // Same surface -> neutral mapping Discord uses, each one becoming a tinted pane over the shared backdrop
     const surfaces: Array<[string, number, number]> = [
@@ -293,6 +364,26 @@ function mutedOverrides() {
     return `${selector} {\n--status-danger: ${color};\n--status-danger-background: ${color};\n--button-danger-background: ${color};\n--red-400: ${color};\n--red-400-hsl: ${hsl};\n--red-430: ${color};\n--red-430-hsl: ${hsl};\n--red-460: ${color};\n--red-460-hsl: ${hsl};\n}`;
 }
 
+function homeIconOverrides(): string {
+    // The Home button is identified by data-list-item-id="guildsnav___home" (a stable, non-localised id).
+    // Inside it, the Discord logo is the svg[aria-hidden] — hide it and overlay Flocord's glowing planet.
+    const home = `[data-list-item-id="guildsnav___home"]`;
+    return `${home} svg[aria-hidden="true"] { visibility: hidden; }
+${home} { position: relative; }
+${home}::after {
+content: "";
+position: absolute;
+inset: 0;
+margin: auto;
+width: 34px;
+height: 34px;
+background: url("${HOME_ORB}") center / contain no-repeat;
+pointer-events: none;
+transition: filter .2s ease, transform .2s ease;
+}
+${home}:hover::after { filter: drop-shadow(0 0 6px hsl(258 90% 70% / .8)); transform: scale(1.05); }`;
+}
+
 function apply() {
     if (!style) return;
 
@@ -322,16 +413,17 @@ function apply() {
         `.theme-dark {\n${dark}\n}`,
         `:root, .theme-dark, .theme-light {\n${brandOverrides(accent)}\n--brand-experiment: var(--brand-500);\n--brand-experiment-560: var(--brand-560);\n--brand-experiment-600: var(--brand-600);\n--text-link: ${hsla(accent, 1, Math.max(accent.l, 68))};\n}`,
         muted,
-        frosted
+        frosted,
+        settings.store.replaceHomeIcon ? homeIconOverrides() : ""
     ].join("\n\n");
 }
 
 export default definePlugin({
     name: "FlocordTheme",
-    description: "Flocord's own look: a deep violet glass theme with a violet accent. Style and colors are adjustable below.",
+    description: "Flocord's own look: deep space, starlight and nebula glow. Style and colors are adjustable below.",
     authors: [FlocordDevs.Flocord],
     tags: ["Appearance"],
-    enabledByDefault: true,
+    required: true,
     settings,
     startAt: StartAt.DOMContentLoaded,
 
