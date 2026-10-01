@@ -17,7 +17,7 @@ const cl = classNameFactory("vc-neko-");
 /** How close the cat needs to get before it stops and sits */
 const IDLE_DISTANCE = 56;
 /** How quickly the cat eases toward the cursor, per 16.67ms frame (0..1, higher = snappier) */
-const FOLLOW_FACTOR = 0.16;
+const FOLLOW_FACTOR = 0.07;
 /** How often the walk-cycle sprite swaps while trotting */
 const WALK_FRAME_MS = 150;
 
