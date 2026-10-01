@@ -38,9 +38,6 @@ src/App.css
 src/App.tsx
 src/main.tsx
 
-# Plugins locaux privés : jamais commités ni poussés dans le repo public
-src/userplugins
-
 # Plugins privés — non distribués publiquement
 src/flocordplugins/nitroSniper/
 src/flocordplugins/tokenLoginManager/
