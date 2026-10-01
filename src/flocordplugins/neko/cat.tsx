@@ -9,7 +9,7 @@ import { classNameFactory } from "@utils/css";
 import { classes } from "@utils/misc";
 import { createRoot, React, useEffect, useRef, useState } from "@webpack/common";
 
-import { SIT_BLINK, SIT_OPEN, SPRITE_ASPECT, WALK_A, WALK_B } from "./sprites";
+import { SCRATCH, SIT_BLINK, SIT_OPEN, SPRITE_ASPECT, WALK_A, WALK_B } from "./sprites";
 
 const cl = classNameFactory("vc-neko-");
 
@@ -21,9 +21,17 @@ const STEP = 11;
 const TICK_MS = 100;
 /** How often the walk-cycle sprite swaps while trotting */
 const WALK_FRAME_MS = 150;
-/** How often an idle blink happens, roughly */
+
+/** Ticks of stillness before a random idle animation (scratch/sleep) can start */
+const IDLE_ANIMATION_AFTER_TICKS = 10;
+/** Roughly once every this many ticks, on average, while eligible */
+const IDLE_ANIMATION_CHANCE = 1 / 60;
+const SCRATCH_TICKS = 8;
+const SLEEP_TICKS = 24;
 const BLINK_EVERY_MS = 3200;
 const BLINK_DURATION_MS = 160;
+
+type Behavior = "idle" | "scratch" | "sleep" | "alert" | "walk";
 
 let root: ReturnType<typeof createRoot> | null = null;
 let mountNode: HTMLDivElement | null = null;
@@ -59,13 +67,15 @@ export function unmountNeko() {
 
 function Neko({ size }: { size: number; }) {
     const [pos, setPos] = useState(() => ({ x: window.innerWidth / 2, y: window.innerHeight / 2 }));
-    const [walking, setWalking] = useState(false);
+    const [behavior, setBehavior] = useState<Behavior>("idle");
     const [facingLeft, setFacingLeft] = useState(false);
-    const [walkFrame, setWalkFrame] = useState(false);
+    const [frameToggle, setFrameToggle] = useState(false);
     const [blinking, setBlinking] = useState(false);
 
     const mouse = useRef({ x: pos.x, y: pos.y });
     const catPos = useRef(pos);
+    const idleTicks = useRef(0);
+    const behaviorTicks = useRef(0);
 
     useEffect(() => {
         const onMove = (e: MouseEvent) => {
@@ -73,16 +83,44 @@ function Neko({ size }: { size: number; }) {
         };
         window.addEventListener("mousemove", onMove);
 
-        const moveInterval = window.setInterval(() => {
+        const tick = window.setInterval(() => {
             const dx = mouse.current.x - catPos.current.x;
             const dy = mouse.current.y - catPos.current.y;
             const distance = Math.hypot(dx, dy);
 
             if (distance < IDLE_DISTANCE) {
-                setWalking(prev => (prev ? false : prev));
+                idleTicks.current += 1;
+
+                setBehavior(prev => {
+                    if (prev === "scratch" || prev === "sleep") {
+                        behaviorTicks.current += 1;
+                        const limit = prev === "scratch" ? SCRATCH_TICKS : SLEEP_TICKS;
+                        if (behaviorTicks.current > limit) {
+                            behaviorTicks.current = 0;
+                            return "idle";
+                        }
+                        return prev;
+                    }
+
+                    if (idleTicks.current > IDLE_ANIMATION_AFTER_TICKS && Math.random() < IDLE_ANIMATION_CHANCE) {
+                        behaviorTicks.current = 0;
+                        return Math.random() < 0.5 ? "scratch" : "sleep";
+                    }
+
+                    return "idle";
+                });
                 return;
             }
 
+            // Just noticed the cursor wandered off: a brief surprised pause before chasing it
+            if (idleTicks.current > 2) {
+                idleTicks.current = 0;
+                behaviorTicks.current = 0;
+                setBehavior("alert");
+                return;
+            }
+
+            idleTicks.current = 0;
             const step = Math.min(STEP, distance - IDLE_DISTANCE + STEP);
             const next = {
                 x: catPos.current.x + (dx / distance) * step,
@@ -90,11 +128,11 @@ function Neko({ size }: { size: number; }) {
             };
             catPos.current = next;
             setPos(next);
-            setWalking(true);
+            setBehavior("walk");
             if (Math.abs(dx) > 2) setFacingLeft(dx < 0);
         }, TICK_MS);
 
-        const walkFrameInterval = window.setInterval(() => setWalkFrame(f => !f), WALK_FRAME_MS);
+        const frameInterval = window.setInterval(() => setFrameToggle(f => !f), WALK_FRAME_MS);
 
         let blinkTimer: number;
         const scheduleBlink = () => {
@@ -108,13 +146,19 @@ function Neko({ size }: { size: number; }) {
 
         return () => {
             window.removeEventListener("mousemove", onMove);
-            window.clearInterval(moveInterval);
-            window.clearInterval(walkFrameInterval);
+            window.clearInterval(tick);
+            window.clearInterval(frameInterval);
             window.clearTimeout(blinkTimer);
         };
     }, []);
 
-    const sprite = walking ? (walkFrame ? WALK_A : WALK_B) : (blinking ? SIT_BLINK : SIT_OPEN);
+    let sprite = SIT_OPEN;
+    if (behavior === "walk") sprite = frameToggle ? WALK_A : WALK_B;
+    else if (behavior === "scratch") sprite = frameToggle ? SCRATCH : SIT_OPEN;
+    else if (behavior === "sleep") sprite = SIT_BLINK;
+    else if (behavior === "idle") sprite = blinking ? SIT_BLINK : SIT_OPEN;
+    else if (behavior === "alert") sprite = SIT_OPEN;
+
     const width = size;
     const height = Math.round(size * SPRITE_ASPECT);
 
@@ -127,7 +171,14 @@ function Neko({ size }: { size: number; }) {
                 height
             }}
         >
-            <div className={classes(cl("sprite"), walking ? cl("walking") : cl("idle"), facingLeft ? cl("flip") : "")}
+            {behavior === "sleep" && <div className={cl("zzz")}>z</div>}
+            <div
+                className={classes(
+                    cl("sprite"),
+                    behavior === "walk" ? cl("walking") : cl("idle"),
+                    behavior === "alert" ? cl("alert") : "",
+                    facingLeft ? cl("flip") : ""
+                )}
                 style={{ backgroundImage: `url("${sprite}")` }}
             />
         </div>
