@@ -1,0 +1,142 @@
+.vc-neko-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 2147483000;
+    will-change: transform;
+}
+
+.vc-neko-flip {
+    width: 100%;
+    height: 100%;
+    transition: transform 120ms ease-out;
+}
+
+.vc-neko-flip-active {
+    transform: scaleX(-1);
+}
+
+.vc-neko-cat {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.vc-neko-walking {
+    animation: vc-neko-trot 300ms ease-in-out infinite;
+}
+
+.vc-neko-idle {
+    animation: vc-neko-breathe 2400ms ease-in-out infinite;
+}
+
+.vc-neko-tail {
+    position: absolute;
+    left: 6%;
+    bottom: 18%;
+    width: 46%;
+    height: 16%;
+    background: #c97a3d;
+    border-radius: 999px;
+    transform-origin: 90% 50%;
+    animation: vc-neko-tail-wag 1400ms ease-in-out infinite;
+}
+
+.vc-neko-walking .vc-neko-tail {
+    animation: vc-neko-tail-trail 300ms ease-in-out infinite;
+}
+
+.vc-neko-body {
+    position: absolute;
+    left: 22%;
+    bottom: 6%;
+    width: 60%;
+    height: 48%;
+    background: #e8935a;
+    border-radius: 50% 50% 46% 46%;
+}
+
+.vc-neko-head {
+    position: absolute;
+    left: 28%;
+    top: 2%;
+    width: 50%;
+    height: 50%;
+    background: #ecA06a;
+    border-radius: 50%;
+}
+
+.vc-neko-ear {
+    position: absolute;
+    top: -22%;
+    width: 0;
+    height: 0;
+    border-left: 20% solid transparent;
+    border-right: 20% solid transparent;
+    border-bottom: 32% solid #ecA06a;
+}
+
+.vc-neko-ear-left {
+    left: 2%;
+    transform: rotate(-18deg);
+}
+
+.vc-neko-ear-right {
+    right: 2%;
+    transform: rotate(18deg);
+}
+
+.vc-neko-eye {
+    position: absolute;
+    top: 44%;
+    width: 13%;
+    height: 13%;
+    background: #2b1a12;
+    border-radius: 50%;
+    animation: vc-neko-blink 4800ms ease-in-out infinite;
+}
+
+.vc-neko-eye-left {
+    left: 24%;
+}
+
+.vc-neko-eye-right {
+    right: 24%;
+}
+
+.vc-neko-nose {
+    position: absolute;
+    top: 60%;
+    left: 44%;
+    width: 0;
+    height: 0;
+    border-left: 6% solid transparent;
+    border-right: 6% solid transparent;
+    border-top: 8% solid #c96b8a;
+}
+
+@keyframes vc-neko-trot {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-8%) rotate(-3deg); }
+}
+
+@keyframes vc-neko-breathe {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(0.98); }
+}
+
+@keyframes vc-neko-tail-wag {
+    0%, 100% { transform: rotate(-12deg); }
+    50% { transform: rotate(18deg); }
+}
+
+@keyframes vc-neko-tail-trail {
+    0%, 100% { transform: rotate(6deg); }
+    50% { transform: rotate(-10deg); }
+}
+
+@keyframes vc-neko-blink {
+    0%, 92%, 100% { transform: scaleY(1); }
+    96% { transform: scaleY(0.1); }
+}
