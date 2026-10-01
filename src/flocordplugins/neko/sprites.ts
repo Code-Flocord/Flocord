@@ -1,0 +1,18 @@
+/*
+ * Vencord, a Discord client mod
+ * Copyright (c) 2026 Vendicated and contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+// Original pixel-art grey cat, hand-drawn on a 34x20 grid (not a copy of any existing sprite sheet).
+// Facing right by default; the component mirrors it (scaleX) to face left.
+
+export const SPRITE_ASPECT = 20 / 34;
+
+export const WALK_A = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAUCAYAAADoZO9yAAAAmElEQVR42mNgGO4gITX3PyniNHXIijVb/hMSo4tDJk1f8B85BLCJ0RSALCMGj0yHgNLEoAoRCQkpMB6UUUOUY0ApG5bKYSmdFDYx+N60lf9J9hUtHEIwRNBDg1aYqIKI1LimqkOQHYHukEtXbxGNKcoZ6I4YUIfgS7B0cwgxiRdWKMH4yBhdjqYFFcwydDYhuZHhEFLkiAEAISOmi5Pr/CAAAAAASUVORK5CYII=";
+
+export const WALK_B = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAUCAYAAADoZO9yAAAAmklEQVR42mNgGO4gITX3PyniNHXIijVb/hMSo4tDJk1f8B85BLCJ0RSALCMGj0yHgNLEoAoRCQkpMB6UUUOUY0ApG5bKYSmdFDYx+N60lf9J9hUtHEIwRNBDg1aYqIKI1LimqkOQHYHukEtXbxGNKcoZ6I4YUIfgS7B0cwgxiRcZwwoofHI0K6iQLUC3DJ/c8HUILkeRIocLAAD4v6i8wqeYngAAAABJRU5ErkJggg==";
+
+export const SIT_OPEN = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAUCAYAAADoZO9yAAAAj0lEQVR42mNgGIogITX3PymYZg6ZNH3B/xVrtoAtAbGxYZAcSA2MTzOHkIpHhkMkJKTgGNlSbOLD0yGgxIecAEnBML10cci9aSsHh0PoFiLk5hiqphNYKTlgDkF2wICFCLIDKHUE2Y5BdwSyQy5dvUUyJssh2BwxYA7Bl2Po5hBaZF2aFPXIdQkIk6tmUAMAthP6N5PCRrwAAAAASUVORK5CYII=";
+
+export const SIT_BLINK = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAUCAYAAADoZO9yAAAAkUlEQVR42mNgGIogITX3PymYZg6ZNH3B/xVrtoAtAbGxYZAcSA2MTzOHkIpHHUJXhyAnSPT0gS5OVQeAEh9yAiQFw/TSxSH3pq0cHA6hW4iQm1Cpmk6wJUq6OgTZAQMWIsgOoNQRZDsG3RHIDrl09RbJmCyHYHPEgDkEX46hm0NokXVpUtRLSEj9R8bkqhnUAACW5giwrURDvgAAAABJRU5ErkJggg==";
