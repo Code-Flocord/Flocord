@@ -30,6 +30,34 @@
     animation: vc-neko-breathe 2400ms ease-in-out infinite;
 }
 
+.vc-neko-alert {
+    animation: vc-neko-pop 180ms ease-out;
+}
+
+.vc-neko-zzz {
+    position: absolute;
+    top: -6px;
+    right: -4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted, #a0a0a0);
+    animation: vc-neko-zzz-float 2200ms ease-in infinite;
+    user-select: none;
+}
+
+@keyframes vc-neko-pop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.22); }
+    100% { transform: scale(1); }
+}
+
+@keyframes vc-neko-zzz-float {
+    0% { opacity: 0; transform: translateY(0) scale(0.8); }
+    20% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-14px) scale(1.15); }
+}
+
 .vc-neko-walking.vc-neko-flip {
     animation: vc-neko-trot-flip 300ms steps(1) infinite;
 }
