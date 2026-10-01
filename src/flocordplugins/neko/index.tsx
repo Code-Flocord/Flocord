@@ -6,25 +6,11 @@
 
 import "./style.css";
 
-import { definePluginSettings } from "@api/Settings";
 import { FlocordDevs } from "@utils/constants";
-import definePlugin, { OptionType } from "@utils/types";
+import definePlugin from "@utils/types";
 
 import { mountNeko, unmountNeko } from "./cat";
-
-const settings = definePluginSettings({
-    size: {
-        type: OptionType.SLIDER,
-        description: "Size of the cat, in pixels.",
-        markers: [24, 32, 40, 48, 64],
-        default: 36,
-        stickToMarkers: false,
-        onChange: () => {
-            unmountNeko();
-            mountNeko(settings.store.size);
-        }
-    }
-});
+import { settings } from "./settings";
 
 export default definePlugin({
     name: "Neko",
@@ -34,7 +20,7 @@ export default definePlugin({
     settings,
 
     start() {
-        mountNeko(settings.store.size);
+        mountNeko();
     },
 
     stop() {
