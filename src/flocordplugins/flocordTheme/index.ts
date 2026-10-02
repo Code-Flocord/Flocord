@@ -19,6 +19,55 @@ const logger = new Logger("FlocordTheme");
 
 const HEX = /^#?([0-9a-f]{6})$/i;
 
+// The bundled default photo was made around a violet accent. Presets with a different accent
+// hue-rotate this same image on a canvas instead of needing a separate photo per color — works
+// only for the bundled data: URI (a user-supplied http(s) URL would taint the canvas on export).
+const DEFAULT_BACKGROUND_NATIVE_HUE = 258;
+const tintedBackgroundCache = new Map<number, string>();
+let tintingHue: number | null = null;
+
+function tintDefaultBackground(hueDeg: number) {
+    const bucket = Math.round(((hueDeg % 360) + 360) % 360 / 8) * 8;
+    if (bucket === 0 || tintedBackgroundCache.has(bucket) || tintingHue === bucket) return;
+
+    tintingHue = bucket;
+    const img = new Image();
+    img.onload = () => {
+        try {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) return;
+            ctx.filter = `hue-rotate(${bucket}deg) saturate(1.1)`;
+            ctx.drawImage(img, 0, 0);
+            tintedBackgroundCache.set(bucket, canvas.toDataURL("image/webp", 0.92));
+            apply();
+        } catch (err) {
+            logger.warn("Could not tint the default background, keeping the original hue", err);
+        } finally {
+            tintingHue = null;
+        }
+    };
+    img.onerror = () => { tintingHue = null; };
+    img.src = DEFAULT_BACKGROUND;
+}
+
+function backgroundImageFor(accent: Hsl): string {
+    const raw = settings.store.backgroundImage?.trim();
+    if (raw !== DEFAULT_BACKGROUND) return raw ?? "";
+
+    const hueDeg = accent.h - DEFAULT_BACKGROUND_NATIVE_HUE;
+    const bucket = Math.round(((hueDeg % 360) + 360) % 360 / 8) * 8;
+    if (bucket === 0) return DEFAULT_BACKGROUND;
+
+    const cached = tintedBackgroundCache.get(bucket);
+    if (cached) return cached;
+
+    tintDefaultBackground(hueDeg);
+    return DEFAULT_BACKGROUND;
+}
+
 const panelButtonClasses = findCssClassesLazy("redGlow", "button", "enabled");
 // Floating surfaces that become frosted panes: [class to style, ...other classes identifying the module].
 // Some of these modules (emoji picker, user popout) only load when first opened, so they are watched
@@ -229,7 +278,7 @@ function mulberry32(seed: number) {
     return () => {
         seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
         let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
 }
@@ -259,7 +308,7 @@ function glassOverrides(base: Hsl, accent: Hsl) {
     const secondary: Hsl = { h: (accent.h + 40) % 360, s: accent.s, l: accent.l };
     const tertiary: Hsl = { h: (accent.h + 300) % 360, s: accent.s, l: accent.l };
 
-    const image = settings.store.backgroundImage?.trim();
+    const image = backgroundImageFor(accent);
 
     const layers = [
         `radial-gradient(75% 60% at 5% 0%, ${hsla(accent, (image ? 0.4 : 0.6) * intensity)}, transparent 70%) fixed 0 0/cover`,
@@ -367,7 +416,7 @@ function mutedOverrides() {
 function homeIconOverrides(): string {
     // The Home button is identified by data-list-item-id="guildsnav___home" (a stable, non-localised id).
     // Inside it, the Discord logo is the svg[aria-hidden] — hide it and overlay Flocord's glowing planet.
-    const home = `[data-list-item-id="guildsnav___home"]`;
+    const home = "[data-list-item-id=\"guildsnav___home\"]";
     return `${home} svg[aria-hidden="true"] { visibility: hidden; }
 ${home} { position: relative; }
 ${home}::after {
