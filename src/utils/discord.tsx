@@ -18,7 +18,7 @@
 
 import type { MessageObject } from "@api/MessageEvents";
 import type { Channel, CloudUpload, Guild, GuildFeatures, MediaModalItem, MediaModalProps, Message, User } from "@vencord/discord-types";
-import { ChannelActionCreators, ChannelStore, ComponentDispatch, Constants, FluxDispatcher, GuildStore, i18n, InviteActions, MessageActions, openMediaModal, RestAPI, SelectedChannelStore, SelectedGuildStore, Toasts, UserProfileActions, UserProfileStore, UserSettingsActionCreators, UserUtils } from "@webpack/common";
+import { ChannelActionCreators, ChannelStore, ComponentDispatch, Constants, FluxDispatcher, GuildStore, i18n, InviteActions, MessageActions, openMediaModal, RestAPI, SelectedChannelStore, SelectedGuildStore, Toasts, UserProfileStore, UserSettingsActionCreators, UserUtils } from "@webpack/common";
 import { Except } from "type-fest";
 
 import { copyToClipboard } from "./clipboard";
@@ -182,7 +182,10 @@ export async function openUserProfile(id: string) {
     if (!user) throw new Error("No such user: " + id);
 
     const guildId = SelectedGuildStore.getGuildId();
-    UserProfileActions.openUserProfileModal({
+    // Discord opens its profile popout through this Flux action; the webpack lookup of the
+    // openUserProfileModal helper no longer finds anything in current builds.
+    FluxDispatcher.dispatch({
+        type: "USER_PROFILE_MODAL_OPEN",
         userId: id,
         guildId,
         channelId: SelectedChannelStore.getChannelId(),
