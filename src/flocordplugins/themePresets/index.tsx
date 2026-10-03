@@ -24,7 +24,7 @@ import { PRESETS, ThemePreset } from "./presets";
 const cl = classNameFactory("vc-theme-presets-");
 
 /** The FlocordTheme settings a preset carries */
-const KEYS = ["style", "background", "accent", "surfaceOpacity", "backdropIntensity", "accentTint", "roundness", "mutedColor"] as const;
+const KEYS = ["style", "background", "accent", "surfaceOpacity", "backdropIntensity", "accentTint", "roundness", "mutedColor", "fontFamily", "scanlines", "promptChannelIcons"] as const;
 type Key = typeof KEYS[number];
 
 const settings = definePluginSettings({

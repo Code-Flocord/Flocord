@@ -15,96 +15,120 @@ export interface ThemePreset {
     accentTint?: boolean;
     roundness?: number;
     mutedColor?: string;
+    fontFamily?: string;
+    scanlines?: boolean;
+    promptChannelIcons?: boolean;
 }
 
 export const PRESETS: ThemePreset[] = [
     {
         name: "Flocord",
-        description: "Deep space, starlight and a violet nebula — the default look",
+        description: "The default violet glass",
         style: "glass",
-        background: "#0a0a18",
+        background: "#14101c",
         accent: "#8b5cf6",
         surfaceOpacity: 0.55,
         backdropIntensity: 0.8,
         accentTint: true,
         roundness: 1.25,
-        mutedColor: "#6d28d9"
+        mutedColor: "#6d28d9",
+        fontFamily: "",
+        scanlines: false,
+        promptChannelIcons: false
     },
     {
-        name: "Nebula",
-        description: "Magenta glow over near-black, maximum contrast",
-        style: "glass",
-        background: "#170a1a",
-        accent: "#d946ef",
-        surfaceOpacity: 0.5,
-        backdropIntensity: 0.9,
-        accentTint: true,
-        roundness: 1.5,
-        mutedColor: "#a21caf"
-    },
-    {
-        name: "Aurora",
-        description: "Green-teal glow, like polar light over a dark sky",
-        style: "glass",
-        background: "#0a1614",
-        accent: "#34d399",
-        surfaceOpacity: 0.6,
-        backdropIntensity: 0.7,
-        accentTint: true,
-        roundness: 1.25,
-        mutedColor: "#059669"
-    },
-    {
-        name: "Eclipse",
+        name: "Midnight",
         description: "Deep blue, calm and low contrast",
         style: "glass",
-        background: "#0a0f1e",
+        background: "#0d1220",
         accent: "#3b82f6",
         surfaceOpacity: 0.6,
         backdropIntensity: 0.65,
         accentTint: true,
         roundness: 1.25,
-        mutedColor: "#1d4ed8"
+        mutedColor: "#1d4ed8",
+        fontFamily: "",
+        scanlines: false,
+        promptChannelIcons: false
     },
     {
-        name: "Supernova",
-        description: "Orange-red explosion on charcoal, high energy",
+        name: "Rosewood",
+        description: "Warm pink over near-black",
         style: "glass",
-        background: "#170d09",
+        background: "#1a0f16",
+        accent: "#ec4899",
+        surfaceOpacity: 0.55,
+        backdropIntensity: 0.85,
+        accentTint: true,
+        roundness: 1.5,
+        mutedColor: "#be185d",
+        fontFamily: "",
+        scanlines: false,
+        promptChannelIcons: false
+    },
+    {
+        name: "Matcha",
+        description: "Green accent, easy on the eyes",
+        style: "glass",
+        background: "#101a14",
+        accent: "#34d399",
+        surfaceOpacity: 0.6,
+        backdropIntensity: 0.7,
+        accentTint: true,
+        roundness: 1.25,
+        mutedColor: "#059669",
+        fontFamily: "",
+        scanlines: false,
+        promptChannelIcons: false
+    },
+    {
+        name: "Ember",
+        description: "Orange on charcoal, high energy",
+        style: "glass",
+        background: "#180f0a",
         accent: "#f97316",
         surfaceOpacity: 0.5,
-        backdropIntensity: 0.95,
+        backdropIntensity: 0.9,
         accentTint: true,
         roundness: 1.0,
-        mutedColor: "#c2410c"
+        mutedColor: "#c2410c",
+        fontFamily: "",
+        scanlines: false,
+        promptChannelIcons: false
     },
     {
-        name: "Pulsar",
-        description: "Cyan glow, sharp and electric",
+        name: "Graphite",
+        description: "Flat, no backdrop, neutral grey",
+        style: "flat",
+        background: "#16171a",
+        accent: "#a1a1aa",
+        surfaceOpacity: 0.7,
+        backdropIntensity: 0,
+        accentTint: false,
+        roundness: 0.75,
+        mutedColor: "#52525b",
+        fontFamily: "",
+        scanlines: false,
+        promptChannelIcons: false
+    },
+    {
+        name: "Vaporwave",
+        description: "Cyan and magenta, maximum glow",
         style: "glass",
-        background: "#0d1420",
+        background: "#150d20",
         accent: "#22d3ee",
         surfaceOpacity: 0.45,
         backdropIntensity: 1,
         accentTint: true,
         roundness: 1.5,
-        mutedColor: "#0e7490"
+        mutedColor: "#a21caf",
+        fontFamily: "",
+        scanlines: false,
+        promptChannelIcons: false
     },
     {
-        name: "Void",
-        description: "Flat, no backdrop, near-black and minimal",
-        style: "flat",
-        background: "#08080b",
-        accent: "#71717a",
-        surfaceOpacity: 0.75,
-        backdropIntensity: 0,
-        accentTint: false,
-        roundness: 0.75,
-        mutedColor: "#3f3f46"
-    },
-    {
-        name: "Moonlight",
-        description: "Soft pale violet-grey, flat and minimal tint",
+        name: "Paper",
+        description: "Soft dark grey, minimal tint",
         style: "flat",
         background: "#1c1b1f",
         accent: "#c4b5fd",
@@ -112,6 +136,24 @@ export const PRESETS: ThemePreset[] = [
         backdropIntensity: 0,
         accentTint: false,
         roundness: 1.0,
-        mutedColor: "#7c3aed"
+        mutedColor: "#7c3aed",
+        fontFamily: "",
+        scanlines: false,
+        promptChannelIcons: false
+    },
+    {
+        name: "Terminal",
+        description: "Indigo-cyan on near-black, monospace, flat and sharp — a serious CMD look",
+        style: "flat",
+        background: "#07080f",
+        accent: "#6366f1",
+        surfaceOpacity: 0.85,
+        backdropIntensity: 0,
+        accentTint: true,
+        roundness: 0.3,
+        mutedColor: "#991b1b",
+        fontFamily: "'Cascadia Code', 'Cascadia Mono', Consolas, 'Courier New', ui-monospace, monospace",
+        scanlines: true,
+        promptChannelIcons: true
     }
 ];
