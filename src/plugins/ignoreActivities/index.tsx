@@ -243,8 +243,11 @@ export default definePlugin({
             find: '"LocalActivityStore"',
             replacement: [
                 {
-                    match: /\.LISTENING.+?(?=!?\i\(\)\(\i,\i\))(?<=(\i)\.push.+?)/,
-                    replace: (m, activities) => `${m}${activities}=${activities}.filter($self.isActivityNotIgnored);`
+                    // Captures the trailing comma/colon instead of leaving it to the lookahead: inserting
+                    // the filter call blindly after whichever punctuation happens to be there broke when
+                    // it was a colon (object key context), not just a comma.
+                    match: /\.LISTENING.+?([,:])(?=!?\i\(\)\(\i,\i\))(?<=(\i)\.push.+?)/,
+                    replace: (m, commaOrSemiColon, activities) => `${m}${activities}=${activities}.filter($self.isActivityNotIgnored)${commaOrSemiColon}`
                 }
             ]
         },

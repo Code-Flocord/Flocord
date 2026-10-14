@@ -160,8 +160,14 @@ export default definePlugin({
         {
             find: 'tutorialId:"whos-online"',
             replacement: {
-                match: /\((function\(\i\)\{let\{id:.*?#{intl::CHANNEL_MEMBERS_A11Y_LABEL}.*?\}\))\}\);/,
-                replace: "($self.wrapRoleGroup($1}));",
+                // The role-group header renderer is now wrapped in React.memo (X.memo(function(e){...})),
+                // not a bare parenthesized function expression — keep the memo() wrapper, wrap only the
+                // function passed to it. The lazy .*? needs a disambiguating end anchor: the function body
+                // has several inner "}){" — "})" sequences (e.g. a ternary branch's own jsx(...) call)
+                // that look just like the real end, so without the trailing lookahead the capture stops
+                // short at the first one instead of the function's actual closing brace.
+                match: /(\i)\.memo\((function\(\i\)\{let\{id:.*?#{intl::CHANNEL_MEMBERS_A11Y_LABEL}.*?\})\)(?=,\i=)/,
+                replace: "$1.memo($self.wrapRoleGroup($2))",
             },
         },
     ],

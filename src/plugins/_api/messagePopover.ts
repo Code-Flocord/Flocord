@@ -25,9 +25,13 @@ export default definePlugin({
     authors: [Devs.KingFish, Devs.Ven, Devs.Nuckyz],
     patches: [
         {
-            find: "#{intl::MESSAGE_UTILITIES_A11Y_LABEL}",
+            // Narrowed find string, ported from Equicord: the plain label text now matches more than
+            // one spot in the bundle.
+            find: "#{intl::MESSAGE_UTILITIES_A11Y_LABEL}),children",
             replacement: {
-                match: /(?<=\]\}\)),(.{0,40}togglePopout:.+?\}\))\]\}\):null,(?<=\((\i),\{label:.+?:null,(\i)\?\(0,\i\.jsxs?\)\(\i\.Fragment.+?message:(\i).+?)/,
+                // (\i\.\i|\i), ported from Equicord: the captured button component reference is now
+                // sometimes a dotted member expression instead of a bare identifier.
+                match: /(?<=\]\}\)),(.{0,40}togglePopout:.+?\}\))\]\}\):null,(?<=\((\i\.\i|\i),\{label:.+?:null,(\i)\?\(0,\i\.jsxs?\)\(\i\.Fragment.+?message:(\i).+?)/,
                 replace: (_, ReactButton, ButtonComponent, showReactButton, message) => "" +
                     `]}):null,Flocord.Api.MessagePopover._buildPopoverElements(${ButtonComponent},${message}),${showReactButton}?${ReactButton}:null,`
             }

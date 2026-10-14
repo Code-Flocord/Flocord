@@ -124,7 +124,8 @@ export default definePlugin({
             predicate: () => settings.store.allCallTimers,
             replacement: [
                 {
-                    match: /user:(\i).*?\.EMBEDDED.{0,25};(?=return 0!==(\i)\.length)/,
+                    // Ported from Equicord: .EMBEDDED became .isEmbedded and the lookahead's shape changed.
+                    match: /user:(\i).*?\.isEmbedded.{0,200};(?=return\(\i&&null!=\i&&(\i)\.push\(\i\))/,
                     replace: "$&$2.push($self.renderTimer($1.id));",
                     predicate: () => !settings.store.showWithoutHover,
                 },
@@ -138,7 +139,9 @@ export default definePlugin({
         {
             find: '"RTCConnectionMenu"',
             replacement: {
-                match: /("RTCConnectionMenu".{0,200}?lineClamp:1,children:)(\i)(?=,|}\))/,
+                // The gap between "RTCConnectionMenu" and "lineClamp:1,children:" has grown past 200
+                // chars (around 267 as of Discord build 634304) as Discord added more props to this panel.
+                match: /("RTCConnectionMenu".{0,400}?lineClamp:1,children:)(\i)(?=,|}\))/,
                 replace: "$1[$2,$self.renderConnectionTimer({ channelId: this?.props?.channel?.id })]"
             }
         },

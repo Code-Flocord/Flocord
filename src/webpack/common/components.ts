@@ -28,6 +28,8 @@ import { LazyComponent } from "@utils/lazyReact";
 import * as t from "@vencord/discord-types";
 import { filters, find, findCssClassesLazy, mapMangledCssClasses, mapMangledModuleLazy, proxyLazyWebpack, waitFor } from "@webpack";
 
+import type { ComponentType } from "react";
+
 import { waitForComponent } from "./internal";
 
 export const Forms = {
@@ -68,6 +70,19 @@ export const TabBar = waitForComponent("TabBar", filters.componentByCode("ref:th
 // TODO: remake this component
 export const Clickable = waitForComponent<t.Clickable>("Clickable", filters.componentByCode("this.context?this.renderNonInteractive():"));
 export const Avatar = waitForComponent<t.Avatar>("Avatar", filters.componentByCode(".size-1.375*"));
+
+export interface RoleMemberPopoutProps {
+    popoutProps: t.PopoutProps;
+    guildId: string;
+    channelId: string;
+    roleId: string;
+}
+export type RoleMemberPopoutComponent = ComponentType<RoleMemberPopoutProps>;
+
+export let RoleMemberPopout: RoleMemberPopoutComponent = () => null;
+export function setRoleMemberPopout(component: RoleMemberPopoutComponent) {
+    RoleMemberPopout = component;
+}
 
 export let ColorPicker: t.ColorPicker = () => null;
 export function setColorPicker(component: t.ColorPicker) {

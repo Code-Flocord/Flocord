@@ -27,8 +27,9 @@ export default definePlugin({
     patches: [{
         find: "setDevtoolsCallbacks",
         replacement: {
-            match: /if\(null!=\i&&"0.0.0"===\i\.app\.getVersion\(\)\)/,
-            replace: "if(true)"
+            // Ported from Equicord: condition flipped (De Morgan) and no longer matches the live code.
+            match: /if\(null==\i\|\|"0\.0\.0"!==\i\.app\.getVersion\(\)\)/,
+            replace: "if(false)"
         }
     }]
 });

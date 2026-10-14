@@ -70,7 +70,8 @@ export default definePlugin({
             find: "\"data-selenium-video-tile\":",
             replacement: [
                 {
-                    match: /(?<=function\((\i),\i\)\{)(?=let.{20,40},style:)/,
+                    // Ported from Equicord: now a named one-arg function instead of an anonymous two-arg one.
+                    match: /(?<=function \i\((\i)\)\{)(?=let.{20,40},style:)/,
                     replace: "Object.assign($1.style=$1.style||{},$self.getVoiceBackgroundStyles($1));"
                 }
             ]

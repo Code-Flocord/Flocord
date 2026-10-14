@@ -59,7 +59,9 @@ export default definePlugin({
 
     patches: [
         {
-            find: "#{intl::MESSAGE_UTILITIES_A11Y_LABEL}",
+            // Narrowed find string, ported from Equicord: the plain label text now matches more than
+            // one spot in the bundle.
+            find: "#{intl::MESSAGE_UTILITIES_A11Y_LABEL}),children",
             replacement: {
                 match: /(?<=length>=3\?.{0,40})\.slice\(0,3\)/,
                 replace: ".slice(0,$self.reactionCount)"

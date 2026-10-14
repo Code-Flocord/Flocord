@@ -185,7 +185,9 @@ export default definePlugin({
             // Thread "spine" that shows in the left.
             find: "M0 15H2c0 1.6569",
             replacement: {
-                match: /mentionsCount:\i.+?null(?<=channel:(\i).+?)/,
+                // Ported from Equicord: the thread spine's structure changed entirely (was keyed off
+                // mentionsCount, now off a thread/countInVoice tuple).
+                match: /\(\i,\{thread:(\i),countInVoice:.{0,200}?\]\}\)(?=\])/,
                 replace: "$&,$self.TypingIndicator($1.id,$1.getGuildId())"
             }
         }

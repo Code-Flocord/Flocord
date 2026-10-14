@@ -10,13 +10,23 @@ import { FlocordDevs } from "@utils/constants";
 import { classNameToSelector, createAndAppendStyle } from "@utils/css";
 import { Logger } from "@utils/Logger";
 import definePlugin, { OptionType, StartAt } from "@utils/types";
-import { findCssClassesLazy, onceReady, waitFor } from "@webpack";
+import { filters, onceReady, waitFor } from "@webpack";
 
 const logger = new Logger("FlocordTheme");
 
 const HEX = /^#?([0-9a-f]{6})$/i;
 
-const panelButtonClasses = findCssClassesLazy("redGlow", "button", "enabled");
+// The module carrying these classes (mute/deafen panel buttons) is only loaded once the account panel
+// first renders — a one-shot findCssClassesLazy() at plugin start can run before that happens and then
+// permanently caches the empty-object failure (proxyLazy never retries once it gets a truthy, if empty,
+// result). waitFor re-applies once the real module actually shows up, whenever that is.
+let redGlowClass: string | null = null;
+function watchPanelButtonClasses() {
+    waitFor(filters.byClassNames("redGlow", "button", "enabled"), (module: any) => {
+        redGlowClass = module.redGlow;
+        apply();
+    });
+}
 // Floating surfaces that become frosted panes: [class to style, ...other classes identifying the module].
 // Some of these modules (emoji picker, user popout) only load when first opened, so they are watched
 // with waitFor and the style is re-applied as they appear.
@@ -302,8 +312,10 @@ function roundnessOverrides() {
 }
 
 function mutedOverrides() {
+    if (!redGlowClass) return "";
+
     // Active mute/deafen buttons carry the panel button module's "redGlow" class, whose background is the danger red
-    const selector = classNameToSelector(panelButtonClasses.redGlow);
+    const selector = classNameToSelector(redGlowClass);
     const color = `#${HEX.exec(settings.store.mutedColor)?.[1] ?? "6d28d9"}`;
     const { h, s, l } = hexToHsl(color);
     const hsl = `${h.toFixed(1)} ${s.toFixed(1)}% ${l.toFixed(1)}%`;
@@ -414,6 +426,7 @@ export default definePlugin({
         apply();
         onceReady.then(apply);
         watchFrostedSurfaces();
+        watchPanelButtonClasses();
     },
 
     stop() {

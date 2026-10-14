@@ -40,15 +40,13 @@ export class Data {
     onMessagePreSend(channelId, message, extra) {
         const target: Set<{ user: User; source?: Guild, extra: IUserExtra; }> = new Set();
         const now = Date.now();
-        const { replyOptions } = extra;
-
         const guild = (() => {
             const channel = ChannelStore.getChannel(channelId);
             return GuildStore.getGuild(channel.guild_id) || undefined;
         })();
 
-        if (replyOptions.messageReference) {
-            const { channel_id, message_id } = replyOptions.messageReference;
+        if (extra.messageReference) {
+            const { channel_id, message_id } = extra.messageReference;
             const message = MessageStore.getMessage(channel_id, message_id);
             if (!message) {
                 return;

@@ -29,7 +29,8 @@ function safeFindByProps<T = any>(...props: string[]): T | null {
     }
 
     try {
-        const mod = find((m: any) => m && typeof m === "object" && props.every(p => m[p] !== undefined));
+        // isIndirect: true — callers try several prop combinations in a row, so a miss here is expected
+        const mod = find((m: any) => m && typeof m === "object" && props.every(p => m[p] !== undefined), { isIndirect: true });
         if (mod) return mod as T;
     } catch {}
 
@@ -38,20 +39,22 @@ function safeFindByProps<T = any>(...props: string[]): T | null {
 }
 
 function resolveGatewayConnection() {
-    let mod = find((m: any) => m && typeof m === "object" && typeof m.updateVoiceState === "function");
+    // isIndirect: true on every attempt here — these are speculative fallbacks tried in order, so an
+    // earlier one failing is normal and not worth find()'s default "module not found" console error.
+    let mod = find((m: any) => m && typeof m === "object" && typeof m.updateVoiceState === "function", { isIndirect: true });
     if (mod) {
         gatewayMethodName = "updateVoiceState";
         return mod;
     }
 
-    mod = find((m: any) => m && typeof m === "object" && typeof m.voiceStateUpdate === "function");
+    mod = find((m: any) => m && typeof m === "object" && typeof m.voiceStateUpdate === "function", { isIndirect: true });
     if (mod) {
         gatewayMethodName = "voiceStateUpdate";
         return mod;
     }
 
     // Try finding via getSocket() if it exists
-    const getSocketMod = find((m: any) => m && typeof m === "object" && typeof m.getSocket === "function");
+    const getSocketMod = find((m: any) => m && typeof m === "object" && typeof m.getSocket === "function", { isIndirect: true });
     if (getSocketMod) {
         const socket = getSocketMod.getSocket();
         if (socket) {
