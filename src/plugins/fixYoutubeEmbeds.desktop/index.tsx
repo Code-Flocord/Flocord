@@ -29,6 +29,7 @@ export default definePlugin({
     description: "Bypasses youtube videos being blocked from display on Discord (for example by UMG)",
     tags: ["Media", "Utility"],
     authors: [Devs.coolelectronics, Devs.arHSM],
+    isModified: true,
     settings,
     patches: [
         {
@@ -42,11 +43,8 @@ export default definePlugin({
     ],
     ToggleableDescription: ErrorBoundary.wrap(({ embed, original }: ToggleableDescriptionProps) => {
         const [isOpen, setOpen] = useState(false);
-
-        if (!embed.rawDescription)
-            return null;
-        if (embed.rawDescription.length <= 20)
-            return original();
+        if (!embed.rawDescription) return null;
+        if (embed.rawDescription.length <= 20) return original();
 
         return (
             <div

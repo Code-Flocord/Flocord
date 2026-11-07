@@ -18,14 +18,11 @@
 
 import { definePluginSettings, migratePluginSetting, Settings } from "@api/Settings";
 import { containsBlockedKeywords } from "@flocordplugins/blockKeywords";
-import { Devs, FlocordDevs } from "@utils/constants";
+import { Devs, EquicordDevs } from "@utils/constants";
 import { Logger } from "@utils/Logger";
 import definePlugin, { OptionType } from "@utils/types";
 import { Message, User } from "@vencord/discord-types";
-import { findStoreLazy } from "@webpack";
-import { MessageStore, RelationshipStore } from "@webpack/common";
-
-const ReferencedMessageStore = findStoreLazy("ReferencedMessageStore");
+import { MessageStore, ReferencedMessageStore, RelationshipStore } from "@webpack/common";
 
 interface ChannelStreamDividerProps {
     type: "DIVIDER",
@@ -89,7 +86,7 @@ const settings = definePluginSettings({
 export default definePlugin({
     name: "NoBlockedMessages",
     description: "Hide all blocked/ignored messages from chat completely.",
-    authors: [Devs.rushii, Devs.Samu, Devs.jamesbt365, Devs.Elvyra, FlocordDevs.Etorix],
+    authors: [Devs.rushii, Devs.Samu, Devs.jamesbt365, Devs.Elvyra, EquicordDevs.Etorix],
     tags: ["Accessibility", "Chat"],
     isModified: true,
     settings,

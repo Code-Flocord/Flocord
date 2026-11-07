@@ -6,7 +6,7 @@
 
 import { definePluginSettings } from "@api/Settings";
 import ErrorBoundary from "@components/ErrorBoundary";
-import { Devs, FlocordDevs } from "@utils/constants";
+import { Devs, EquicordDevs } from "@utils/constants";
 import { useFixedTimer } from "@utils/react";
 import { formatDurationMs } from "@utils/text";
 import definePlugin, { OptionType } from "@utils/types";
@@ -30,7 +30,7 @@ export const settings = definePluginSettings({
                 label: "30d 23h 00m 42s",
                 value: "human"
             }
-        ]
+        ] as const
     },
     allCallTimers: {
         type: OptionType.BOOLEAN,
@@ -110,7 +110,7 @@ export default definePlugin({
     name: "CallTimer",
     description: "Add call timers for all users in voice channels and in the connection status.",
     tags: ["Voice", "Utility"],
-    authors: [Devs.Ven, FlocordDevs.MaxHerbold, Devs.D3SOX],
+    authors: [Devs.Ven, EquicordDevs.MaxHerbold, Devs.D3SOX],
     managedStyle: alignedChatInputFix,
     settings,
 
@@ -124,8 +124,7 @@ export default definePlugin({
             predicate: () => settings.store.allCallTimers,
             replacement: [
                 {
-                    // Ported from Equicord: .EMBEDDED became .isEmbedded and the lookahead's shape changed.
-                    match: /user:(\i).*?\.isEmbedded.{0,200};(?=return\(\i&&null!=\i&&(\i)\.push\(\i\))/,
+                    match: /user:(\i).*?\.isEmbedded;(?=return 0!==(\i)\.length)/,
                     replace: "$&$2.push($self.renderTimer($1.id));",
                     predicate: () => !settings.store.showWithoutHover,
                 },
@@ -139,9 +138,7 @@ export default definePlugin({
         {
             find: '"RTCConnectionMenu"',
             replacement: {
-                // The gap between "RTCConnectionMenu" and "lineClamp:1,children:" has grown past 200
-                // chars (around 267 as of Discord build 634304) as Discord added more props to this panel.
-                match: /("RTCConnectionMenu".{0,400}?lineClamp:1,children:)(\i)(?=,|}\))/,
+                match: /("RTCConnectionMenu".{0,300}?lineClamp:1,children:)(\i)(?=,|}\))/,
                 replace: "$1[$2,$self.renderConnectionTimer({ channelId: this?.props?.channel?.id })]"
             }
         },

@@ -29,8 +29,6 @@ export default definePlugin({
             ]
         },
         {
-            // Fixes the preview video element leaking: it never gets paused/detached, so CPU usage climbs
-            // continuously for as long as the screenshare runs.
             find: "ApplicationStreamPreviewUploadManager",
             replacement: {
                 match: /removeAttribute\("srcObject"\)(?<=(\i)\..+?)/,

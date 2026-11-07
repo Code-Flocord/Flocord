@@ -9,4 +9,5 @@ export { ApplicationCommandInputType, ApplicationCommandOptionType, ApplicationC
 
 export interface FlocordCommand extends Command {
     isFlocordCommand?: boolean;
+    rootCommand?: FlocordCommand;
 }

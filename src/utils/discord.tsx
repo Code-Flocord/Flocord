@@ -17,8 +17,8 @@
 */
 
 import type { MessageObject } from "@api/MessageEvents";
-import type { Channel, CloudUpload, Guild, GuildFeatures, MediaModalItem, MediaModalProps, Message, User } from "@vencord/discord-types";
-import { ChannelActionCreators, ChannelStore, ComponentDispatch, Constants, FluxDispatcher, GuildStore, i18n, InviteActions, MessageActions, openMediaModal, RestAPI, SelectedChannelStore, SelectedGuildStore, Toasts, UserProfileStore, UserSettingsActionCreators, UserUtils } from "@webpack/common";
+import type { Channel, CloudUpload, ConfirmModalProps, Guild, GuildFeatures, MediaModalItem, MediaModalProps, Message, User } from "@vencord/discord-types";
+import { ChannelActionCreators, ChannelStore, ComponentDispatch, ConfirmModal, Constants, FluxDispatcher, GuildStore, i18n, InviteActions, MessageActions, openMediaModal, openModal, RestAPI, SelectedChannelStore, SelectedGuildStore, Toasts, UserProfileStore, UserSettingsActionCreators, UserUtils } from "@webpack/common";
 import { Except } from "type-fest";
 
 import { copyToClipboard } from "./clipboard";
@@ -239,7 +239,7 @@ export function getUniqueUsername(user: User) {
 }
 
 // Discord has a similar function in their code
-export function getGuildAcronym(guild: Guild): string {
+export function getGuildAcronym(guild: { name: string; }): string {
     return guild.name
         .replaceAll("'s ", " ")
         .replace(/\w+/g, m => m[0])
@@ -248,4 +248,33 @@ export function getGuildAcronym(guild: Guild): string {
 
 export function hasGuildFeature(guild: Guild, feature: GuildFeatures): boolean {
     return guild.features?.has(feature) ?? false;
+}
+
+export type ConfirmOptions = Pick<ConfirmModalProps, "title" | "subtitle" | "confirmText" | "cancelText" | "variant" | "onConfirm" | "onCancel" | "onCloseCallback">;
+
+export async function confirmAction({ variant, confirmText, title, cancelText, subtitle, onConfirm, onCancel, onCloseCallback }: ConfirmOptions) {
+    return new Promise<boolean>((resolve, reject) => {
+        const wrap = (callback: Function | undefined, result: boolean) => async (...args: any[]): Promise<void> => {
+            try {
+                await callback?.(...args);
+                resolve(result);
+            } catch (error) {
+                reject(error);
+            }
+        };
+
+        openModal(modalProps => (
+            <ConfirmModal
+                {...modalProps}
+                variant={variant}
+                confirmText={confirmText}
+                cancelText={cancelText}
+                title={title}
+                subtitle={subtitle}
+                onConfirm={wrap(onConfirm, true)}
+                onCancel={wrap(onCancel, false)}
+                onCloseCallback={wrap(onCloseCallback, false)}
+            />
+        ));
+    });
 }

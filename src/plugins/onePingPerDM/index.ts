@@ -57,11 +57,11 @@ export default definePlugin({
             find: '"NotificationStore"',
             replacement: [
                 {
-                    match: /(\i\.\i\.getDesktopType\(\)===\i\.\i\.NEVER)\)(?=.*?(\i\.\i\.playNotificationSound\(.{0,5}\)))/,
-                    replace: "$&if(!$self.isPrivateChannelRead(arguments[0]?.message))return;else if($self.playSound())return $2;else "
+                    match: /\i\.\i\.getDesktopType\(\)===\i\.\i\.NEVER\)(?=.*?(\i\.\i\.playNotificationSound\(.{0,5}\)))/,
+                    replace: "$&if(!$self.isPrivateChannelRead(arguments[0]?.message))return;else if($self.playSound())return $1;else "
                 },
                 {
-                    match: /sound:(\i\?(\i):void 0,volume:\i,onClick)/,
+                    match: /sound:(\i\?\i:void 0,volume:)/,
                     replace: "sound:!$self.isPrivateChannelRead(arguments[0]?.message)?undefined:$self.playSound()?$2:$1"
                 }
             ]

@@ -6,7 +6,7 @@
 
 import { findGroupChildrenByChildId, NavContextMenuPatchCallback } from "@api/ContextMenu";
 import { migratePluginSettings } from "@api/Settings";
-import { Devs, FlocordDevs } from "@utils/constants";
+import { Devs, EquicordDevs } from "@utils/constants";
 import { classNameFactory } from "@utils/css";
 import { sendMessage } from "@utils/discord";
 import { useForceUpdater } from "@utils/react";
@@ -88,7 +88,12 @@ function repeatMessage(msg: Message) {
         });
 }
 
-function RepeatMenuItem({ msg }: { msg: Message; }) {
+const messageCtxPatch: NavContextMenuPatchCallback = (children, { msg }: { msg: Message; }) => {
+    if (!msg) return null;
+
+    const group = findGroupChildrenByChildId("copy-text", children);
+    if (!group) return;
+
     const forceUpdate = useForceUpdater();
 
     useEffect(() => {
@@ -105,28 +110,14 @@ function RepeatMenuItem({ msg }: { msg: Message; }) {
         };
     }, []);
 
-    return (
+    group.splice(group.findIndex(c => c?.props?.id === "reply") + 1, 0, (
         <Menu.MenuItem
             id="vc-repeat"
             label={shift ? "Repeat and Reply" : "Repeat"}
             icon={RepeatMessageIcon}
+            leadingAccessory={{ type: "icon", icon: RepeatMessageIcon }}
             action={async () => repeatMessage(msg)}
         />
-    );
-}
-
-const messageCtxPatch: NavContextMenuPatchCallback = (children, { msg }: { msg: Message; }) => {
-    if (!msg) return null;
-
-    const group = findGroupChildrenByChildId("copy-text", children);
-    if (!group) return;
-
-    // Les hooks vivent dans RepeatMenuItem, pas ici : ce callback est rappelé à chaque ouverture du menu
-    // avec des props qui varient (msg/group selon le message cliqué), donc des hooks appelés directement ici
-    // seraient conditionnels d'un clic droit à l'autre sur le même composant de menu réutilisé par Discord —
-    // ordre de hooks incohérent, crash React et boucle de rendu au clic droit sur n'importe quel message.
-    group.splice(group.findIndex(c => c?.props?.id === "reply") + 1, 0, (
-        <RepeatMenuItem key="vc-repeat" msg={msg} />
     ));
 };
 
@@ -144,7 +135,7 @@ export default definePlugin({
     description: "Allows you to repeat messages quickly. If you hold shift while clicking the Repeat option, it will reply to the message.",
     dependencies: ["MessagePopoverAPI"],
     tags: ["Chat"],
-    authors: [FlocordDevs.Tolgchu, Devs.thororen],
+    authors: [EquicordDevs.Tolgchu, Devs.thororen],
     contextMenus: {
         "message": messageCtxPatch
     },

@@ -31,13 +31,13 @@ export default definePlugin({
     authors: [Devs.Megu],
     start() {
         SettingsPlugin.customEntries.push({
-            key: "flocord_startup_timings",
+            key: "vencord_startup_timings",
             title: "Startup Timings",
             Component: StartupTimingPage,
             Icon: ClockIcon
         });
     },
     stop() {
-        removeFromArray(SettingsPlugin.customEntries, e => e.key === "flocord_startup_timings");
+        removeFromArray(SettingsPlugin.customEntries, e => e.key === "vencord_startup_timings");
     },
 });

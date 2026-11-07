@@ -19,11 +19,11 @@
 import "./styles.css";
 
 import { definePluginSettings, migratePluginSettings } from "@api/Settings";
-import { BaseText } from "@components/BaseText";
 import ErrorBoundary from "@components/ErrorBoundary";
 import { Flex } from "@components/Flex";
+import { Paragraph } from "@components/Paragraph";
 import { TooltipContainer } from "@components/TooltipContainer";
-import { Devs, FlocordDevs } from "@utils/constants";
+import { Devs, EquicordDevs } from "@utils/constants";
 import { classNameFactory } from "@utils/css";
 import definePlugin, { OptionType } from "@utils/types";
 import { User } from "@vencord/discord-types";
@@ -54,7 +54,7 @@ const settings = definePluginSettings({
 migratePluginSettings("SortFriends", "SortFriendRequests");
 export default definePlugin({
     name: "SortFriends",
-    authors: [Devs.Megu, FlocordDevs.CallMeGii],
+    authors: [Devs.Megu, EquicordDevs.CallMeGii],
     description: "Sorts friend requests by date of receipt",
     tags: ["Friends", "Organisation"],
     isModified: true,
@@ -137,7 +137,7 @@ export default definePlugin({
             {children}
             {!isNaN(since.getTime()) && (
                 <TooltipContainer text={DateUtils.dateFormat(since, "LLLL")} tooltipClassName={cl("tooltip")}>
-                    <BaseText size="xs" className={cl("date")}>{formatter.format(since)}</BaseText>
+                    <Paragraph size="xs" className={cl("date")}>{formatter.format(since)}</Paragraph>
                 </TooltipContainer>
             )}
         </div>;

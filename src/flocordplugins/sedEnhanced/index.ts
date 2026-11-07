@@ -5,7 +5,7 @@
  */
 
 import { definePluginSettings } from "@api/Settings";
-import { FlocordDevs } from "@utils/constants";
+import { EquicordDevs } from "@utils/constants";
 import definePlugin, { OptionType } from "@utils/types";
 import { MessageActions, MessageStore, PendingReplyStore, UserStore } from "@webpack/common";
 
@@ -21,7 +21,8 @@ const settings = definePluginSettings({
 export default definePlugin({
     name: "SedEnhanced",
     description: "Expands on Discord's rudimentary `sed` support.",
-    authors: [FlocordDevs.dawn, FlocordDevs.Willow, FlocordDevs.kat],
+    authors: [EquicordDevs.dawn, EquicordDevs.Willow, EquicordDevs.kat],
+    tags: ["Chat"],
     patches: [
         {
             find: ".SLASH_COMMAND_USED,{",

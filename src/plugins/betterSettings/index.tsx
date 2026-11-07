@@ -16,7 +16,7 @@ import definePlugin, { OptionType } from "@utils/types";
 import { Icon } from "@vencord/discord-types";
 import { findCssClassesLazy } from "@webpack";
 import { ComponentDispatch, FocusLock, Menu, useEffect, useRef } from "@webpack/common";
-import type { HTMLAttributes, ReactNode } from "react";
+import type { HTMLAttributes, ReactElement, ReactNode } from "react";
 
 import fullHeightStyle from "./fullHeightContext.css?managed";
 
@@ -29,7 +29,7 @@ const SECTION_ICONS: Record<string, Icon> = {
     flocord_section: FlocordIcon,
     billing_section: CreditCardIcon,
     app_section: AppsIcon,
-    activity_section: GameControllerIcon,
+    games_and_apps_section: GameControllerIcon,
     developer_section: HammerAndChiselIcon,
     utility_section: MainSettingsIcon,
     playgrounds: AchievementsIcon,
@@ -110,8 +110,8 @@ export default definePlugin({
             find: "this.renderArtisanalHack()",
             replacement: [
                 {
-                    match: /class (\i)(?= extends \i\.PureComponent.+?static contextType=.+?jsx\)\(\1,\{mode:)/,
-                    replace: "var $1=$self.Layer;class FlocordPatchedOldFadeLayer",
+                    match: /class (\i)( extends \i\.PureComponent.+?jsx\)\(\1,\{mode:)/,
+                    replace: "var $1=$self.Layer;class FlocordPatchedOldFadeLayer$2",
                     predicate: () => settings.store.disableFade
                 },
                 { // Lazy-load contents
@@ -150,11 +150,19 @@ export default definePlugin({
             predicate: () => settings.store.disableFade
         },
         { // Disable initial and exit delay for settings menu
-            find: "headerId:void 0,headerIdIsManaged:!1",
-            replacement: {
-                match: /let (\i)=300/,
-                replace: "let $1=0"
-            },
+            find: '||"replace"===',
+            replacement: [
+                {
+                    // FIXME: Stable compat: everything, keep only 300(?=\*!\i)
+                    match: /(?:(?<=\?0:\i\.\i))|(?:300(?=\*!\i))/g,
+                    replace: "0"
+                },
+                {
+                    // FIXME: Stable compat: \i\.\i|300, keep only 300
+                    match: /(?<=setTimeout\(\(\)=>\i\(\),)\i\.\i|300(?=\))/,
+                    replace: "0"
+                }
+            ],
             predicate: () => settings.store.disableFade
         },
         { // Load menu TOC eagerly
@@ -192,7 +200,7 @@ export default definePlugin({
         return <Layer {...props} />;
     },
 
-    transformSettingsEntries(list) {
+    transformSettingsEntries(list: ReactElement<any>[]): ReactNode[] {
         const items: ReactNode[] = [];
         const SECTION_NAMES: Record<string, string> = {
             user_section: getIntlMessage("USER_SETTINGS"),

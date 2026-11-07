@@ -10,12 +10,12 @@ import { showNotification } from "@api/Notifications";
 import { definePluginSettings } from "@api/Settings";
 import ErrorBoundary from "@components/ErrorBoundary";
 import { copyToClipboard } from "@utils/clipboard";
-import { FlocordDevs } from "@utils/constants";
+import { EquicordDevs } from "@utils/constants";
 import { showItemInFolder } from "@utils/native";
 import definePlugin, { OptionType } from "@utils/types";
 import { saveFile } from "@utils/web";
 import { Message } from "@vencord/discord-types";
-import { Menu, Toasts } from "@webpack/common";
+import { Menu, showToast } from "@webpack/common";
 
 import { ContactsList } from "./types";
 
@@ -94,6 +94,14 @@ async function exportMessage(message: Message) {
     }
 }
 
+function Icon() {
+    return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+        </svg>
+    );
+}
+
 const messageContextMenuPatch = (children: Array<React.ReactElement<any> | null>, props: { message: Message; }) => {
     const { message } = props;
 
@@ -103,11 +111,8 @@ const messageContextMenuPatch = (children: Array<React.ReactElement<any> | null>
         <Menu.MenuItem
             id="export-message"
             label="Export Message"
-            icon={() => (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
-                </svg>
-            )}
+            icon={Icon}
+            leadingAccessory={{ type: "icon", icon: Icon }}
             action={() => exportMessage(message)}
         />
     );
@@ -130,7 +135,7 @@ export default definePlugin({
     name: "ExportMessages",
     description: "Allows you to export any message to a file",
     tags: ["Chat", "Utility"],
-    authors: [FlocordDevs.veygax, FlocordDevs.dat_insanity],
+    authors: [EquicordDevs.veygax, EquicordDevs.dat_insanity],
     settings,
     contextMenus: {
         "message": messageContextMenuPatch
@@ -138,6 +143,7 @@ export default definePlugin({
     patches: [
         {
             find: "fetchRelationships(){",
+            predicate: () => settings.store.exportContacts,
             replacement: {
                 match: /(\.then\(\i)=>(\i\.\i\.dispatch\({type:"LOAD_RELATIONSHIPS_SUCCESS",relationships:(\i\.body)}\))/,
                 replace: "$1=>{$2; $self.getContacts($3)}"
@@ -145,9 +151,11 @@ export default definePlugin({
         },
         {
             find: ".getLastFocusableElement()}",
+            predicate: () => settings.store.exportContacts,
             replacement: {
                 match: /("aria-label":(\i).{0,25}children:null!=\i)\?(this\.renderChildren\(\i\)):null/,
-                replace: '$1?($2==="Friends"?[...$3,$self.addExportButton()]:$3):null'
+                replace:
+                    '$1?($2==="Friends"?[...$3,$self.addExportButton()]:$3):null'
             }
         }
     ],
@@ -167,28 +175,22 @@ export default definePlugin({
     copyContactToClipboard() {
         if (this.contactList) {
             copyToClipboard(JSON.stringify(this.contactList));
-            Toasts.show({
-                message: "Contacts copied to clipboard successfully.",
-                type: Toasts.Type.SUCCESS,
-                id: Toasts.genId(),
-                options: {
-                    duration: 3000,
-                    position: Toasts.Position.BOTTOM
-                }
+            showToast({
+                text: "Contacts copied to clipboard successfully.",
+                variant: "success",
+                duration: 3000,
+                position: "bottom"
             });
             return;
         }
         // reason why you need to click the all tab is because the data is extracted during
         // the request itself when you fetch all your friends. this is done to avoid sending a
         // manual request to discord, which may raise suspicion and might even get you terminated.
-        Toasts.show({
-            message: "Contact list is undefined. Click on the \"All\" tab before exporting.",
-            type: Toasts.Type.FAILURE,
-            id: Toasts.genId(),
-            options: {
-                duration: 3000,
-                position: Toasts.Position.BOTTOM
-            }
+        showToast({
+            text: "Contact list is undefined. Click on the \"All\" tab before exporting.",
+            variant: "critical",
+            duration: 3000,
+            position: "bottom"
         });
     }
 });

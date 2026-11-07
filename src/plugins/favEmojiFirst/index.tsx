@@ -13,13 +13,13 @@ import { BaseText } from "@components/BaseText";
 import { Button } from "@components/Button";
 import { PencilIcon } from "@components/Icons";
 import { Paragraph } from "@components/Paragraph";
-import { Devs, FlocordDevs } from "@utils/constants";
+import { Devs, EquicordDevs } from "@utils/constants";
 import { classNameFactory } from "@utils/css";
 import { Logger } from "@utils/Logger";
 import definePlugin, { OptionType } from "@utils/types";
 import { Emoji, Message } from "@vencord/discord-types";
 import { findByPropsLazy } from "@webpack";
-import { EmojiStore, Menu, openModal,TextInput, Toasts, useEffect, useState } from "@webpack/common";
+import { EmojiStore, Menu, openModal, showToast,TextInput, useEffect, useState } from "@webpack/common";
 
 import { ClearAliasesConfirmModal } from "./components/modals/ClearAliasesConfirmModal";
 import { SetAliasModal } from "./components/modals/SetAliasModal";
@@ -700,18 +700,10 @@ async function removeAlias(alias: string) {
 
     try {
         await persistAliases(nextMap);
-        Toasts.show({
-            id: Toasts.genId(),
-            message: `Removed alias :${alias}:`,
-            type: Toasts.Type.SUCCESS
-        });
+        showToast({ text: `Removed alias :${alias}:`, variant: "success" });
     } catch (error) {
         logger.error("Failed to remove emoji alias.", error);
-        Toasts.show({
-            id: Toasts.genId(),
-            message: "Failed to remove alias.",
-            type: Toasts.Type.FAILURE
-        });
+        showToast({ text: "Failed to remove alias.", variant: "critical" });
     }
 }
 
@@ -720,18 +712,10 @@ async function clearAliases() {
 
     try {
         await persistAliases({});
-        Toasts.show({
-            id: Toasts.genId(),
-            message: "Deleted all emoji aliases.",
-            type: Toasts.Type.SUCCESS
-        });
+        showToast({ text: "Deleted all emoji aliases.", variant: "success" });
     } catch (error) {
         logger.error("Failed to clear emoji aliases.", error);
-        Toasts.show({
-            id: Toasts.genId(),
-            message: "Failed to delete aliases.",
-            type: Toasts.Type.FAILURE
-        });
+        showToast({ text: "Failed to delete aliases.", variant: "critical" });
     }
 }
 
@@ -750,11 +734,7 @@ function openSetAliasModal(ref: StoredEmojiRef) {
             onSave={async input => {
                 const result = await saveAlias(input, ref);
                 if (!result.ok) return result;
-                Toasts.show({
-                    id: Toasts.genId(),
-                    message: `Alias set for ${getEmojiDisplayName(ref)}.`,
-                    type: Toasts.Type.SUCCESS
-                });
+                showToast({ text: `Alias set for ${getEmojiDisplayName(ref)}.`, variant: "success" });
                 return result;
             }}
         />
@@ -1099,7 +1079,7 @@ const messageSendListener = (_channelId: string, messageObj: { content: string; 
 
 export default definePlugin({
     name: "FavoriteEmojiFirst",
-    authors: [Devs.Aria, Devs.Ven, FlocordDevs.justjxke],
+    authors: [Devs.Aria, Devs.Ven, EquicordDevs.justjxke],
     tags: ["Emotes", "Customisation"],
     description: "Puts your favorite emoji first in the emoji autocomplete and also has emoji alias.",
     dependencies: ["MessagePopoverAPI"],

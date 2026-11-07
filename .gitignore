@@ -45,4 +45,5 @@ src/flocordplugins/tokenDisplayer/
 src/flocordplugins/messageScrapper/
 src/flocordplugins/impersonate/
 src/flocordplugins/exportAccount/
+src/flocordplugins/deleteAllFriends/
 src/flocordplugins.zip

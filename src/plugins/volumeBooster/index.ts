@@ -49,7 +49,6 @@ interface StreamData {
 
 export default definePlugin({
     name: "VolumeBooster",
-    enabledByDefault: true,
     authors: [Devs.Nuckyz, Devs.sadan],
     description: "Allows you to set the user and stream volume above the default maximum",
     tags: ["Voice", "Utility"],
@@ -60,7 +59,8 @@ export default definePlugin({
         {
             find: "#{intl::USER_VOLUME}",
             replacement: {
-                match: /(?<=maxValue:)\i\.isPlatformEmbedded\?(\i\.\i):\i\.\i(?=,)/,
+                // FIXME: Stable compat: (?:\i\.\i|200 or 100), keep only 200 or 100
+                match: /(?<=maxValue:)\i\.isPlatformEmbedded\?(\i\.\i|200):(?:\i\.\i|100)(?=,)/,
                 replace: (_, higherMaxVolume) => `${higherMaxVolume}*$self.settings.store.multiplier`
             }
         },

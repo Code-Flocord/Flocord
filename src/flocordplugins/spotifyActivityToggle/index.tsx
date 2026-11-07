@@ -49,6 +49,7 @@ function SpotifyActivityToggleButton({ iconForeground, hideTooltips, nameplate }
     }, []);
 
     if (!isLoaded || !spotifyId || location !== "PANEL" && isPluginEnabled(flocordToolbox.name)) return null;
+    const connectionId = spotifyId;
 
     return (
         <UserAreaButton
@@ -63,7 +64,7 @@ function SpotifyActivityToggleButton({ iconForeground, hideTooltips, nameplate }
                 forceUpdate?.();
 
                 await RestAPI.patch({
-                    url: Constants.Endpoints.CONNECTION("spotify", spotifyId),
+                    url: Constants.Endpoints.CONNECTION("spotify", connectionId),
                     body: { show_activity: showActivity },
                 });
             }}
@@ -102,6 +103,7 @@ export default definePlugin({
         const { location } = settings.use(["location"]);
 
         if (!spotifyId || location !== "TOOLBOX") return null;
+        const connectionId = spotifyId;
 
         return (
             <Menu.MenuItem
@@ -111,7 +113,7 @@ export default definePlugin({
                     showActivity = !showActivity;
 
                     await RestAPI.patch({
-                        url: Constants.Endpoints.CONNECTION("spotify", spotifyId),
+                        url: Constants.Endpoints.CONNECTION("spotify", connectionId),
                         body: { show_activity: showActivity },
                     });
                 }}

@@ -5,7 +5,7 @@
  */
 
 import { definePluginSettings } from "@api/Settings";
-import { FlocordDevs } from "@utils/constants";
+import { EquicordDevs } from "@utils/constants";
 import definePlugin, { OptionType } from "@utils/types";
 import { FluxDispatcher } from "@webpack/common";
 
@@ -56,7 +56,8 @@ function interceptor(event: any) {
 export default definePlugin({
     name: "SilenceUsers",
     description: "Silences @mention pings and server badge counts from specific users. Regular messages and DMs are untouched.",
-    authors: [FlocordDevs.dka],
+    authors: [EquicordDevs.dka],
+    tags: ["Notifications"],
     settings,
     start() {
         FluxDispatcher.addInterceptor(interceptor);

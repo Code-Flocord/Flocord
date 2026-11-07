@@ -37,15 +37,28 @@ export const CspPolicies: PolicyMap = {
     "jsdelivr.net": ImageAndCssSrc, // jsDelivr, used by very few themes
 
     "fonts.googleapis.com": CssSrc, // Google Fonts, used by many themes
+    "fonts.gstatic.com": ["font-src"], // Google Fonts font files
 
     "i.imgur.com": ImageSrc, // Imgur, used by some themes
     "i.ibb.co": ImageSrc, // ImgBB, used by some themes
     "i.pinimg.com": ImageSrc, // Pinterest, used by some themes
     "*.tenor.com": ImageSrc, // Tenor, used by some themes
+    "tenor.com": ["img-src", "media-src"],
+    "media.tenor.com": ["img-src", "media-src"],
+    "i.giphy.com": ["img-src"],
+    "media.giphy.com": ["img-src", "media-src"],
+    "media0.giphy.com": ["img-src", "media-src"],
+    "media1.giphy.com": ["img-src", "media-src"],
+    "media2.giphy.com": ["img-src", "media-src"],
+    "media3.giphy.com": ["img-src", "media-src"],
+    "media4.giphy.com": ["img-src", "media-src"],
+    "static.klipy.com": ["img-src", "media-src"],
     "files.catbox.moe": ImageAndCssSrc, // Catbox, used by some themes
 
     "cdn.discordapp.com": ImageAndCssSrc, // Discord CDN, used by Flocord and some themes to load media
     "media.discordapp.net": ImageSrc, // Discord media CDN, possible alternative to Discord CDN
+    "images-ext-1.discordapp.net": ["img-src"],
+    "images-ext-2.discordapp.net": ["img-src"],
 
     // CDNs used for some things by Flocord.
     // FIXME: we really should not be using CDNs anymore
@@ -54,6 +67,13 @@ export const CspPolicies: PolicyMap = {
 
     // Function Specific
     "api.github.com": ConnectSrc, // used for updating Flocord itself
+    "api.thecatapi.com": ConnectSrc, // cat command in moreCommands
+    "api.thedogapi.com": ConnectSrc, // dog command in moreCommands
+    "nekos.best": ConnectSrc, // neko command in moreCommands
+    "www.reddit.com": ConnectSrc, // subreddit command in moreCommands
+    "openrouter.ai": ConnectSrc, // ChatGPT plugin API endpoint
+    "cors.keiran0.workers.dev": ConnectSrc, // CORS proxy used by betterAudioPlayer
+    "i.scdn.co": ["img-src"], // Spotify activity artwork
     "ws.audioscrobbler.com": ConnectSrc, // Last.fm API
     "translate-pa.googleapis.com": ConnectSrc, // Google Translate API
     "decor.fieryflames.dev": ConnectSrc, // Decor API

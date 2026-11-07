@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-export class ChangeList<T>{
+export class ChangeList<T> implements Iterable<T> {
     private set = new Set<T>();
 
     public get changeCount() {
@@ -44,7 +44,11 @@ export class ChangeList<T>{
         return this.set.values();
     }
 
-    public map<R>(mapper: (v: T, idx: number, arr: T[]) => R): R[] {
-        return [...this.getChanges()].map(mapper);
+    public map<U>(callback: (item: T, index: number, values: T[]) => U) {
+        return Array.from(this.set).map(callback);
+    }
+
+    public [Symbol.iterator]() {
+        return this.getChanges();
     }
 }

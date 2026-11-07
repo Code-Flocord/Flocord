@@ -18,6 +18,7 @@
 
 import type * as t from "@vencord/discord-types";
 import { _resolveReady, filters, findByCodeLazy, findByPropsLazy, findLazy, mapMangledModuleLazy, waitFor } from "@webpack";
+import { React } from "./react";
 import type * as TSPattern from "ts-pattern";
 
 export let FluxDispatcher: t.FluxDispatcher;
@@ -138,8 +139,25 @@ export const Toasts = {
 /**
  * Show a simple toast. If you need more options, use Toasts.show manually
  */
-export function showToast(message: string, type = ToastType.MESSAGE, options?: ToastOptions) {
-    Toasts.show(Toasts.create(message, type, options));
+export function showToast(data: t.ToastData): void;
+export function showToast(message: string, type?: string, options?: ToastOptions): void;
+export function showToast(message: string | t.ToastData, type = ToastType.MESSAGE, options?: ToastOptions) {
+    if (typeof message === "string") {
+        Toasts.show(Toasts.create(message, type, options));
+        return;
+    }
+
+    const toastType = message.variant === "success"
+        ? ToastType.SUCCESS
+        : message.variant === "critical"
+            ? ToastType.FAILURE
+            : ToastType.MESSAGE;
+
+    Toasts.show(Toasts.create(message.text, toastType, {
+        ...(message.position && { position: message.position === "bottom" ? ToastPosition.BOTTOM : ToastPosition.TOP }),
+        ...(message.duration !== undefined && { duration: message.duration }),
+        ...(message.icon && { component: React.createElement(message.icon as any, { color: message.iconColor }) })
+    }));
 }
 
 export const UserUtils = {

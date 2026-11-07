@@ -5,7 +5,7 @@
  */
 
 import { findGroupChildrenByChildId, NavContextMenuPatchCallback } from "@api/ContextMenu";
-import { Devs, FlocordDevs } from "@utils/constants";
+import { Devs, EquicordDevs } from "@utils/constants";
 import definePlugin from "@utils/types";
 import type { Guild } from "@vencord/discord-types";
 import { EmojiStore, Menu, StickersStore } from "@webpack/common";
@@ -83,11 +83,13 @@ async function zipGuildAssets(guild: Guild, type: "emojis" | "stickers") {
         .then(results => {
             const zipped = zipSync(Object.fromEntries(results.map(({ file, filename }) => [filename, file])));
             const blob = new Blob([new Uint8Array(zipped)], { type: "application/zip" });
+            const objectUrl = URL.createObjectURL(blob);
             const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
+            link.href = objectUrl;
             link.download = `${guild.name}-${type}.zip`;
             link.click();
             link.remove();
+            setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
         })
         .catch(console.error);
 }
@@ -96,7 +98,7 @@ export default definePlugin({
     name: "GuildPickerDumper",
     description: "Context menu to dump and download a server's emojis and stickers.",
     tags: ["Emotes", "Servers", "Utility"],
-    authors: [FlocordDevs.Cortex, Devs.Samwich, FlocordDevs.Synth, Devs.thororen],
+    authors: [EquicordDevs.Cortex, Devs.Samwich, EquicordDevs.Synth, Devs.thororen],
     contextMenus: {
         "guild-context": Patch,
         "guild-header-popout": Patch

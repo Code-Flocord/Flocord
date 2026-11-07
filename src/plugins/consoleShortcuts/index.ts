@@ -154,7 +154,7 @@ function makeShortcuts() {
 
                     if (s.parentElement?.tagName === "HEAD")
                         doc.head.append(n);
-                    else if (n.id?.startsWith("flocord-") || n.id?.startsWith("vcd-"))
+                    else if (n.id?.startsWith("vencord-") || n.id?.startsWith("vcd-"))
                         doc.documentElement.append(n);
                     else
                         doc.body.append(n);

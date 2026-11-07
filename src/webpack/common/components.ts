@@ -58,6 +58,11 @@ export const Tooltip = waitForComponent<t.Tooltip>("Tooltip", m => m.prototype?.
 /** @deprecated import from @components/TooltipContainer */
 export const TooltipContainer = TooltipContainerComponent as never;
 
+export let NewCustomizationSection: t.ComponentSection = () => null;
+export function setNewCustomizationSection(component: t.ComponentSection) {
+    NewCustomizationSection = component;
+}
+
 // FIXME: t.TextInput was for the old void components, and is not 100% correct for the mana component
 export const TextInput = waitForComponent<t.TextInput>("TextInput", filters.componentByCode('setHasValue?.(""!==', '="text",'));
 export const TextArea = waitForComponent<t.TextArea>("TextArea", filters.componentByCode("!0,rows:", "showRemainingCharacterCount:"));

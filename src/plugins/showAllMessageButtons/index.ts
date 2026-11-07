@@ -37,8 +37,6 @@ export default definePlugin({
 
     patches: [
         {
-            // Narrowed find string, ported from Equicord: the plain label text now matches more than
-            // one spot in the bundle.
             find: "#{intl::MESSAGE_UTILITIES_A11Y_LABEL}),children",
             replacement: [
                 {

@@ -5,13 +5,13 @@
  */
 
 import { AudioPlayerInternal, AudioPlayerOptions, audioProcessorFunctions, AudioType, identifyAudioType, playAudio } from "@api/AudioPlayer";
-import { FlocordDevs } from "@utils/constants";
+import { EquicordDevs } from "@utils/constants";
 import definePlugin from "@utils/types";
 
 export default definePlugin({
     name: "AudioPlayerAPI",
     description: "API to play internal Discord audio files or external audio links.",
-    authors: [FlocordDevs.Etorix],
+    authors: [EquicordDevs.Etorix],
     AudioType,
     playAudio,
 
@@ -24,10 +24,7 @@ export default definePlugin({
                     // Uses the audio as-is if external, otherwise checks for an internal Discord sound.
                     // Also force loads the internal sounds module to account for the second patch group below,
                     // as well as accounting for not calling the module in this patch when this.type is not DISCORD.
-                    // The gap between the class opening and `new Audio;` grows as Discord adds methods to
-                    // this class (setPlaybackRate, playWithListener, trackNotificationFailure...); it's
-                    // around 1080 chars as of Discord build 634304, so 1000 was no longer enough.
-                    match: /(let \i=class.{0,2000}?new Audio;\i.src=)((\i\(\d+\))(?:\(`\.\/\$\{|.{0,50}concat\())this.name(\}\.mp3`\))/,
+                    match: /(let \i=class.{0,1250}?new Audio;\i.src=)((\i\(\d+\))\(`\.\/\$\{)this.name(\}\.mp3`\))/,
                     replace: "$3;$1this.type!==$self.AudioType.DISCORD?this.audio:$2this.audio$4"
                 },
                 {
@@ -73,7 +70,7 @@ export default definePlugin({
             // Pass undefined for options in default Discord calls to the audio constructor.
             find: "SoundUtils",
             replacement: {
-                match: /return new (\i)\((.{0,50}?)(?=}function)/,
+                match: /return new (\i)\((.{0,50}?)(?=})/,
                 replace: "return new $1(undefined,$2"
             }
         },

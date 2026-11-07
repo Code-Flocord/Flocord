@@ -2,10 +2,6 @@
     display: flex;
     flex-direction: column;
     gap: 0.5em;
-
-    & h5 {
-        margin: 0;
-    }
 }
 
 .vc-customRPC-settings-pair {
@@ -14,6 +10,23 @@
     align-items: start;
     gap: 0.5em;
     width: 100%;
+}
+
+.vc-customRPC-settings-presets {
+    display: grid;
+    gap: 0.5em;
+}
+
+.vc-customRPC-settings-preset-create {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5em;
+}
+
+.vc-customRPC-settings-preset-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 0.5em;
 }
 
 .vc-customRPC-settings-single {

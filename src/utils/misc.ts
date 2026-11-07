@@ -90,6 +90,8 @@ export function pluralise(amount: number, singular: string, plural = singular + 
     return amount === 1 ? `${amount} ${singular}` : `${amount} ${plural}`;
 }
 
+export const pluralize = pluralise;
+
 export function interpolateIfDefined(strings: TemplateStringsArray, ...args: any[]) {
     if (args.some(arg => arg == null)) return "";
     return String.raw({ raw: strings }, ...args);

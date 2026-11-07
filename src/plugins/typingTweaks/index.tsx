@@ -16,10 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+import { isPluginEnabled } from "@api/PluginManager";
 import { definePluginSettings, migratePluginToSettings, Settings } from "@api/Settings";
 import ErrorBoundary from "@components/ErrorBoundary";
 import { getCustomColorString } from "@flocordplugins/customUserColors";
-import { Devs, FlocordDevs } from "@utils/constants";
+import showMeYourName from "@plugins/showMeYourName";
+import { Devs, EquicordDevs } from "@utils/constants";
 import { classNameFactory } from "@utils/css";
 import { openUserProfile } from "@utils/discord";
 import { isNonNullish } from "@utils/guards";
@@ -104,7 +106,9 @@ const TypingUser = ErrorBoundary.wrap(function TypingUser({ user, guildId }: Typ
                     size="SIZE_16"
                     src={user.getAvatarURL(guildId, 128)} />
             )}
-            {GuildMemberStore.getNick(guildId!, user.id)
+            {isPluginEnabled(showMeYourName.name)
+                && showMeYourName.getTypingMemberListProfilesReactionsVoiceNameText({ user, guildId, type: "typingIndicator" })
+                || GuildMemberStore.getNick(guildId!, user.id)
                 || (!guildId && RelationshipStore.getNickname(user.id))
                 || (user as any).globalName
                 || user.username
@@ -118,7 +122,7 @@ export default definePlugin({
     name: "TypingTweaks",
     description: "Show avatars and role colours in the typing indicator",
     tags: ["Appearance", "Customisation"],
-    authors: [Devs.zt, Devs.sadan, FlocordDevs.MrDiamond],
+    authors: [Devs.zt, Devs.sadan, EquicordDevs.MrDiamond],
     settings,
     isModified: true,
 

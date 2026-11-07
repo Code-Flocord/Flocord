@@ -18,12 +18,15 @@
 
 import { isPluginEnabled } from "@api/PluginManager";
 import { definePluginSettings } from "@api/Settings";
-import { UserAreaButton, UserAreaRenderProps } from "@api/UserArea";
+import { UserAreaRenderProps } from "@api/UserArea";
 import { getUserSettingLazy } from "@api/UserSettings";
 import flocordToolbox from "@flocordplugins/flocordToolbox";
 import { Devs } from "@utils/constants";
 import definePlugin, { OptionType } from "@utils/types";
+import { findComponentByCodeLazy } from "@webpack";
 import { Menu } from "@webpack/common";
+
+const Button = findComponentByCodeLazy(".GREEN,positionKeyStemOverride:");
 
 const ShowCurrentGame = getUserSettingLazy<boolean>("status", "showCurrentGame")!;
 
@@ -76,20 +79,20 @@ function Icon({ className }: { className?: string; }) {
     );
 }
 
-function GameActivityToggleButton({ iconForeground, hideTooltips, nameplate }: UserAreaRenderProps) {
+function GameActivityToggleButton(props: UserAreaRenderProps) {
     const { location } = settings.use(["location"]);
     const showCurrentGame = ShowCurrentGame.useSetting();
 
     if (location !== "PANEL" && isPluginEnabled(flocordToolbox.name)) return null;
 
     return (
-        <UserAreaButton
-            tooltipText={hideTooltips ? void 0 : showCurrentGame ? "Disable Game Activity" : "Enable Game Activity"}
-            icon={<Icon className={iconForeground} />}
+        <Button
+            tooltipText={showCurrentGame ? "Disable Game Activity" : "Enable Game Activity"}
+            icon={Icon}
             role="switch"
-            aria-checked={!showCurrentGame}
+            ariaChecked={!showCurrentGame}
             redGlow={!showCurrentGame}
-            plated={nameplate != null}
+            plated={props?.nameplate != null}
             onClick={() => ShowCurrentGame.updateSetting(old => !old)}
         />
     );

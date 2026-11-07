@@ -4,12 +4,9 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import "./BaseText.css";
-
 import { classNameFactory } from "@utils/css";
-import { classes } from "@utils/misc";
-import type { Text as DiscordText } from "@vencord/discord-types";
-import type { ComponentPropsWithoutRef, ReactNode } from "react";
+import type { ComponentPropsWithoutRef, ComponentType, ReactNode } from "react";
+import { Text } from "./Text";
 
 const textCls = classNameFactory("vc-text-");
 
@@ -86,47 +83,12 @@ export type BaseTextProps<Tag extends TextTag = "div"> = ComponentPropsWithoutRe
 };
 
 export function BaseText<T extends TextTag = "div">(props: BaseTextProps<T>): ReactNode {
-    const {
-        size = "md",
-        weight = "normal",
-        color,
-        tag: Tag = "div",
-        selectable = false,
-        lineClamp,
-        tabularNumbers = false,
-        defaultColor = true,
-        children,
-        className,
-        style,
-        ...restProps
-    } = props;
-
-    return (
-        <Tag
-            className={classes(
-                textCls("base", size, weight),
-                selectable && textCls("selectable"),
-                lineClamp === 1 && textCls("line-clamp-1"),
-                lineClamp != null && lineClamp > 1 && textCls("line-clamp"),
-                tabularNumbers && textCls("tabular-numbers"),
-                defaultColor && textCls("defaultColor"),
-                className
-            )}
-            style={{
-                ...style,
-                ...(color && { color: TextColors[color] }),
-                ...(lineClamp && lineClamp > 1 && { WebkitLineClamp: lineClamp })
-            }}
-            {...restProps}
-        >
-            {children}
-        </Tag>
-    );
+    return <Text {...props} />;
 }
 
 // #region Old compatibility
 
-export const TextCompat: DiscordText = function TextCompat({ color, variant, ...restProps }) {
+export const TextCompat: ComponentType<any> = function TextCompat({ color, variant, ...restProps }) {
     const newBaseTextProps = restProps as BaseTextProps;
 
     if (variant) {

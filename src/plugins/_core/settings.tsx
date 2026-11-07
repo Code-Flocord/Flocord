@@ -9,10 +9,10 @@ import { BackupRestoreIcon, LogIcon, MainSettingsIcon, PaintbrushIcon, PatchHelp
 import {
     BackupAndRestoreTab,
     ChangelogTab,
-    FlocordTab,
     PatchHelperTab,
     PluginsTab,
     ThemesTab,
+    FlocordTab,
 } from "@components/settings";
 import FlocordUpdaterTab from "@flocordplugins/FlocordAutoUpdater/UpdaterTab";
 import { shouldHideSettingsSection } from "@flocordplugins/streamProof";
@@ -101,10 +101,10 @@ const settings = definePluginSettings({
         description: "Where to put the Flocord settings section",
         options: [
             { label: "At the very top", value: "top" },
-            { label: "Above the Nitro section", value: "aboveNitro", default: true },
-            { label: "Below the Nitro section", value: "belowNitro" },
-            { label: "Above Activity Settings", value: "aboveActivity" },
-            { label: "Below Activity Settings", value: "belowActivity" },
+            { label: "Above Billing section", value: "aboveNitro", default: true },
+            { label: "Below Billing section", value: "belowNitro" },
+            { label: "Above Games & Apps Settings", value: "aboveActivity" },
+            { label: "Below Games & Apps Settings", value: "belowActivity" },
             { label: "At the very bottom", value: "bottom" },
         ] as { label: string; value: SettingsLocation; default?: boolean; }[]
     },
@@ -119,6 +119,7 @@ export default definePlugin({
     name: "Settings",
     description: "Adds Settings UI and debug info",
     authors: [Devs.Ven, Devs.Megu],
+    tags: ["Utility"],
     required: true,
 
     settings,
@@ -132,9 +133,10 @@ export default definePlugin({
                     replace: "$&.replace(/^./, c => c.toUpperCase())"
                 },
                 {
-                    match: /"text-xxs\/normal".{0,300}?(?=null!=(\i)&&(.{0,20}\i\.\i.{0,200}?,children:).{0,15}?("span"),{className:(\i\.\i),children:\["Build Override: ",\1\.id,\i\]\}\)\}\))/,
-                    replace: (m, _buildOverride, makeRow, component, className) =>
-                        `${m},$self.makeInfoElements(${component},${className}).map(e=>${makeRow}e})),`
+                    match: /"footnote\/normal".{0,300}?(?=null!=(\i)&&(.{0,20}\i\.\i.{0,200}?,children:).{0,15}?("span"),{className:(\i\.\i),children:\["Build Override: ",\1\.id,\i\]\}\)\}\))/,
+                    replace: (m, _buildOverride, makeRow, component, className) => {
+                        return `${m},$self.makeInfoElements(${component},${className}).map(e=>${makeRow}e})),`;
+                    }
                 },
                 {
                     match: /copyValue:\i\.join\(" "\)/g,
@@ -208,7 +210,7 @@ export default definePlugin({
                 Component: ThemesTab,
                 Icon: PaintbrushIcon
             }),
-            buildEntry({
+            !IS_UPDATER_DISABLED && FlocordUpdaterTab && buildEntry({
                 key: "flocord_updater",
                 title: "Updater",
                 panelTitle: "Flocord Updater",
@@ -249,8 +251,8 @@ export default definePlugin({
             top: "user_section",
             aboveNitro: "billing_section",
             belowNitro: "billing_section",
-            aboveActivity: "activity_section",
-            belowActivity: "activity_section",
+            aboveActivity: "games_and_apps_section",
+            belowActivity: "games_and_apps_section",
             bottom: "utility_section"
         };
 
@@ -319,10 +321,8 @@ export default definePlugin({
     },
 
     makeInfoElements(Component: ComponentType<PropsWithChildren<{ className?: string; }>>, className: string) {
-        return this.getInfoRows().map((text, i) => (
-            <Component key={i} className={className}>
-                {text}
-            </Component>
-        ));
-    },
+        return this.getInfoRows().map((text, i) =>
+            <Component key={i} className={className}>{text}</Component>
+        );
+    }
 });

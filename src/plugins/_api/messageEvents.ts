@@ -37,7 +37,7 @@ export default definePlugin({
         {
             find: ".handleSendMessage,onResize:",
             replacement: {
-                match: /(?<=channel:\i\}\)\.then\()(?:async )?(\i=>.+?let (\i)=\i\.\i\.parse\((\i),.+?\.getSendMessageOptions\((\{[^{}]*\})\)[^;]*;)(?=.+?(\i)\.flags=)(?<=\)\(({.+?})\)\.then.+?)/,
+                match: /(?<=channel:\i\}\)\.then\()(?:async )?(\i=>.+?let (\i)=\i\.\i\.parse\((\i),.+?\.getSendMessageOptions\((\{.+?\})\),.{0,100}?\};)(?=.+?(\i)\.flags=)(?<=\)\(({.+?})\)\.then.+?)/,
                 replace: (m, restCode, parsedMessage, channel, contentOptions, options, props) => "async " + restCode +
                     `if(await Flocord.Api.MessageEvents._handlePreSend(${channel}.id,${parsedMessage},${options},${props},${contentOptions}))` +
                     "return{shouldClear:false,shouldRefocus:true};"

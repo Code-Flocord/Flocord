@@ -13,7 +13,7 @@ import ErrorBoundary from "@components/ErrorBoundary";
 import { EyeIcon } from "@components/Icons";
 import pinDms from "@plugins/pinDms";
 import { isPinned } from "@plugins/pinDms/data";
-import { FlocordDevs } from "@utils/constants";
+import { EquicordDevs } from "@utils/constants";
 import { classNameFactory } from "@utils/css";
 import definePlugin, { OptionType } from "@utils/types";
 import { Channel, Message } from "@vencord/discord-types";
@@ -65,6 +65,7 @@ const messageCtxPatch: NavContextMenuPatchCallback = (children, { message }: { m
             id="vc-hidemessages"
             label="Hide"
             icon={EyeIcon}
+            leadingAccessory={{ type: "icon", icon: EyeIcon }}
             action={() => hideMessage(message.id, message.channel_id)}
         />
     ));
@@ -84,6 +85,7 @@ const userCtxPatch: NavContextMenuPatchCallback = (children, { channel }: UserCo
             id="vc-hidemessages-dm"
             label={hidden ? "Unhide DM" : "Hide DM"}
             icon={EyeIcon}
+            leadingAccessory={{ type: "icon", icon: EyeIcon }}
             action={() => toggleDm(channel.id)}
         />
     ));
@@ -102,7 +104,7 @@ export default definePlugin({
     description: "Temporarily hide messages and DMs until you restart.",
     dependencies: ["MessagePopoverAPI"],
     tags: ["Chat", "Utility"],
-    authors: [FlocordDevs.yash],
+    authors: [EquicordDevs.yash],
     patches: [
         {
             find: '"dm-quick-launcher"===',

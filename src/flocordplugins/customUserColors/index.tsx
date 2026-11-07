@@ -9,7 +9,7 @@ import "./styles.css";
 import { NavContextMenuPatchCallback } from "@api/ContextMenu";
 import { get } from "@api/DataStore";
 import { definePluginSettings, Settings } from "@api/Settings";
-import { FlocordDevs } from "@utils/constants";
+import { EquicordDevs } from "@utils/constants";
 import definePlugin, { OptionType } from "@utils/types";
 import { Channel, User } from "@vencord/discord-types";
 import { extractAndLoadChunksLazy } from "@webpack";
@@ -48,6 +48,7 @@ const userContextMenuPatch: NavContextMenuPatchCallback = (children, { user }: {
             label="Set Color"
             id="set-color"
             icon={ColorIcon}
+            leadingAccessory={{ type: "icon", icon: ColorIcon }}
             action={async () => {
                 await requireSettingsMenu();
                 openModal(modalProps => <SetColorModal id={user.id} modalProps={modalProps} />);
@@ -66,6 +67,7 @@ const channelContextMenuPatch: NavContextMenuPatchCallback = (children, { channe
             label="Set Color"
             id="set-color"
             icon={ColorIcon}
+            leadingAccessory={{ type: "icon", icon: ColorIcon }}
             action={async () => {
                 await requireSettingsMenu();
                 openModal(modalProps => <SetColorModal id={channel.id} modalProps={modalProps} />);
@@ -100,7 +102,7 @@ export default definePlugin({
     name: "CustomUserColors",
     description: "Lets you add a custom color to any user, anywhere! Highly recommend to use with typingTweaks and roleColorEverywhere",
     tags: ["Appearance", "Customisation", "Chat"],
-    authors: [FlocordDevs.mochienya],
+    authors: [EquicordDevs.mochienya],
     contextMenus: {
         "user-context": userContextMenuPatch,
         "gdm-context": channelContextMenuPatch,

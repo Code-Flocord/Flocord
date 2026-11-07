@@ -6,7 +6,7 @@
 
 import { definePluginSettings } from "@api/Settings";
 import { Paragraph } from "@components/Paragraph";
-import { Devs, FlocordDevs } from "@utils/constants";
+import { Devs, EquicordDevs } from "@utils/constants";
 import definePlugin, { OptionType } from "@utils/types";
 import { GuildMember } from "@vencord/discord-types";
 import { ChannelStore, GuildMemberStore, GuildRoleStore, React, RelationshipStore, UserStore } from "@webpack/common";
@@ -144,7 +144,7 @@ export default definePlugin({
     description: "Allows you to locally hide almost all content from any user",
     tags: ["Utility"],
     searchTerms: ["blocked", "block", "hide", "hidden", "noblockedmessages"],
-    authors: [Devs.Samwich, FlocordDevs.KamiRu],
+    authors: [Devs.Samwich, EquicordDevs.KamiRu],
     settings,
     activeNowView,
     shouldHideUser,
@@ -163,8 +163,8 @@ export default definePlugin({
         {
             find: "peopleListItemRef.current.componentWillLeave",
             replacement: {
-                match: /\i}=this.state;/,
-                replace: "$&if($self.shouldHideUser(this.props.user.id)) return null; "
+                match: /return \i===\i\.\i\.FRIEND_ANNIVERSARY/,
+                replace: "if($self.shouldHideUser(this.props.user.id)) return null;$&"
             }
         },
         // member list

@@ -8,10 +8,10 @@ import "./styles.css";
 
 import { definePluginSettings } from "@api/Settings";
 import { Card } from "@components/Card";
-import { HeadingTertiary } from "@components/Heading";
+import { Heading } from "@components/Heading";
 import { ErrorBoundary } from "@components/index";
 import { Margins } from "@components/margins";
-import { FlocordDevs } from "@utils/constants";
+import { EquicordDevs } from "@utils/constants";
 import { classNameFactory } from "@utils/css";
 import { classes } from "@utils/misc";
 import definePlugin, { OptionType } from "@utils/types";
@@ -51,7 +51,7 @@ function RegexHelper() {
 
     return (
         <Card className={cl("regex")}>
-            <HeadingTertiary className={Margins.bottom8}>Regex Helper</HeadingTertiary>
+            <Heading tag="h4" className={Margins.bottom8}>Regex Helper</Heading>
             <TextInput
                 type="text"
                 placeholder="Input to test..."
@@ -132,7 +132,7 @@ export default definePlugin({
     name: "BlockKeywords",
     description: "Blocks messages containing specific user-defined keywords, as if the user sending them was blocked.",
     tags: ["Appearance", "Customisation", "Privacy"],
-    authors: [FlocordDevs.catcraft, FlocordDevs.secp192k1],
+    authors: [EquicordDevs.catcraft, EquicordDevs.secp192k1],
     patches: [
         {
             find: "_channelMessages={}",

@@ -7,7 +7,7 @@
 import "./styles.css";
 
 import { migratePluginToSettings } from "@api/Settings";
-import { Devs, FlocordDevs } from "@utils/constants";
+import { Devs, EquicordDevs } from "@utils/constants";
 import { classNameFactory } from "@utils/css";
 import { getCurrentChannel, getIntlMessage } from "@utils/discord";
 import definePlugin from "@utils/types";
@@ -39,7 +39,7 @@ export default definePlugin({
     description: "Adds tags for webhooks and moderative roles (owner, admin, etc.)",
     dependencies: ["MemberListDecoratorsAPI", "MessageDecorationsAPI", "NicknameIconsAPI"],
     tags: ["Appearance", "Chat"],
-    authors: [Devs.Cyn, Devs.TheSun, Devs.RyanCaoDev, Devs.LordElias, Devs.AutumnVN, FlocordDevs.Hen, FlocordDevs.meowabyte],
+    authors: [Devs.Cyn, Devs.TheSun, Devs.RyanCaoDev, Devs.LordElias, Devs.AutumnVN, EquicordDevs.Hen, EquicordDevs.meowabyte],
     settings,
     patches: [
         // Make discord actually use our tags
@@ -64,7 +64,7 @@ export default definePlugin({
             all: true,
             predicate: () => settings.store.noAppsAllowed,
             replacement: {
-                match: /(#{intl::APP_TAG::hash}":\[").*?("\])/,
+                match: /(#{intl::APP_TAG::hash}":\[").{0,30}("\])/,
                 replace: "$1BOT$2",
                 noWarn: true,
             }

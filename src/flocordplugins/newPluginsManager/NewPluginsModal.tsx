@@ -15,7 +15,6 @@ import { ChangeList } from "@utils/ChangeList";
 import { classNameFactory } from "@utils/css";
 import { useForceUpdater } from "@utils/react";
 import { RenderModalProps } from "@vencord/discord-types";
-import { findComponentByCodeLazy } from "@webpack";
 import { closeModal, Modal, openModal, Tooltip, useMemo } from "@webpack/common";
 import { ReactNode } from "react";
 
@@ -24,8 +23,6 @@ import Plugins from "~plugins";
 import { getNewPlugins, getNewSettings, KnownPluginSettingsMap, writeKnownSettings } from "./knownSettings";
 
 const cl = classNameFactory("vc-new-plugins-");
-
-const Checkbox = findComponentByCodeLazy('"data-toggleable-component":"checkbox');
 
 let hasSeen = false;
 
@@ -127,10 +124,12 @@ function NewPluginsModal({ modalProps, newPlugins, newSettings }: ModalComponent
                     <BaseText size="lg" weight="semibold" className={cl("title")}>
                         New Plugins and Settings ({totalCount})
                     </BaseText>
-                    <BaseText size="sm" className={cl("description")}>
-                        New plugins have been added since your last visit. Enable any you'd like or continue to dismiss.
-                    </BaseText>
                 </div>
+            }
+            subtitle={
+                <BaseText size="sm" className={cl("description")}>
+                    New plugins have been added since your last visit. Enable any you'd like or continue to dismiss.
+                </BaseText>
             }
             actions={[
                 {

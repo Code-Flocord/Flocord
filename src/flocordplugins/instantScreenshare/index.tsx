@@ -5,13 +5,14 @@
  */
 
 import { getUserSettingLazy } from "@api/UserSettings";
-import { HeadingSecondary } from "@components/Heading";
+import { Heading } from "@components/Heading";
+import { Margins } from "@components/margins";
 import { Paragraph } from "@components/Paragraph";
-import { Devs, FlocordDevs } from "@utils/constants";
+import { Devs, EquicordDevs } from "@utils/constants";
 import definePlugin from "@utils/types";
 import { VoiceState } from "@vencord/discord-types";
-import { findByCodeLazy, findStoreLazy } from "@webpack";
-import { ChannelStore, MediaEngineStore, PermissionsBits, PermissionStore, SelectedChannelStore, showToast, Toasts, UserStore, VoiceActions, WindowStore } from "@webpack/common";
+import { findByCodeLazy } from "@webpack";
+import { ApplicationStreamingSettingsStore, ChannelStore, MediaEngineStore, PermissionsBits, PermissionStore, SelectedChannelStore, showToast, UserStore, VoiceActions, WindowStore } from "@webpack/common";
 
 import { getCurrentMedia, settings } from "./utils";
 
@@ -19,7 +20,6 @@ let hasStreamed, isStreaming, streamKey;
 const startStream = findByCodeLazy('type:"STREAM_START"');
 const stopStream = findByCodeLazy('type:"STREAM_STOP"');
 const StreamPreviewSettings = getUserSettingLazy("voiceAndVideo", "disableStreamPreviews")!;
-const ApplicationStreamingSettingsStore = findStoreLazy("ApplicationStreamingSettingsStore");
 
 async function autoStartStream(instant = true) {
     if (!instant && !WindowStore.isFocused() && settings.store.focusDiscord) return;
@@ -63,7 +63,7 @@ export default definePlugin({
     name: "InstantScreenshare",
     description: "Instantly screenshare when joining a voice channel with support for desktop sources, windows, and video input devices (cameras, capture cards)",
     tags: ["Media", "Voice"],
-    authors: [Devs.HAHALOSAH, Devs.thororen, FlocordDevs.mart],
+    authors: [Devs.HAHALOSAH, Devs.thororen, EquicordDevs.mart],
     dependencies: ["FlocordToolbox"],
     searchTerms: ["ScreenshareKeybind"],
     autoStartStream,
@@ -71,19 +71,19 @@ export default definePlugin({
 
     settingsAboutComponent: () => (
         <>
-            <HeadingSecondary>For Linux</HeadingSecondary>
+            <Heading tag="h3" className={Margins.bottom8}>For Linux</Heading>
             <Paragraph>
                 For Wayland it only pops up the screenshare select
                 <br />
                 For X11 it may or may not work :shrug:
             </Paragraph>
             <br />
-            <HeadingSecondary>Video Devices</HeadingSecondary>
+            <Heading tag="h3" className={Margins.bottom8}>Video Devices</Heading>
             <Paragraph>
                 Supports cameras and capture cards (like Elgato HD60X) when enabled in settings
             </Paragraph>
             <br />
-            <HeadingSecondary>Regarding Sound & Preview Settings</HeadingSecondary>
+            <Heading tag="h3" className={Margins.bottom8}>Regarding Sound & Preview Settings</Heading>
             <Paragraph>
                 We use the settings set and used by discord to decide if stream preview and sound should be enabled or not
             </Paragraph>
@@ -103,8 +103,8 @@ export default definePlugin({
             find: '"push-to-talk-priority"',
             predicate: () => settings.store.keybindScreenshare,
             replacement: {
-                match: /(\{id:.{0,25}?value:\i\.\i\.UNASSIGNED)/,
-                replace: '{id:"instant-screen-share",value:"INSTANT_SCREEN_SHARE",label:"Instant Screenshare"},$1'
+                match: /=\[(\{id:.{0,25}value:\i\.\i\.UNASSIGNED)/,
+                replace: '=[{id:"instant-screen-share",value:"INSTANT_SCREEN_SHARE",label:"Instant Screenshare"},$1'
             }
         }
     ],
@@ -142,7 +142,7 @@ export default definePlugin({
     toolboxActions: {
         "Instant Screenshare"() {
             settings.store.toolboxManagement = !settings.store.toolboxManagement;
-            showToast(`Instant Screenshare ${settings.store.toolboxManagement ? "Enabled" : "Disabled"}`, Toasts.Type.SUCCESS);
+            showToast({ text: `Instant Screenshare ${settings.store.toolboxManagement ? "Enabled" : "Disabled"}`, variant: "success" });
         }
     }
 });

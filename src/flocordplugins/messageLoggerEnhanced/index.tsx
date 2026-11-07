@@ -9,7 +9,7 @@ export const Native = getNative();
 import "./styles.css";
 
 import { LogsIcon } from "@components/Icons";
-import { Devs, FlocordDevs } from "@utils/constants";
+import { Devs, EquicordDevs } from "@utils/constants";
 import { classNameFactory } from "@utils/css";
 import { Logger } from "@utils/Logger";
 import definePlugin from "@utils/types";
@@ -41,8 +41,8 @@ let didClearLogsOnStartup = false;
 
 const cacheThing = findByPropsLazy("commit", "getOrCreate");
 
-export async function clearLogs(showToast = true) {
-    await idb.clearMessagesIDB(showToast);
+export async function clearLogs(toast = true) {
+    await idb.clearMessagesIDB(toast);
     cacheSentMessages.clear();
 }
 
@@ -50,12 +50,7 @@ let oldGetMessage: typeof MessageStore.getMessage;
 
 const handledMessageIds = new Set();
 async function messageDeleteHandler(payload: MessageDeletePayload & { isBulk: boolean; }) {
-    if (payload.mlDeleted) {
-        if (settings.store.permanentlyRemoveLogByDefault)
-            await idb.deleteMessageIDB(payload.id);
-
-        return;
-    }
+    if (payload.mlDeleted) return;
 
     if (handledMessageIds.has(payload.id)) {
         return;
@@ -257,7 +252,7 @@ async function processMessageFetch(response: FetchMessagesResponse) {
 
 export default definePlugin({
     name: "MessageLoggerEnhanced",
-    authors: [Devs.Aria, FlocordDevs.keircn],
+    authors: [Devs.Aria, EquicordDevs.keircn],
     description: "Improves MessageLogger with edited message history, ghost ping detection and more",
     tags: ["Chat", "Servers"],
     dependencies: ["MessageLogger", "HeaderBarAPI"],
@@ -284,14 +279,17 @@ export default definePlugin({
                 replace: "deleted:$self.getDeleted(...arguments), editHistory:$self.getEdited(...arguments),"
             }
         },
-        // MessagePreview component in LogsModal
+        // fix vidoes failing because there are no thumbnails
         {
-            find: "=!0,disableInteraction:",
+            find: ".handleImageLoad)",
             replacement: {
-                match: /childrenHeader:.{0,100}childrenMessageContent/,
-                replace: "childrenAccessories:arguments[0].childrenAccessories || null,$&"
+                match: /(componentDidMount\(\){)(.{1,150}===(.+?)\.LOADING)/,
+                replace:
+                    "$1if(this.props?.src?.startsWith('blob:') && this.props?.item?.type === 'VIDEO')" +
+                    "return this.setState({readyState: $3.READY});$2"
             }
         },
+
         // dont fetch messages for channels in modal
         {
             find: "Using PollReferenceMessageContext without",
@@ -357,10 +355,7 @@ export default definePlugin({
     },
 
     getEdited(m1, m2) {
-        const editHistory = m2?.editHistory;
-        if (editHistory == null && m1?.editHistory != null && m1.editHistory.length > 0)
-            return m1.editHistory.map(mapTimestamp);
-        return editHistory;
+        return m2?.editHistory ?? m1?.editHistory?.map(mapTimestamp) ?? [];
     },
 
     flux: {

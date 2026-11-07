@@ -6,7 +6,7 @@
 
 import { NavContextMenuPatchCallback } from "@api/ContextMenu";
 import { copyToClipboard } from "@utils/clipboard";
-import { Devs, FlocordDevs } from "@utils/constants";
+import { Devs, EquicordDevs } from "@utils/constants";
 import definePlugin from "@utils/types";
 import type { Channel, User } from "@vencord/discord-types";
 import { Menu } from "@webpack/common";
@@ -40,13 +40,14 @@ const UserContextMenuPatch: NavContextMenuPatchCallback = (children, { user }: U
             label="Copy User Mention"
             action={() => copyToClipboard(`<@${user.id}>`)}
             icon={MentionIcon}
+            leadingAccessory={{ type: "icon", icon: MentionIcon }}
         />
     );
 };
 
 export default definePlugin({
     name: "CopyUserMention",
-    authors: [FlocordDevs.Cortex, Devs.castdrian],
+    authors: [EquicordDevs.Cortex, Devs.castdrian],
     description: "Adds a button to copy user's mention on the user context menu, works best with ValidUser.",
     tags: ["Chat", "Utility"],
     contextMenus: {

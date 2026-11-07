@@ -9,7 +9,7 @@ import "./styles.css";
 import { addMessagePreSendListener, removeMessagePreSendListener } from "@api/MessageEvents";
 import { EyeIcon } from "@components/Icons";
 import SettingsPlugin from "@plugins/_core/settings";
-import { FlocordDevs } from "@utils/constants";
+import { EquicordDevs } from "@utils/constants";
 import { removeFromArray } from "@utils/misc";
 import definePlugin from "@utils/types";
 
@@ -20,7 +20,7 @@ export default definePlugin({
     name: "IRememberYou",
     description: "Locally saves everyone you've been communicating with (including servers), in case of lose",
     tags: ["Chat", "Servers"],
-    authors: [FlocordDevs.zoodogood, FlocordDevs.keircn],
+    authors: [EquicordDevs.zoodogood, EquicordDevs.keircn, EquicordDevs.tt],
     dependencies: ["MessageEventsAPI"],
 
     patches: [],

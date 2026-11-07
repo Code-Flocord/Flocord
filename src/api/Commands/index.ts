@@ -46,16 +46,14 @@ export let OptionalMessageOption: CommandOption = OptPlaceholder;
  */
 export let RequiredMessageOption: CommandOption = ReqPlaceholder;
 
-// Discord's command list has random gaps for some reason, which can cause issues while rendering the commands
-// Add this offset to every added command to keep them unique
-let commandIdOffset: number;
+let idCounter = 99;
 
 export const _init = function (cmds: FlocordCommand[]) {
     try {
         BUILT_IN = cmds;
         OptionalMessageOption = cmds.find(c => (c.untranslatedName || c.displayName) === "shrug")!.options![0];
         RequiredMessageOption = cmds.find(c => (c.untranslatedName || c.displayName) === "me")!.options![0];
-        commandIdOffset = Math.abs(BUILT_IN.map(x => Number(x.id)).sort((x, y) => x - y)[0]) - BUILT_IN.length;
+        idCounter = Math.abs(BUILT_IN.map(x => Number(x.id)).sort((x, y) => x - y)[0]) + 1;
     } catch (e) {
         new Logger("CommandsAPI").error("Failed to load CommandsApi", e, " - cmds is", cmds);
     }
@@ -106,9 +104,10 @@ export function prepareOption<O extends CommandOption | FlocordCommand>(opt: O):
     return opt;
 }
 
-// Yes, Discord registers individual commands for each subcommand
-// TODO: This probably doesn't support nested subcommands. If that is ever needed,
-// investigate
+const isSubCommandParent = (cmd: FlocordCommand) => cmd.options?.[0]?.type === ApplicationCommandOptionType.SUB_COMMAND;
+const getSubCommandName = (cmd: FlocordCommand, option: CommandOption) => `${cmd.name} ${option.name}`;
+
+// Yes, Discord registers individual commands for each subcommand.
 function registerSubCommands(cmd: FlocordCommand, plugin: string) {
     cmd.options?.forEach(o => {
         if (o.type !== ApplicationCommandOptionType.SUB_COMMAND)
@@ -118,9 +117,9 @@ function registerSubCommands(cmd: FlocordCommand, plugin: string) {
             ...o,
             options: o.options !== undefined ? o.options : undefined,
             type: ApplicationCommandType.CHAT_INPUT,
-            name: `${cmd.name} ${o.name}`,
             id: `${o.name}-${cmd.id}`,
-            displayName: `${cmd.name} ${o.name}`,
+            name: getSubCommandName(cmd, o),
+            displayName: getSubCommandName(cmd, o),
             subCommandPath: [{
                 name: o.name,
                 type: o.type,
@@ -128,8 +127,16 @@ function registerSubCommands(cmd: FlocordCommand, plugin: string) {
             }],
             rootCommand: cmd
         };
-        registerCommand(subCmd as any, plugin);
+        registerCommand(subCmd, plugin);
     });
+}
+
+function unregisterSubCommands(cmd: FlocordCommand): boolean {
+    const results = BUILT_IN
+        .filter(c => c.rootCommand === cmd)
+        .map(c => unregisterCommand(c.name));
+
+    return results.length > 0 && results.every(x => x);
 }
 
 export function registerCommand<C extends FlocordCommand>(command: C, plugin: string) {
@@ -148,7 +155,7 @@ export function registerCommand<C extends FlocordCommand>(command: C, plugin: st
     command.isFlocordCommand = true;
     command.untranslatedName ??= command.name;
     command.untranslatedDescription ??= command.description;
-    command.id ??= `-${BUILT_IN.length + commandIdOffset + 1}`;
+    command.id ??= `-${idCounter++}`;
     command.applicationId ??= "-1"; // BUILT_IN;
     command.type ??= ApplicationCommandType.CHAT_INPUT;
     command.inputType ??= ApplicationCommandInputType.BUILT_IN_TEXT;
@@ -156,16 +163,23 @@ export function registerCommand<C extends FlocordCommand>(command: C, plugin: st
 
     prepareOption(command);
 
-    if (command.options?.[0]?.type === ApplicationCommandOptionType.SUB_COMMAND) {
+    commands[command.name] = command;
+
+    if (isSubCommandParent(command)) {
         registerSubCommands(command, plugin);
         return;
     }
 
-    commands[command.name] = command;
     BUILT_IN.push(command);
 }
 
-export function unregisterCommand(name: string) {
+export function unregisterCommand(name: string, isSubCommands = false) {
+    const cmd = commands[name];
+    if (cmd && isSubCommandParent(cmd)) {
+        delete commands[name];
+        return unregisterSubCommands(cmd);
+    }
+
     const idx = BUILT_IN.findIndex(c => c.name === name);
     if (idx === -1)
         return false;

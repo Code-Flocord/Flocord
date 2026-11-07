@@ -8,22 +8,18 @@ import "./styles.css";
 
 import ErrorBoundary from "@components/ErrorBoundary";
 import { Message } from "@vencord/discord-types";
-import { DefaultExtractAndLoadChunksRegex, extractAndLoadChunksLazy, findComponentByCodeLazy, findCssClassesLazy } from "@webpack";
+import { findComponentByCodeLazy } from "@webpack";
 import { React, useRef, useState } from "@webpack/common";
-import { MutableRefObject } from "react";
 
 const CloseButton = findComponentByCodeLazy("CLOSE_BUTTON_LABEL");
-const Paginator = findComponentByCodeLazy('rel:"prev",children:');
-const requirePaginator = extractAndLoadChunksLazy(['name:"SearchResults"'], new RegExp(`name:"StageChannelCall",renderLoader:.+?(?:${DefaultExtractAndLoadChunksRegex.source}).{0,30}?name:"SearchResults"`));
+import type { RefObject } from "react";
 
 import { jumper } from "./index";
-
-const containerStyles = findCssClassesLazy("containerBottom", "containerTop");
 
 export default function ReplyNavigator({ replies }: { replies: Message[]; }) {
     const [page, setPage] = useState(1);
     const [visible, setVisible] = useState(true);
-    const ref: MutableRefObject<HTMLDivElement | null> = useRef(null);
+    const ref: RefObject<HTMLDivElement | null> = useRef(null);
     React.useEffect(() => {
         setPage(1);
         setVisible(true);
@@ -41,30 +37,28 @@ export default function ReplyNavigator({ replies }: { replies: Message[]; }) {
             document.removeEventListener("mousedown", onMouseDown);
         };
     }, [ref]);
-    requirePaginator();
     return (
         <ErrorBoundary>
-            <div ref={ref} className={containerStyles.containerBottom + " vc-findreply-div"} style={{
+            <div ref={ref} className="vc-findreply-div" style={{
                 display: visible ? "flex" : "none",
             }}>
-                <Paginator
-                    className={"vc-findreply-paginator"}
-                    currentPage={page}
-                    maxVisiblePages={5}
-                    pageSize={1}
-                    totalCount={replies.length}
-                    onPageChange={processPageChange}
-                />
+                <div className="vc-findreply-paginator">
+                    <button type="button" aria-label="Previous reply" disabled={page <= 1} onClick={() => processPageChange(page - 1)}>‹</button>
+                    <span>{page} / {replies.length}</span>
+                    <button type="button" aria-label="Next reply" disabled={page >= replies.length} onClick={() => processPageChange(page + 1)}>›</button>
+                </div>
                 <CloseButton className={"vc-findreply-close"} onClick={() => setVisible(false)} />
             </div>
         </ErrorBoundary>
     );
 
     function processPageChange(page: number) {
+        const reply = replies[page - 1];
+        if (!reply) return;
         setPage(page);
         jumper.jumpToMessage({
-            channelId: replies[page - 1].channel_id,
-            messageId: replies[page - 1].id,
+            channelId: reply.channel_id,
+            messageId: reply.id,
             flash: true,
             jumpType: "INSTANT"
         });

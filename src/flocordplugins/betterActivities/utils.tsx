@@ -6,14 +6,11 @@
 
 import { classNameFactory } from "@utils/css";
 import { Activity, Application } from "@vencord/discord-types";
-import { findByPropsLazy, findComponentByCodeLazy, findStoreLazy } from "@webpack";
+import { findByPropsLazy, findComponentByCodeLazy } from "@webpack";
+import { ApplicationStore } from "@webpack/common";
 
 import { settings } from "./settings";
 import { ActivityViewProps, ApplicationIcon } from "./types";
-
-const ApplicationStore: {
-    getApplication: (id: string) => Application | null;
-} = findStoreLazy("ApplicationStore");
 
 const { fetchApplication }: {
     fetchApplication: (id: string) => Promise<Application | null>;
@@ -21,7 +18,7 @@ const { fetchApplication }: {
 
 const fetchedApplications = new Map<string, Application | null>();
 
-const xboxUrl = "https://discord.com/assets/9a15d086141be29d9fcd.png"; // TODO: replace with "renderXboxImage"?
+const xboxUrl = "/assets/9a15d086141be29d9fcd.png"; // TODO: replace with "renderXboxImage"?
 
 export const ActivityView = findComponentByCodeLazy<ActivityViewProps>('location:"UserProfileActivityCard",');
 
@@ -33,7 +30,7 @@ export function getActivityApplication(activity: Activity | null) {
     if (!application_id) return undefined;
     let application = ApplicationStore.getApplication(application_id);
     if (!application && fetchedApplications.has(application_id)) {
-        application = fetchedApplications.get(application_id) ?? null;
+        application = fetchedApplications.get(application_id)!;
     }
     return application ?? undefined;
 }
@@ -92,7 +89,7 @@ export function getApplicationIcons(activities: Activity[], preferSmall = false)
             let application = ApplicationStore.getApplication(application_id);
             if (!application) {
                 if (fetchedApplications.has(application_id)) {
-                    application = fetchedApplications.get(application_id) as Application | null;
+                    application = fetchedApplications.get(application_id)!;
                 } else {
                     fetchedApplications.set(application_id, null);
                     fetchApplication(application_id).then(app => {

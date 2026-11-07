@@ -7,12 +7,13 @@
 import "./styles.css";
 
 import { definePluginSettings } from "@api/Settings";
+import { Button } from "@components/Button";
 import { Heading } from "@components/Heading";
 import { DeleteIcon, PlusIcon } from "@components/Icons";
-import { Devs, FlocordDevs } from "@utils/constants";
+import { Devs, EquicordDevs } from "@utils/constants";
 import { classNameFactory } from "@utils/css";
 import definePlugin, { OptionType } from "@utils/types";
-import { Button, Select, TextInput, useState } from "@webpack/common";
+import { Select, TextInput, useState } from "@webpack/common";
 
 const cl = classNameFactory("vc-bbr-");
 
@@ -60,10 +61,9 @@ function ReasonsComponent() {
                     />
                     <Button
                         className={cl("remove-button")}
-                        color={Button.Colors.TRANSPARENT}
+                        variant="secondary"
                         onClick={() => update(reasons.filter((_, j) => j !== i))}
-                        look={Button.Looks.FILLED}
-                        size={Button.Sizes.MIN}
+                        size="min"
                     >
                         <DeleteIcon />
                     </Button>
@@ -82,8 +82,8 @@ function ReasonsComponent() {
                 <Button
                     onClick={() => update([...reasons, { text: "" }])}
                     className={cl("add-button")}
-                    size={Button.Sizes.LARGE}
-                    color={Button.Colors.TRANSPARENT}
+                    size="medium"
+                    variant="secondary"
                 >
                     <PlusIcon /> Add another reason
                 </Button>
@@ -109,7 +109,7 @@ export default definePlugin({
     name: "BetterBanReasons",
     description: "Create custom reasons to use in the Discord ban modal, and/or show a text input by default instead of the options.",
     tags: ["Appearance", "Customisation"],
-    authors: [Devs.Inbestigator, FlocordDevs.yonn2222],
+    authors: [Devs.Inbestigator, EquicordDevs.yonn2222],
 
     durationSetter: null as ((v: number) => void) | null,
 

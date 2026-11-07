@@ -6,14 +6,14 @@
 
 import "./styles.css";
 
+import { Button } from "@components/Button";
 import { Icon, User } from "@vencord/discord-types";
-import { findComponentByCodeLazy, findStoreLazy } from "@webpack";
-import { Button, ChannelActionCreators, ChannelStore, GuildActions, MediaEngineStore, NavigationRouter, PermissionsBits, PermissionStore, Tooltip, UserStore, VoiceActions, VoiceStateStore } from "@webpack/common";
+import { findComponentByCodeLazy } from "@webpack";
+import { ChannelActionCreators, ChannelStore, GuildActions, MediaEngineStore, NavigationRouter, PermissionsBits, PermissionStore, SoundboardStore, Tooltip, UserStore, VoiceActions, VoiceStateStore } from "@webpack/common";
 import { JSX } from "react";
 
 import { settings } from "./settings";
 
-const SoundboardStore = findStoreLazy("SoundboardStore");
 const DeafenIconSelf = findComponentByCodeLazy("M22.7 2.7a1", "1.4l20-20ZM17") as Icon;
 const DeafenIconOther = findComponentByCodeLazy("M21.76.83a5.02", "M12.38") as Icon;
 const ChatIcon = findComponentByCodeLazy(".css,d:\"M12 22a10") as Icon;
@@ -29,9 +29,8 @@ function VoiceUserButton({ user, tooltip, icon, onClick }: { user: User; tooltip
             <Tooltip text={tooltip} shouldShow={!disabled}>
                 {({ onMouseEnter, onMouseLeave }) => (
                     <Button
-                        size={Button.Sizes.MIN}
-                        color={Button.Colors.TRANSPARENT}
-                        look={Button.Looks.FILLED}
+                        size="min"
+                        variant="secondary"
                         disabled={disabled}
                         onClick={e => {
                             e.preventDefault();

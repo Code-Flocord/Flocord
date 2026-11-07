@@ -6,13 +6,13 @@
 
 import { Devs } from "@utils/constants";
 import definePlugin from "@utils/types";
-import { setColorPicker, setCreateScroller, setRoleMemberPopout } from "@webpack/common";
+import { setColorPicker, setCreateScroller, setNewCustomizationSection, setRoleMemberPopout } from "@webpack/common";
 
 export default definePlugin({
     name: "ConcatenatedComponentExtractor",
     description: "Extract components that have been concatenated by the bundler",
     authors: [Devs.sadan],
-
+    tags: ["Developers", "Utility"],
     required: true,
 
     patches: [
@@ -26,12 +26,18 @@ export default definePlugin({
         {
             find: /="ltr",orientation:\i="vertical"[^}]+?customTheme:/,
             replacement: {
-                // No longer wrapped in forwardRef(function(props,ref){...}) — just a plain single-arg
-                // function returned directly, since this component apparently doesn't need ref forwarding
-                // anymore.
                 match: /(?=function (\i)\(\i,\i,\i\)\{.{0,20}?return function\(\i\)\{let\{[^}]+?="ltr",orientation:)/,
                 replace: "$self.setCreateScroller($1);"
             }
+        },
+        {
+            find: "UserProfileModalV2EditingPanel",
+            replacement: [
+                {
+                    match: /function (\i).{0,50}showNitroIcon:.{0,500}\}\),\i\]\}\)\}/,
+                    replace: "$&$self.setNewCustomizationSection($1);"
+                }
+            ]
         },
         {
             find: ".ROLE_MENTION)",
@@ -39,10 +45,11 @@ export default definePlugin({
                 match: /function (\i)(?=.+?renderPopout:.{0,20}\1,\{guildId:\i,channelId:\i)/,
                 replace: "$self.setRoleMemberPopout($1);$&"
             }
-        }
+        },
     ],
 
     setCreateScroller,
     setColorPicker,
+    setNewCustomizationSection,
     setRoleMemberPopout,
 });

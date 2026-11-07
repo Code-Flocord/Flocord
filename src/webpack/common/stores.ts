@@ -16,7 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+import { ConstEnumToRuntimeEnum } from "@utils/types";
 import * as t from "@vencord/discord-types";
+import * as enums from "@vencord/discord-types/enums";
 import { findByCodeLazy, findByPropsLazy } from "@webpack";
 
 import { waitForStore } from "./internal";
@@ -25,11 +27,9 @@ export const Flux: t.Flux = findByPropsLazy("connectStores");
 
 export type GenericStore = t.FluxStore & Record<string, any>;
 
-export const DraftType = findByPropsLazy("ChannelMessage", "SlashCommand");
+export const DraftType: ConstEnumToRuntimeEnum<typeof enums.DraftType> = findByPropsLazy("ChannelMessage", "SlashCommand");
 
-export let MessageStore: Omit<t.MessageStore, "getMessages"> & GenericStore & {
-    getMessages(chanId: string): any;
-};
+export let MessageStore: t.MessageStore;
 
 export let PermissionStore: t.PermissionStore;
 export let GuildChannelStore: t.GuildChannelStore;
@@ -87,6 +87,60 @@ export let ExperimentStore: t.ExperimentStore;
 export let UserAffinitiesStore: t.UserAffinitiesStore;
 export let ApplicationStreamingStore: t.ApplicationStreamingStore;
 export let ApplicationStreamPreviewStore: t.ApplicationStreamPreviewStore;
+export let SortedGuildStore: t.SortedGuildStore;
+export let JoinedThreadsStore: t.JoinedThreadsStore;
+export let SafetyHubStore: t.SafetyHubStore;
+export let PrivateChannelSortStore: t.PrivateChannelSortStore;
+export let ApplicationStreamingSettingsStore: t.ApplicationStreamingSettingsStore;
+export let UserProfileSettingsStore: t.UserProfileSettingsStore;
+export let AuthorizedAppsStore: t.AuthorizedAppsStore;
+export let ChannelSectionStore: t.ChannelSectionStore;
+export let ExpandedGuildFolderStore: t.ExpandedGuildFolderStore;
+export let AuthSessionsStore: t.AuthSessionsStore;
+export let ClientThemesBackgroundStore: t.ClientThemesBackgroundStore;
+export let ConnectedAccountsStore: t.ConnectedAccountsStore;
+export let ChannelMemberStore: t.ChannelMemberStore;
+export let ThreadMemberListStore: t.ThreadMemberListStore;
+export let CollapsedVoiceChannelStore: t.CollapsedVoiceChannelStore;
+export let ReferencedMessageStore: t.ReferencedMessageStore;
+export let SessionsStore: t.SessionsStore;
+export let GuildAvailabilityStore: t.GuildAvailabilityStore;
+export let UserGuildJoinRequestStore: t.UserGuildJoinRequestStore;
+export let BasicGuildStore: t.BasicGuildStore;
+export let GuildProfileStore: t.GuildProfileStore;
+export let ChannelAffinitiesStore: t.ChannelAffinitiesStore;
+export let SelfPresenceStore: t.SelfPresenceStore;
+export let MessageRequestStore: t.MessageRequestStore;
+export let GIFPickerViewStore: t.GIFPickerViewStore;
+export let GuildReadStateStore: t.GuildReadStateStore;
+export let ActiveThreadsStore: t.ActiveThreadsStore;
+export let CategoryCollapseStore: t.CategoryCollapseStore;
+export let ChannelMemberCountStore: t.ChannelMemberCountStore;
+export let ChannelPinsStore: t.ChannelPinsStore;
+export let ChannelStatusStore: t.ChannelStatusStore;
+export let ContextMenuStore: t.ContextMenuStore;
+export let FavoriteStore: t.FavoriteStore;
+export let FriendRequestsStore: t.FriendRequestsStore;
+export let FriendRowStore: t.FriendRowStore;
+export let GameStore: t.GameStore;
+export let IdleStore: t.IdleStore;
+export let IncomingCallStore: t.IncomingCallStore;
+export let KeybindsStore: t.KeybindsStore;
+export let LayerStore: t.LayerStore;
+export let MessageReactionsStore: t.MessageReactionsStore;
+export let NoteStore: t.NoteStore;
+export let RecentMentionsStore: t.RecentMentionsStore;
+export let SortedVoiceStateStore: t.SortedVoiceStateStore;
+export let SoundpackStore: t.SoundpackStore;
+export let SpatialAudioStore: t.SpatialAudioStore;
+export let SpeakingStore: t.SpeakingStore;
+export let StageInstanceStore: t.StageInstanceStore;
+export let StickersPersistedStore: t.StickersPersistedStore;
+export let ThreadMembersStore: t.ThreadMembersStore;
+export let ThreadMessageStore: t.ThreadMessageStore;
+export let TopEmojiStore: t.TopEmojiStore;
+export let UnsyncedUserSettingsStore: t.UnsyncedUserSettingsStore;
+export let VoiceChannelEffectsStore: t.VoiceChannelEffectsStore;
 
 /**
  * @see jsdoc of {@link t.useStateFromStores}
@@ -146,6 +200,60 @@ waitForStore("QuestStore", m => QuestStore = m);
 waitForStore("UserAffinitiesV2Store", m => UserAffinitiesStore = m);
 waitForStore("ApplicationStreamingStore", m => ApplicationStreamingStore = m);
 waitForStore("ApplicationStreamPreviewStore", m => ApplicationStreamPreviewStore = m);
+waitForStore("SortedGuildStore", m => SortedGuildStore = m);
+waitForStore("JoinedThreadsStore", m => JoinedThreadsStore = m);
+waitForStore("SafetyHubStore", m => SafetyHubStore = m);
+waitForStore("PrivateChannelSortStore", m => PrivateChannelSortStore = m);
+waitForStore("ApplicationStreamingSettingsStore", m => ApplicationStreamingSettingsStore = m);
+waitForStore("UserProfileSettingsStore", m => UserProfileSettingsStore = m);
+waitForStore("AuthorizedAppsStore", m => AuthorizedAppsStore = m);
+waitForStore("ChannelSectionStore", m => ChannelSectionStore = m);
+waitForStore("ExpandedGuildFolderStore", m => ExpandedGuildFolderStore = m);
+waitForStore("AuthSessionsStore", m => AuthSessionsStore = m);
+waitForStore("ClientThemesBackgroundStore", m => ClientThemesBackgroundStore = m);
+waitForStore("ConnectedAccountsStore", m => ConnectedAccountsStore = m);
+waitForStore("ChannelMemberStore", m => ChannelMemberStore = m);
+waitForStore("ThreadMemberListStore", m => ThreadMemberListStore = m);
+waitForStore("CollapsedVoiceChannelStore", m => CollapsedVoiceChannelStore = m);
+waitForStore("ReferencedMessageStore", m => ReferencedMessageStore = m);
+waitForStore("SessionsStore", m => SessionsStore = m);
+waitForStore("GuildAvailabilityStore", m => GuildAvailabilityStore = m);
+waitForStore("UserGuildJoinRequestStore", m => UserGuildJoinRequestStore = m);
+waitForStore("BasicGuildStore", m => BasicGuildStore = m);
+waitForStore("GuildProfileStore", m => GuildProfileStore = m);
+waitForStore("ChannelAffinitiesV2Store", m => ChannelAffinitiesStore = m);
+waitForStore("SelfPresenceStore", m => SelfPresenceStore = m);
+waitForStore("MessageRequestStore", m => MessageRequestStore = m);
+waitForStore("GIFPickerViewStore", m => GIFPickerViewStore = m);
+waitForStore("GuildReadStateStore", m => GuildReadStateStore = m);
+waitForStore("ActiveThreadsStore", m => ActiveThreadsStore = m);
+waitForStore("CategoryCollapseStore", m => CategoryCollapseStore = m);
+waitForStore("ChannelMemberCountStore", m => ChannelMemberCountStore = m);
+waitForStore("ChannelPinsStore", m => ChannelPinsStore = m);
+waitForStore("ChannelStatusStore", m => ChannelStatusStore = m);
+waitForStore("ContextMenuStore", m => ContextMenuStore = m);
+waitForStore("FavoriteStore", m => FavoriteStore = m);
+waitForStore("FriendRequestsStore", m => FriendRequestsStore = m);
+waitForStore("FriendRowStore", m => FriendRowStore = m);
+waitForStore("GameStore", m => GameStore = m);
+waitForStore("IdleStore", m => IdleStore = m);
+waitForStore("IncomingCallStore", m => IncomingCallStore = m);
+waitForStore("KeybindsStore", m => KeybindsStore = m);
+waitForStore("LayerStore", m => LayerStore = m);
+waitForStore("MessageReactionsStore", m => MessageReactionsStore = m);
+waitForStore("NoteStore", m => NoteStore = m);
+waitForStore("RecentMentionsStore", m => RecentMentionsStore = m);
+waitForStore("SortedVoiceStateStore", m => SortedVoiceStateStore = m);
+waitForStore("SoundpackStore", m => SoundpackStore = m);
+waitForStore("SpatialAudioStore", m => SpatialAudioStore = m);
+waitForStore("SpeakingStore", m => SpeakingStore = m);
+waitForStore("StageInstanceStore", m => StageInstanceStore = m);
+waitForStore("StickersPersistedStore", m => StickersPersistedStore = m);
+waitForStore("ThreadMembersStore", m => ThreadMembersStore = m);
+waitForStore("ThreadMessageStore", m => ThreadMessageStore = m);
+waitForStore("TopEmojiStore", m => TopEmojiStore = m);
+waitForStore("UnsyncedUserSettingsStore", m => UnsyncedUserSettingsStore = m);
+waitForStore("VoiceChannelEffectsStore", m => VoiceChannelEffectsStore = m);
 waitForStore("ThemeStore", m => {
     ThemeStore = m;
     // Importing this directly causes all webpack commons to be imported, which can easily cause circular dependencies.

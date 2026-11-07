@@ -10,7 +10,7 @@ import ErrorBoundary from "@components/ErrorBoundary";
 import { Flex } from "@components/Flex";
 import { InfoIcon } from "@components/Icons";
 import { Margins } from "@components/margins";
-import { Devs, FlocordDevs } from "@utils/constants";
+import { Devs, EquicordDevs } from "@utils/constants";
 import { classNameFactory } from "@utils/css";
 import { sendMessage } from "@utils/discord";
 import definePlugin, { OptionType } from "@utils/types";
@@ -19,7 +19,7 @@ import { proxyLazyWebpack } from "@webpack";
 import { ChannelActionCreators, ChannelStore, Checkbox, React, Tooltip, useMemo, useState } from "@webpack/common";
 import { Dispatch, MouseEvent, ReactNode, SetStateAction } from "react";
 
-import { ChannelName, ForwardPicker, GuildName, Timestamp } from "./components";
+import { ForwardFooter, ForwardPicker } from "./components";
 import managedStyle from "./style.css?managed";
 
 export const cl = classNameFactory("vc-betterforwards-");
@@ -34,16 +34,15 @@ export interface ForwardOptionsState {
     setOpts: Dispatch<SetStateAction<ForwardOptions>>;
     defaultOpts: Required<ForwardOptions>;
     hasOpts: boolean;
-    message: Message;
+    message?: Message;
 }
 
 export const ForwardOptionsContext = proxyLazyWebpack(() =>
-    React.createContext<ForwardOptionsState & { message: Message }>({
+    React.createContext<ForwardOptionsState>({
         opts: {},
-        setOpts: () => {},
+        setOpts: () => { },
         defaultOpts: { onlyAttachmentIds: [], onlyEmbedIndices: [] },
         hasOpts: false,
-        message: {} as Message
     })
 );
 
@@ -94,7 +93,7 @@ export default definePlugin({
     description: "Message forward utilities including NSFW bypass and UI improvements.",
     tags: ["Chat", "Utility"],
     searchTerms: ["selfForward", "betterForwardMeta"],
-    authors: [Devs.thororen, Devs.sadan, Devs.nin0dev, FlocordDevs.VillainsRule, FlocordDevs.davri],
+    authors: [Devs.thororen, Devs.sadan, Devs.nin0dev, EquicordDevs.VillainsRule, Devs.Davri],
     settings,
     managedStyle,
     patches: [
@@ -124,8 +123,8 @@ export default definePlugin({
                     replace: "$self.renderWrapper(__state,$&)"
                 },
                 {
-                    match: /(?<=#{intl::CHECKPOINT_2025}.{50,100}?)\i>0&&\(.{200,250}?\}\)\]\}\)/,
-                    replace: "$self.renderForwardPicker()"
+                    match: /(?<=compact:\i\}\),)\i>0&&\(.{200,250}?\}\)\]\}\)/,
+                    replace: "$self.ForwardPicker()"
                 },
                 {
                     match: /(?<=transitionToDestination:)(1===\i\.length)(?=,|\})/,
@@ -137,7 +136,7 @@ export default definePlugin({
                     // we need to anchor to the one that is used as an onClick handler
                     match: /((\i)=\i\.useCallback\(\()(\)=>\{)(null!=\i&&\i\.\i\.clearDraft)(?=.{1500,2000}onClick:\2)/,
                     replace: (_, beforeParen, _1, beforeBody, body) =>
-                        `${beforeParen}flocordArg1${beforeBody}$self.setShift(flocordArg1);${body}`,
+                        `${beforeParen}vencordArg1${beforeBody}$self.setShift(vencordArg1);${body}`,
                     predicate: () => settings.store.dontFollowForwards
                 }
             ]
@@ -145,7 +144,7 @@ export default definePlugin({
         {
             find: ".FORWARD_BREADCRUMB_CLICKED,{",
             replacement: {
-                match: /(disableComponentInteractivity:\i\}\),!\i&&\(0,\i\.jsx\)\()\i/,
+                match: /(disableComponentInteractivity:\i(?:,\i:\i)*\}\),!\i&&\(0,\i\.jsx\)\()\i/,
                 replace: "$1$self.ForwardFooter"
             }
         },
@@ -153,13 +152,13 @@ export default definePlugin({
             find: ".getChannelHistory(),",
             predicate: () => settings.store.selfForward,
             replacement: {
-                match: /\i.id\]/,
-                replace: "]"
+                match: /\[\i\.id\]/,
+                replace: "[]"
             }
         }
     ],
 
-    async sendForward(additionalMessage: string | null, channels: { id: string; type: string }[], message: Message, options: ForwardOptions) {
+    async sendForward(additionalMessage: string | null, channels: { id: string; type: string; }[], message: Message, options: ForwardOptions) {
         const contentMessage = message.messageSnapshots[0]?.message ?? message;
 
         const newLine = `\n${settings.store.forwardPreface} `;
@@ -199,22 +198,13 @@ export default definePlugin({
         ignore = !!event?.shiftKey;
     },
 
-    ForwardFooter: ErrorBoundary.wrap(({ message }: { message: Message; }) => {
-        if (!message.messageReference) return null;
+    ForwardFooter: ErrorBoundary.wrap(ForwardFooter, { noop: true }),
 
-        const { guild_id, channel_id, message_id } = message.messageReference;
+    ForwardPicker: ErrorBoundary.wrap(ForwardPicker, { noop: true }),
 
-        return (
-            <div className={cl("footer")}>
-                {guild_id && <GuildName guildId={guild_id} />}
-                <ChannelName messageId={message_id} channelId={channel_id} guildId={guild_id} />
-                <Timestamp snowflake={message_id} />
-            </div>
-        );
-    }, { noop: true }),
-
-    useProps(props: { message: Message; forwardOptions?: ForwardOptions }) {
-        const message = props.message.messageSnapshots[0]?.message ?? props.message;
+    useProps(props: { message?: Message; forwardOptions?: ForwardOptions; }) {
+        // Message is undefined in certain forward contexts (e.g. forwarding an item from the shop)
+        const message = props.message?.messageSnapshots[0]?.message ?? props.message;
 
         const [opts, setOpts] = useState(() => {
             if (!props.forwardOptions || !props.forwardOptions.onlyEmbedIndices)
@@ -224,18 +214,18 @@ export default definePlugin({
             const embedsIds = new Set(props.forwardOptions.onlyEmbedIndices as number[]);
 
             // Discord incorrectly assumes that embed indices directly map to whole embeds, this is an attempt to fix that
-            const onlyEmbedIndices = message.embeds
+            const onlyEmbedIndices = message?.embeds
                 .flatMap((e, i) => e.images?.map(() => ({ id: id++, eId: i })) ?? { id: id++, eId: i })
                 .filter(({ eId }) => embedsIds.has(eId))
-                .map(({ id }) => id);
+                .map(({ id }) => id) ?? [];
 
             return { ...props.forwardOptions, onlyEmbedIndices };
         });
 
         const defaultOpts = useMemo(
             () => ({
-                onlyAttachmentIds: message.attachments.map(a => a.id),
-                onlyEmbedIndices: message.embeds.flatMap(e => e.images ?? [{}]).map((_, i) => i)
+                onlyAttachmentIds: message?.attachments.map(a => a.id) ?? [],
+                onlyEmbedIndices: message?.embeds.flatMap(e => e.images ?? [{}]).map((_, i) => i) ?? []
             }),
             [message]
         );
@@ -270,7 +260,7 @@ export default definePlugin({
             <ErrorBoundary noop>
                 <ForwardOptionsContext.Provider value={state}>
                     {children}
-                    {message.embeds.length + message.attachments.length > 0 && (
+                    {message && message.embeds.length + message.attachments.length > 0 && (
                         <Flex className={Margins.top16}>
                             <Checkbox value={!hasOpts} onChange={() => setOpts(!hasOpts ? defaultOpts : {})} size={20}>
                                 <BaseText size="sm">Forward everything</BaseText>
@@ -281,14 +271,6 @@ export default definePlugin({
                         </Flex>
                     )}
                 </ForwardOptionsContext.Provider>
-            </ErrorBoundary>
-        );
-    },
-
-    renderForwardPicker() {
-        return (
-            <ErrorBoundary noop>
-                <ForwardPicker />
             </ErrorBoundary>
         );
     }
