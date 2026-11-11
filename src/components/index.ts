@@ -26,5 +26,5 @@ export * from "./ServerListItem";
 export * from "./settings";
 export * from "./Span";
 export * from "./Switch";
-export { Text } from "./Text";
 export type { TextProps } from "./Text";
+export { Text } from "./Text";

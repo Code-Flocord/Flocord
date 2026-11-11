@@ -9,10 +9,10 @@ import { BackupRestoreIcon, LogIcon, MainSettingsIcon, PaintbrushIcon, PatchHelp
 import {
     BackupAndRestoreTab,
     ChangelogTab,
+    FlocordTab,
     PatchHelperTab,
     PluginsTab,
     ThemesTab,
-    FlocordTab,
 } from "@components/settings";
 import FlocordUpdaterTab from "@flocordplugins/FlocordAutoUpdater/UpdaterTab";
 import { shouldHideSettingsSection } from "@flocordplugins/streamProof";

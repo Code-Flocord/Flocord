@@ -14,7 +14,6 @@
     background-repeat: no-repeat;
     background-position: center;
     image-rendering: pixelated;
-    image-rendering: -moz-crisp-edges;
     transition: transform 120ms ease-out;
 }
 
@@ -52,10 +51,17 @@
 }
 
 @keyframes vc-neko-zzz-float {
-    0% { opacity: 0; transform: translateY(0) scale(0.8); }
+    0% {
+        opacity: 0;
+        transform: translateY(0) scale(0.8);
+    }
     20% { opacity: 1; }
     80% { opacity: 1; }
-    100% { opacity: 0; transform: translateY(-14px) scale(1.15); }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-14px) scale(1.15);
+    }
 }
 
 .vc-neko-walking.vc-neko-flip {

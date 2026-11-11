@@ -6,6 +6,7 @@
 
 import { classNameFactory } from "@utils/css";
 import type { ComponentPropsWithoutRef, ComponentType, ReactNode } from "react";
+
 import { Text } from "./Text";
 
 const textCls = classNameFactory("vc-text-");

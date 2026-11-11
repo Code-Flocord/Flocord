@@ -198,11 +198,42 @@ export const globPlugins = kind => ({
                     i++;
                 }
             }
+
+            // ── FlocordPrivate private plugins ──────────────────────────────────────
+            // Scans ../FlocordPrivate/plugins/ relative to FlocordCore root.
+            // Plugins stay exclusively in FlocordPrivate and are never copied here;
+            // they are compiled directly into renderer.js at build time.
+            const privatePluginsDir = resolve(
+                dirname(fileURLToPath(import.meta.url)),
+                "../../../FlocordPrivate/plugins"
+            );
+            const watchDirsExtra = [];
+            if (await exists(privatePluginsDir)) {
+                watchDirsExtra.push(privatePluginsDir);
+                const privateFiles = await readdir(privatePluginsDir, { withFileTypes: true });
+                for (const file of privateFiles) {
+                    const fileName = file.name;
+                    if (fileName.startsWith("_") || fileName.startsWith(".")) continue;
+                    if (!file.isDirectory()) continue;
+
+                    const absPluginPath = join(privatePluginsDir, fileName);
+                    const mod = `p${i}`;
+                    // Use absolute path so esbuild can locate the file outside src/.
+                    // FlocordPrivate/tsconfig.json extends FlocordCore's tsconfig so
+                    // all @api/*, @utils/*, @webpack/* aliases resolve correctly.
+                    code += `import ${mod} from ${JSON.stringify(absPluginPath)};\n`;
+                    pluginsCode += `[${mod}.name]:${mod},\n`;
+                    metaCode += `[${mod}.name]:${JSON.stringify({ folderName: `FlocordPrivate/plugins/${fileName}` })},\n`;
+                    i++;
+                }
+            }
+            // ────────────────────────────────────────────────────────────────────────
+
             code += `export default {${pluginsCode}};export const PluginMeta={${metaCode}};export const ExcludedPlugins={${excludedCode}};`;
             return {
                 contents: code,
                 resolveDir: "./src",
-                watchDirs: pluginDirs.map(d => resolve("src", d)),
+                watchDirs: [...pluginDirs.map(d => resolve("src", d)), ...watchDirsExtra],
             };
         });
     }

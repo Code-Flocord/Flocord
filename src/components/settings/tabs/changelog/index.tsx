@@ -16,8 +16,10 @@ import { Link } from "@components/Link";
 import { Paragraph } from "@components/Paragraph";
 import { SettingsTab, wrapTab } from "@components/settings/tabs/BaseTab";
 import { HashLink } from "@components/settings/tabs/updater/Components";
+import { FLOCORD_VERSION, versionGt } from "@flocordplugins/FlocordAutoUpdater/version";
 import { Margins } from "@utils/margins";
 import { useAwaiter } from "@utils/react";
+import { type PluginNative } from "@utils/types";
 import { getRepo, UpdateLogger } from "@utils/updater";
 import { Alerts, React, Toasts } from "@webpack/common";
 
@@ -42,6 +44,10 @@ import {
     UpdateSession,
 } from "./changelogManager";
 import { NewPluginsCompact, NewPluginsSection } from "./NewPluginsSection";
+
+const AutoUpdater = FlocordNative.pluginHelpers.FlocordAutoUpdater as PluginNative<
+    typeof import("@flocordplugins/FlocordAutoUpdater/native")
+>;
 
 function ChangelogCard({
     entry,
@@ -238,7 +244,12 @@ function ChangelogContent() {
         new Set(),
     );
     const [showHistory, setShowHistory] = React.useState(false);
-    const [recentlyChecked, setRecentlyChecked] = React.useState(false);
+    const [availableVersion, setAvailableVersion] = React.useState<string | null>(
+        null,
+    );
+    const [isVersionChecking, setIsVersionChecking] = React.useState(true);
+    const [checkSummary, setCheckSummary] = React.useState<string | null>(null);
+    const [lastCheckedAt, setLastCheckedAt] = React.useState<number | null>(null);
 
     React.useEffect(() => {
         const init = async () => {
@@ -279,6 +290,23 @@ function ChangelogContent() {
         }
     }, []);
 
+    const refreshAvailableVersion = React.useCallback(async () => {
+        setIsVersionChecking(true);
+
+        try {
+            const info = await AutoUpdater.fetchVersionInfo();
+            const version = info?.version ?? null;
+            setAvailableVersion(version);
+            return version;
+        } catch (err) {
+            UpdateLogger.error("Failed to fetch latest client version", err);
+            setAvailableVersion(null);
+            return null;
+        } finally {
+            setIsVersionChecking(false);
+        }
+    }, []);
+
     const ensureLocalUpdateLogged = React.useCallback(async () => {
         if (repoPending || repoErr) return false;
         const repoUrl = repo;
@@ -305,85 +333,47 @@ function ChangelogContent() {
         }
     }, [repo, repoErr, repoPending, loadChangelogHistory]);
 
-    // check if the repository was recently refreshed
-    React.useEffect(() => {
-        const checkRecentStatus = async () => {
-            try {
-                const lastRepoCheck = await getLastRepositoryCheckHash();
-                const updates = await FlocordNative.updater.getUpdates();
-
-                if (updates.ok) {
-                    const currentRepoHash =
-                        updates.value.length > 0
-                            ? updates.value[0].hash
-                            : gitHash;
-                    setRecentlyChecked(lastRepoCheck === currentRepoHash);
-                }
-            } catch (err) {
-                // ignore errors (hopefully there are none lol)
-                setRecentlyChecked(false);
-            }
-        };
-
-        if (!repoPending && !repoErr) {
-            checkRecentStatus();
-        }
-    }, [repoPending, repoErr]);
-
     const fetchChangelog = React.useCallback(async () => {
         if (repoPending || repoErr) return;
 
         setIsLoading(true);
         setError(null);
+        setCheckSummary(null);
 
         try {
-            // check if the repository was recently refreshed and that nothing has changed
+            const versionRequest = refreshAvailableVersion();
             const updates = await FlocordNative.updater.getUpdates();
-            const lastRepoCheck = await getLastRepositoryCheckHash();
-            const currentRepoHash =
-                updates.ok && updates.value.length > 0
-                    ? updates.value[0].hash
-                    : gitHash;
+            const latestVersion = await versionRequest;
 
-            // If repository state hasn't changed since last check
-            if (lastRepoCheck === currentRepoHash) {
-                setIsLoading(false);
-                setRecentlyChecked(true);
-                const logged = await ensureLocalUpdateLogged();
-                if (!logged) {
-                    setChangelog([]);
-                    Toasts.show({
-                        message: "Already up to date with repository",
-                        id: Toasts.genId(),
-                        type: Toasts.Type.MESSAGE,
-                        options: {
-                            position: Toasts.Position.BOTTOM,
-                        },
-                    });
-                }
-                return;
+            if (!updates.ok) {
+                throw new Error(
+                    updates.error?.message || "Failed to fetch from repository",
+                );
             }
 
-            if (updates.ok && updates.value) {
-                if (updates.value.length > 0) {
-                    setChangelog(updates.value);
+            const lastRepoCheck = await getLastRepositoryCheckHash();
+            const currentRepoHash = updates.value[0]?.hash ?? gitHash;
+            const isNewRepositoryState = lastRepoCheck !== currentRepoHash;
 
-                    const newPlgs = await getNewPlugins();
-                    const updatedPlgs = await getUpdatedPlugins();
-                    const newSettings = await getNewSettings();
-                    setNewPlugins(newPlgs);
-                    setUpdatedPlugins(updatedPlgs);
+            if (updates.value.length > 0) {
+                setChangelog(updates.value);
 
-                    await saveUpdateSession(
-                        updates.value,
-                        newPlgs,
-                        updatedPlgs,
-                        newSettings,
-                        true,
-                    );
-                    await loadChangelogHistory();
-                    setRecentlyChecked(true);
+                const newPlgs = await getNewPlugins();
+                const updatedPlgs = await getUpdatedPlugins();
+                const newSettings = await getNewSettings();
+                setNewPlugins(newPlgs);
+                setUpdatedPlugins(updatedPlgs);
 
+                await saveUpdateSession(
+                    updates.value,
+                    newPlgs,
+                    updatedPlgs,
+                    newSettings,
+                    true,
+                );
+                await loadChangelogHistory();
+
+                if (isNewRepositoryState) {
                     Toasts.show({
                         message: `Found ${updates.value.length} commit${updates.value.length === 1 ? "" : "s"} from repository`,
                         id: Toasts.genId(),
@@ -392,28 +382,38 @@ function ChangelogContent() {
                             position: Toasts.Position.BOTTOM,
                         },
                     });
+                }
+            } else {
+                const logged = await ensureLocalUpdateLogged();
+                if (!logged) {
+                    setChangelog([]);
+                    setNewPlugins([]);
+                    setUpdatedPlugins([]);
                 } else {
-                    const logged = await ensureLocalUpdateLogged();
-                    setRecentlyChecked(true);
                     Toasts.show({
-                        message: logged
-                            ? "Logged commits from your latest update"
-                            : "Repository is up to date with your local copy",
+                        message: "Logged commits from your latest update",
                         id: Toasts.genId(),
-                        type: logged ? Toasts.Type.SUCCESS : Toasts.Type.MESSAGE,
+                        type: Toasts.Type.SUCCESS,
                         options: {
                             position: Toasts.Position.BOTTOM,
                         },
                     });
-                    if (!logged) {
-                        setChangelog([]);
-                    }
                 }
-            } else if (!updates.ok) {
-                throw new Error(
-                    updates.error?.message || "Failed to fetch from repository",
-                );
             }
+
+            const versionStatus = latestVersion === null
+                ? "The latest client release could not be checked."
+                : versionGt(latestVersion, FLOCORD_VERSION)
+                    ? `Update available: v${latestVersion} (installed: v${FLOCORD_VERSION}).`
+                    : versionGt(FLOCORD_VERSION, latestVersion)
+                        ? `Installed v${FLOCORD_VERSION} is newer than the latest release, v${latestVersion}.`
+                        : `Client up to date: v${FLOCORD_VERSION} installed; v${latestVersion} available.`;
+            const repositoryStatus = updates.value.length > 0
+                ? `${updates.value.length} repository commit${updates.value.length === 1 ? "" : "s"} differ from this installation.`
+                : `No repository commits are ahead of ${gitHash.slice(0, 7)}.`;
+
+            setCheckSummary(`${versionStatus} ${repositoryStatus}`);
+            setLastCheckedAt(Date.now());
         } catch (err: any) {
             UpdateLogger.error("Failed to fetch commits from repository", err);
             const errorMessage =
@@ -433,7 +433,13 @@ function ChangelogContent() {
         } finally {
             setIsLoading(false);
         }
-    }, [repoPending, repoErr, loadNewPlugins, loadChangelogHistory]);
+    }, [
+        repoPending,
+        repoErr,
+        refreshAvailableVersion,
+        ensureLocalUpdateLogged,
+        loadChangelogHistory,
+    ]);
 
     React.useEffect(() => {
         const loadInitialData = async () => {
@@ -443,11 +449,13 @@ function ChangelogContent() {
                 if (!logged) {
                     await fetchChangelog();
                 } else {
+                    await refreshAvailableVersion();
                     setIsLoading(false);
                 }
             } else if (!repoPending) {
                 // perseverance
                 await loadNewPlugins();
+                await refreshAvailableVersion();
                 setIsLoading(false);
             }
         };
@@ -458,6 +466,7 @@ function ChangelogContent() {
         fetchChangelog,
         loadNewPlugins,
         ensureLocalUpdateLogged,
+        refreshAvailableVersion,
     ]);
 
     const toggleLogExpanded = (logId: string) => {
@@ -474,26 +483,70 @@ function ChangelogContent() {
         changelog.length > 0 ||
         newPlugins.length > 0 ||
         updatedPlugins.length > 0;
+    const isReleaseUpdateAvailable =
+        availableVersion !== null &&
+        versionGt(availableVersion, FLOCORD_VERSION);
+    const isInstalledVersionNewer =
+        availableVersion !== null &&
+        versionGt(FLOCORD_VERSION, availableVersion);
 
     return (
         <>
             <Heading className={Margins.top16}>Fetch Changes</Heading>
             <Paragraph className={Margins.bottom16}>
-                Check the repository for new commits, plugin updates, and code changes. This will compare your current version with the latest available and show you what's new.
+                Compare the installed client with the latest release, then check the repository for new commits and plugin changes.
             </Paragraph>
+
+            <Card className="vc-changelog-version-summary">
+                <div className="vc-changelog-version-comparison">
+                    <div className="vc-changelog-version-item">
+                        <span className="vc-changelog-version-label">Installed client</span>
+                        <strong className="vc-changelog-version-value">
+                            v{FLOCORD_VERSION}
+                        </strong>
+                        <code className="vc-changelog-version-hash">
+                            {gitHash.slice(0, 7)}
+                        </code>
+                    </div>
+                    <span className="vc-changelog-version-arrow" aria-hidden="true">
+                        →
+                    </span>
+                    <div className="vc-changelog-version-item">
+                        <span className="vc-changelog-version-label">Latest available</span>
+                        <strong className="vc-changelog-version-value">
+                            {isVersionChecking
+                                ? "Checking…"
+                                : availableVersion
+                                    ? `v${availableVersion}`
+                                    : "Unavailable"}
+                        </strong>
+                    </div>
+                </div>
+                <div
+                    className={`vc-changelog-version-status ${isReleaseUpdateAvailable ? "update-available" : ""} ${!isReleaseUpdateAvailable && !isInstalledVersionNewer && availableVersion ? "up-to-date" : ""}`}
+                    role="status"
+                    aria-live="polite"
+                >
+                    {isVersionChecking
+                        ? "Checking the latest signed release…"
+                        : availableVersion === null
+                            ? "Could not check the latest client release."
+                            : isReleaseUpdateAvailable
+                                ? `Version v${availableVersion} is available.`
+                                : isInstalledVersionNewer
+                                    ? `Installed v${FLOCORD_VERSION} is newer than the latest release.`
+                                    : "Your client is up to date."}
+                </div>
+            </Card>
 
             <div className="vc-changelog-controls">
                 <Button
                     size="small"
                     disabled={isLoading || repoPending || !!repoErr}
                     onClick={fetchChangelog}
-                    variant={recentlyChecked ? "positive" : "primary"}
+                    variant="primary"
                 >
-                    {isLoading
-                        ? "Loading..."
-                        : recentlyChecked
-                            ? "Repository Up to Date"
-                            : "Fetch from Repository"}
+                    {isLoading ? "Checking..." : lastCheckedAt ? "Check again" : "Check for updates"}
                 </Button>
 
                 {changelogHistory.length > 0 && (
@@ -538,6 +591,17 @@ function ChangelogContent() {
                     </>
                 )}
             </div>
+
+            {checkSummary && (
+                <div className="vc-changelog-check-summary" role="status" aria-live="polite">
+                    <Paragraph>{checkSummary}</Paragraph>
+                    {lastCheckedAt !== null && (
+                        <span className="vc-changelog-last-checked">
+                            Last checked at {new Date(lastCheckedAt).toLocaleTimeString()}.
+                        </span>
+                    )}
+                </div>
+            )}
 
             {error && (
                 <ErrorCard style={{ padding: "1em", marginTop: "1em" }}>
@@ -619,7 +683,7 @@ function ChangelogContent() {
                     <Divider className={Margins.top20} />
                     <Heading className={Margins.top20}>Recent Changes</Heading>
                     <Paragraph color="text-subtle">
-                        No commits available ahead of your current version. Click "Fetch from Repository" to check for new changes.
+                        No commits were found beyond the installed revision. The version comparison above shows whether a newer client release is available.
                     </Paragraph>
                 </>
             )}

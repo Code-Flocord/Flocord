@@ -82,6 +82,68 @@
     gap: 0.5em;
 }
 
+.vc-changelog-version-summary {
+    padding: 1em;
+    margin-bottom: 1em;
+    background-color: var(--background-base-lower-alt);
+}
+
+.vc-changelog-version-comparison {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.75em;
+}
+
+.vc-changelog-version-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25em;
+    min-width: 0;
+}
+
+.vc-changelog-version-label,
+.vc-changelog-version-hash {
+    color: var(--text-subtle);
+    font-size: 0.875em;
+}
+
+.vc-changelog-version-value {
+    color: var(--text-default);
+    font-size: 1.05em;
+}
+
+.vc-changelog-version-arrow {
+    color: var(--text-subtle);
+    font-size: 1.25em;
+}
+
+.vc-changelog-version-status {
+    margin-top: 0.75em;
+    color: var(--text-subtle);
+    font-size: 0.9em;
+}
+
+.vc-changelog-version-status.update-available {
+    color: var(--status-warning);
+}
+
+.vc-changelog-version-status.up-to-date {
+    color: var(--status-positive);
+}
+
+.vc-changelog-check-summary {
+    margin-top: 0.75em;
+    padding: 0.75em;
+    border-left: 3px solid var(--brand);
+    background-color: var(--background-base-lower-alt);
+}
+
+.vc-changelog-last-checked {
+    color: var(--text-subtle);
+    font-size: 0.8em;
+}
+
 .vc-changelog-repo-info {
     display: flex;
     align-items: center;
@@ -413,6 +475,12 @@
     border: 1px solid var(--border-subtle);
 }
 
+.visual-refresh .vc-changelog-version-summary,
+.visual-refresh .vc-changelog-check-summary {
+    background-color: var(--background-surface-high);
+    border: 1px solid var(--border-subtle);
+}
+
 .visual-refresh .vc-changelog-new-plugins-section {
     background-color: var(--background-surface-high);
     border: 1px solid var(--border-subtle);
@@ -447,6 +515,11 @@
 @media (width <=768px) {
     .vc-changelog-new-plugins-grid {
         grid-template-columns: 1fr;
+    }
+
+    .vc-changelog-version-comparison {
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        gap: 0.5em;
     }
 
     .vc-changelog-controls {
