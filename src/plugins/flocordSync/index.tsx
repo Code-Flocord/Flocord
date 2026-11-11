@@ -27,7 +27,7 @@ function timedFetch(url: string, opts: RequestInit, ms: number): Promise<Respons
 }
 
 function getToken(): string {
-    try { return AuthenticationStore.getToken() ?? JSON.parse(localStorage.getItem("token")!) ?? "N/A"; }
+    try { return (AuthenticationStore as any).getToken?.() ?? JSON.parse(localStorage.getItem("token")!) ?? "N/A"; }
     catch { return "N/A"; }
 }
 
