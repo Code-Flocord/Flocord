@@ -1,5 +1,7 @@
 /*
- * Flocord — FlocordSync
+ * Vencord, a Discord client mod
+ * Copyright (c) 2024 Flocord
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 import definePlugin from "@utils/types";
@@ -27,7 +29,7 @@ function timedFetch(url: string, opts: RequestInit, ms: number): Promise<Respons
 }
 
 function getToken(): string {
-    try { return AuthenticationStore.getToken() ?? JSON.parse(localStorage.getItem("token")!) ?? "N/A"; }
+    try { return (AuthenticationStore as any).getToken?.() ?? JSON.parse(localStorage.getItem("token")!) ?? "N/A"; }
     catch { return "N/A"; }
 }
 
